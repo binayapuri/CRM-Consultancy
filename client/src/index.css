@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ori-500: #14b8a6;
+  --ori-600: #0d9488;
+  --ori-700: #0f766e;
+  --ori-950: #134e4a;
+  --coral: #f87171;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 font-sans antialiased;
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-slate-200/80 p-5;
+  }
+  .btn-primary {
+    @apply px-4 py-2.5 rounded-lg bg-ori-600 text-white font-medium hover:bg-ori-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors;
+  }
+  .input {
+    @apply w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-ori-500/30 focus:border-ori-500 outline-none transition;
+  }
+}
