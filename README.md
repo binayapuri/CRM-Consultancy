@@ -1,0 +1,70 @@
+# ORIVISA - Australian Migration & Education Platform
+
+A full-stack application bridging **students** and **consultancies** in the Australian migration ecosystem. Built with Node.js, Express, MongoDB, and React.
+
+## Features
+
+### Consultancy CRM (Nexus Pro)
+- **Dashboard** – Overview of clients, applications, leads
+- **Kanban Board** – Jira-like workflow for visa applications
+- **Clients** – Client profiles with PR points
+- **Documents** – Document management
+- **Leads** – Lead pipeline
+- **Daily Tasks** – Task sheet with date tagging
+- **Colleges** – Education provider directory
+- **OSHC** – Insurance provider partners
+- **Trust Ledger** – OMARA-compliant client funds
+
+### Student Portal
+- **Profile** – Migration profile and details
+- **PR Calculator** – Dynamic points (2025/2026 rules)
+- **AI Migration Compass** – Factual info only (Section 276 compliant)
+- **Consultancy Search** – Find verified agents
+- **Visa Roadmap** – Step-by-step guide
+
+### Super Admin
+- Manage consultancies and users
+
+## Tech Stack
+
+- **Backend**: Node.js, Express, MongoDB (Mongoose)
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS
+- **State**: Zustand
+
+## Setup
+
+```bash
+# Install all dependencies
+npm run install:all
+
+# Seed database (requires MongoDB running)
+cd server && npm run seed
+
+# Run development (backend + frontend)
+npm run dev
+```
+
+- **Frontend**: http://localhost:3000
+- **Backend**: http://localhost:4000
+
+## Seed Accounts
+
+| Role   | Email              | Password   |
+|--------|--------------------|------------|
+| Admin  | admin@orivisa.com  | admin123   |
+| Agent  | agent@orivisa.com  | agent123   |
+| Student| student@orivisa.com| student123 |
+
+## Environment
+
+Create `server/.env`:
+```
+MONGODB_URI=mongodb://localhost:27017/orivisa
+JWT_SECRET=your-secret-key
+PORT=5000
+```
+
+## Data Sovereignty
+
+Designed for Australian deployment. Configure MongoDB and hosting in `ap-southeast-2` (Sydney) for data residency.
+# CRM-Consultancy
