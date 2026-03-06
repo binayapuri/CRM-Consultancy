@@ -19,19 +19,25 @@ export default function Leads() {
   const [q, setQ] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSource, setFilterSource] = useState('');
+  const [filterAgent, setFilterAgent] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [agents, setAgents] = useState<any[]>([]);
 
   const fetchLeads = () => {
     const url = consultancyId ? `/api/leads?consultancyId=${consultancyId}` : '/api/leads';
     authFetch(url).then(r => r.json()).then(data => { setLeads(data); setLoading(false); });
   };
   useEffect(() => { setLoading(true); fetchLeads(); }, [consultancyId]);
+  useEffect(() => {
+    authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).then(d => setAgents(Array.isArray(d) ? d : [])).catch(() => []);
+  }, [consultancyId]);
 
   const filtered = leads.filter(l => {
     const matchSearch = `${l.profile?.firstName} ${l.profile?.lastName} ${l.profile?.email} ${l.profile?.interest}`.toLowerCase().includes(q.toLowerCase());
     const matchStatus = !filterStatus || l.status === filterStatus;
     const matchSource = !filterSource || (l.source || '').toLowerCase() === filterSource.toLowerCase();
-    return matchSearch && matchStatus && matchSource;
+    const matchAgent = !filterAgent || (l.assignedTo?._id || l.assignedTo) === filterAgent;
+    return matchSearch && matchStatus && matchSource && matchAgent;
   });
 
   const handleConvert = async (leadId: string) => {
@@ -84,7 +90,11 @@ export default function Leads() {
             <select value={filterSource} onChange={e => setFilterSource(e.target.value)} className="input w-full md:w-36">
               {SOURCE_OPTIONS.map(s => <option key={s} value={s}>{s || 'All sources'}</option>)}
             </select>
-            {(filterStatus || filterSource) && <button onClick={() => { setFilterStatus(''); setFilterSource(''); }} className="text-slate-500 hover:text-slate-700 text-sm flex items-center gap-1"><X className="w-4 h-4" /> Clear</button>}
+            <select value={filterAgent} onChange={e => setFilterAgent(e.target.value)} className="input w-full md:w-40">
+              <option value="">All agents</option>
+              {agents.map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
+            </select>
+            {(filterStatus || filterSource || filterAgent) && <button onClick={() => { setFilterStatus(''); setFilterSource(''); setFilterAgent(''); }} className="text-slate-500 hover:text-slate-700 text-sm flex items-center gap-1"><X className="w-4 h-4" /> Clear</button>}
           </div>
         )}
       </div>
@@ -105,7 +115,9 @@ export default function Leads() {
           <tbody>
             {filtered.map((l: any) => (
               <tr key={l._id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                <td className="px-4 py-3 font-medium">{l.profile?.firstName} {l.profile?.lastName}</td>
+                <td className="px-4 py-3 font-medium">
+                  <Link to={consultancyId ? `/consultancy/leads/${l._id}?consultancyId=${consultancyId}` : `/consultancy/leads/${l._id}`} className="text-ori-600 hover:underline">{l.profile?.firstName} {l.profile?.lastName}</Link>
+                </td>
                 <td className="px-4 py-3 text-slate-600">{l.profile?.email}</td>
                 <td className="px-4 py-3 text-slate-600">{l.profile?.interest || '-'}</td>
                 <td className="px-4 py-3 text-slate-600">{l.source || '-'}</td>

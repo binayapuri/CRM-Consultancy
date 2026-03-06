@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { authFetch } from '../../store/auth';
 import { useAuthStore } from '../../store/auth';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Pencil, UserX } from 'lucide-react';
+import { Plus, Pencil, UserX, Search, Filter } from 'lucide-react';
 
 export default function Employees() {
   const { user } = useAuthStore();
@@ -10,16 +10,37 @@ export default function Employees() {
   const consultancyId = searchParams.get('consultancyId');
   const [employees, setEmployees] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [filterSearch, setFilterSearch] = useState('');
+  const [filterRole, setFilterRole] = useState('');
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ email: '', password: '', role: 'AGENT', profile: { firstName: '', lastName: '', phone: '' } });
 
   const canAdd = ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'].includes(user?.role || '');
   const canDelete = ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'].includes(user?.role || '');
 
+  const filteredEmployees = employees.filter((emp: any) => {
+    const matchSearch = !filterSearch || `${emp.profile?.firstName} ${emp.profile?.lastName} ${emp.email}`.toLowerCase().includes(filterSearch.toLowerCase());
+    const matchRole = !filterRole || emp.role === filterRole;
+    return matchSearch && matchRole;
+  });
+
+  const editId = searchParams.get('editId');
+
   useEffect(() => {
     const url = consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees';
     authFetch(url).then(r => r.json()).then(setEmployees);
   }, [consultancyId]);
+
+  useEffect(() => {
+    if (editId && employees.length) {
+      const emp = employees.find((e: any) => e._id === editId);
+      if (emp) {
+        setEditing(emp);
+        setForm({ email: emp.email, password: '', role: emp.role, profile: { firstName: emp.profile?.firstName || '', lastName: emp.profile?.lastName || '', phone: emp.profile?.phone || '' } });
+        setShowForm(true);
+      }
+    }
+  }, [editId, employees]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +61,7 @@ export default function Employees() {
       setShowForm(false);
       setEditing(null);
       setForm({ email: '', password: '', role: 'AGENT', profile: { firstName: '', lastName: '', phone: '' } });
+      if (editId) setSearchParams(consultancyId ? { consultancyId } : {});
       authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).then(setEmployees);
     } catch (err: any) {
       alert(err.message);
@@ -65,6 +87,18 @@ export default function Employees() {
         </div>
         {canAdd && <button onClick={() => { setShowForm(true); setEditing(null); setForm({ email: '', password: '', role: 'AGENT', profile: { firstName: '', lastName: '', phone: '' } }); }} className="btn-primary flex items-center gap-2"><Plus className="w-4 h-4" /> Add Employee</button>}
       </div>
+      <div className="mt-6 flex flex-wrap gap-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input placeholder="Search by name, email..." value={filterSearch} onChange={e => setFilterSearch(e.target.value)} className="input pl-10" />
+        </div>
+        <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="input w-40">
+          <option value="">All roles</option>
+          <option value="CONSULTANCY_ADMIN">Admin</option>
+          <option value="MANAGER">Manager</option>
+          <option value="AGENT">Agent</option>
+        </select>
+      </div>
 
       {showForm && (
         <div className="card mt-6 max-w-md">
@@ -79,7 +113,7 @@ export default function Employees() {
             <div><label className="block text-sm font-medium text-slate-700 mb-1">Role</label><select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className="input" disabled={editing?.role === 'CONSULTANCY_ADMIN'}><option value="AGENT">Agent</option><option value="MANAGER">Manager (full access)</option>{editing?.role === 'CONSULTANCY_ADMIN' && <option value="CONSULTANCY_ADMIN">Admin (owner)</option>}</select></div>
             <div className="flex gap-2">
               <button type="submit" className="btn-primary">Save</button>
-              <button type="button" onClick={() => { setShowForm(false); setEditing(null); }} className="btn-secondary">Cancel</button>
+              <button type="button" onClick={() => { setShowForm(false); setEditing(null); if (editId) setSearchParams(consultancyId ? { consultancyId } : {}); }} className="btn-secondary">Cancel</button>
             </div>
           </form>
         </div>
@@ -97,9 +131,9 @@ export default function Employees() {
             </tr>
           </thead>
           <tbody>
-            {employees.map((emp: any) => (
+            {filteredEmployees.map((emp: any) => (
               <tr key={emp._id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                <td className="px-4 py-3 font-medium"><Link to={`/consultancy/employees/${emp._id}`} className="text-ori-600 hover:underline">{emp.profile?.firstName} {emp.profile?.lastName}</Link></td>
+                <td className="px-4 py-3 font-medium"><Link to={consultancyId ? `/consultancy/employees/${emp._id}?consultancyId=${consultancyId}` : `/consultancy/employees/${emp._id}`} className="text-ori-600 hover:underline">{emp.profile?.firstName} {emp.profile?.lastName}</Link></td>
                 <td className="px-4 py-3 text-slate-600">{emp.email}</td>
                 <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs ${emp.role === 'CONSULTANCY_ADMIN' ? 'bg-amber-100 text-amber-700' : emp.role === 'MANAGER' ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-600'}`}>{emp.role}</span></td>
                 <td className="px-4 py-3 text-slate-600">{emp.profile?.marnNumber || '-'}</td>

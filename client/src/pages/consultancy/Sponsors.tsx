@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { authFetch, safeJson } from '../../store/auth';
-import { Plus, Pencil, Trash2, Building2, FileSignature, Send } from 'lucide-react';
+import { Plus, Pencil, Trash2, Building2, FileSignature, Send, Search } from 'lucide-react';
 
 export default function Sponsors() {
   const [searchParams] = useSearchParams();
   const consultancyId = searchParams.get('consultancyId');
   const [sponsors, setSponsors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterSearch, setFilterSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({
@@ -28,6 +29,11 @@ export default function Sponsors() {
   };
 
   useEffect(() => { fetchSponsors(); }, [consultancyId]);
+
+  const filteredSponsors = sponsors.filter((s: any) => {
+    const str = `${s.companyName} ${s.abn} ${s.acn} ${s.contactPerson?.firstName} ${s.contactPerson?.lastName} ${s.email}`.toLowerCase();
+    return !filterSearch || str.includes(filterSearch.toLowerCase());
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +68,7 @@ export default function Sponsors() {
     if (!confirm('Delete this sponsor?')) return;
     try {
       const res = await authFetch(`/api/sponsors/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error((await safeJson(res)).error);
+      if (!res.ok) throw new Error((await safeJson(res) as { error?: string })?.error);
       fetchSponsors();
     } catch (e) {
       alert((e as Error).message);
@@ -124,6 +130,12 @@ export default function Sponsors() {
           <Plus className="w-4 h-4" /> Add Sponsor
         </button>
       </div>
+      <div className="mt-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input placeholder="Search company, ABN, contact..." value={filterSearch} onChange={e => setFilterSearch(e.target.value)} className="input pl-10" />
+        </div>
+      </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="card mt-6 max-w-2xl">
@@ -147,9 +159,9 @@ export default function Sponsors() {
       )}
 
       <div className="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading ? <p className="text-slate-500">Loading...</p> : sponsors.length === 0 ? (
-          <div className="card p-8 text-center text-slate-500 col-span-full">No sponsors yet. Add one for employer-sponsored visas (482, 186).</div>
-        ) : sponsors.map((s: any) => (
+        {loading ? <p className="text-slate-500">Loading...</p> : filteredSponsors.length === 0 ? (
+          <div className="card p-8 text-center text-slate-500 col-span-full">{sponsors.length ? 'No sponsors match your search.' : 'No sponsors yet. Add one for employer-sponsored visas (482, 186).'}</div>
+        ) : filteredSponsors.map((s: any) => (
           <div key={s._id} className="card flex flex-col gap-3">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-ori-100 flex items-center justify-center shrink-0"><Building2 className="w-5 h-5 text-ori-600" /></div>

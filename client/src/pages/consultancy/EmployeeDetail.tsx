@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { format } from 'date-fns';
-import { ArrowLeft, ClipboardList } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Pencil } from 'lucide-react';
 
 export default function EmployeeDetail() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const consultancyId = searchParams.get('consultancyId');
   const [employee, setEmployee] = useState<any>(null);
   const [jobSheet, setJobSheet] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,15 +28,16 @@ export default function EmployeeDetail() {
 
   return (
     <div>
-      <Link to="/consultancy/employees" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4">
+      <Link to={consultancyId ? `/consultancy/employees?consultancyId=${consultancyId}` : '/consultancy/employees'} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4">
         <ArrowLeft className="w-4 h-4" /> Back to Employees
       </Link>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-display font-bold text-slate-900">{employee.profile?.firstName} {employee.profile?.lastName}</h1>
           <p className="text-slate-500">{employee.email}</p>
           <p className="text-sm text-slate-600 mt-1">{employee.role} {employee.profile?.marnNumber && `• MARN ${employee.profile.marnNumber}`}</p>
         </div>
+        <Link to={consultancyId ? `/consultancy/employees?consultancyId=${consultancyId}&editId=${id}` : `/consultancy/employees?editId=${id}`} className="btn-primary flex items-center gap-2 shrink-0"><Pencil className="w-4 h-4" /> Edit Employee</Link>
       </div>
 
       {/* Job Sheet - same as client task sheet */}

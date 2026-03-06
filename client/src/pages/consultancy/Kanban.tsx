@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { authFetch, safeJson } from '../../store/auth';
 import { format } from 'date-fns';
-import { Plus, MessageSquare, ChevronRight, ChevronLeft, User, X, CheckCircle, PenTool, GripVertical } from 'lucide-react';
+import { Plus, MessageSquare, ChevronRight, ChevronLeft, User, X, CheckCircle, PenTool, Search, Filter } from 'lucide-react';
 
 const APP_COLUMNS = [
   { key: 'ONBOARDING', label: 'Onboarding', color: 'bg-slate-100' },
@@ -31,6 +31,10 @@ export default function Kanban() {
   const [newTask, setNewTask] = useState({ title: '', clientId: '', assignedTo: '', priority: 'MEDIUM' });
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const [taskComment, setTaskComment] = useState('');
+  const [filterSearch, setFilterSearch] = useState('');
+  const [filterClient, setFilterClient] = useState('');
+  const [filterAgent, setFilterAgent] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchData = async () => {
     const q = consultancyId ? `?consultancyId=${consultancyId}` : '';
@@ -94,8 +98,22 @@ export default function Kanban() {
     }
   };
 
+  const filterTask = (t: any) => {
+    const matchSearch = !filterSearch || t.title?.toLowerCase().includes(filterSearch.toLowerCase()) || [t.clientId?.profile?.firstName, t.clientId?.profile?.lastName].filter(Boolean).join(' ').toLowerCase().includes(filterSearch.toLowerCase());
+    const matchClient = !filterClient || (t.clientId?._id || t.clientId) === filterClient;
+    const matchAgent = !filterAgent || (t.assignedTo?._id || t.assignedTo) === filterAgent;
+    return matchSearch && matchClient && matchAgent;
+  };
+  const filterApp = (app: any) => {
+    const matchSearch = !filterSearch || [app.clientId?.profile?.firstName, app.clientId?.profile?.lastName].filter(Boolean).join(' ').toLowerCase().includes(filterSearch.toLowerCase()) || String(app.visaSubclass || '').includes(filterSearch);
+    const matchClient = !filterClient || (app.clientId?._id || app.clientId) === filterClient;
+    const matchAgent = !filterAgent || (app.agentId?._id || app.agentId) === filterAgent;
+    return matchSearch && matchClient && matchAgent;
+  };
+  const filteredTasks = tasks.filter(filterTask);
+  const filteredApps = Object.fromEntries(Object.entries(appColumns).map(([k, arr]) => [k, (arr || []).filter(filterApp)]));
   const taskColumns = TASK_COLUMNS.reduce((acc, { key }) => {
-    acc[key] = tasks.filter((t: any) => t.status === key);
+    acc[key] = filteredTasks.filter((t: any) => t.status === key);
     return acc;
   }, {} as Record<string, any[]>);
 
@@ -186,6 +204,23 @@ export default function Kanban() {
           <p className="text-slate-500 mt-1">Tasks first, then applications – Jira-style workflow</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input placeholder="Search client, task, visa..." value={filterSearch} onChange={e => setFilterSearch(e.target.value)} className="input pl-9 text-sm" />
+          </div>
+          <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary flex items-center gap-2 text-sm ${showFilters ? 'ring-2 ring-ori-500' : ''}`}><Filter className="w-4 h-4" /> Filters</button>
+          {showFilters && (
+            <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+              <select value={filterClient} onChange={e => setFilterClient(e.target.value)} className="input text-sm w-full sm:w-40">
+                <option value="">All clients</option>
+                {clients.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}
+              </select>
+              <select value={filterAgent} onChange={e => setFilterAgent(e.target.value)} className="input text-sm w-full sm:w-40">
+                <option value="">All agents</option>
+                {agents.map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
+              </select>
+            </div>
+          )}
           <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">
             <button onClick={() => setActiveTab('tasks')} className={`px-3 sm:px-4 py-2 rounded-md font-medium transition text-sm sm:text-base ${activeTab === 'tasks' ? 'bg-white shadow text-ori-600' : 'text-slate-600 hover:text-slate-900'}`}>Tasks</button>
             <button onClick={() => setActiveTab('applications')} className={`px-3 sm:px-4 py-2 rounded-md font-medium transition text-sm sm:text-base ${activeTab === 'applications' ? 'bg-white shadow text-ori-600' : 'text-slate-600 hover:text-slate-900'}`}>Applications</button>
@@ -219,7 +254,7 @@ export default function Kanban() {
             <div key={key} className="flex-shrink-0 w-[260px] sm:w-72">
               <div className={`${color} rounded-t-lg px-4 py-2 font-medium text-slate-700`}>{label}</div>
               <div className="bg-slate-100 rounded-b-lg p-4 min-h-[280px] sm:min-h-[360px] lg:min-h-[400px] space-y-3" onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }} onDrop={e => onAppDrop(e, key)}>
-                {(appColumns[key] || []).map((app: any) => (
+                {(filteredApps[key] || []).map((app: any) => (
                   <div key={app._id} draggable className="card cursor-grab active:cursor-grabbing hover:shadow-md transition group" onDragStart={e => onAppDragStart(e, app, key)}>
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">

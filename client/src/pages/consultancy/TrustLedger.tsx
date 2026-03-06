@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { format } from 'date-fns';
-import { Wallet, Plus, X, Pencil, Trash2 } from 'lucide-react';
+import { Wallet, Plus, X, Pencil, Trash2, Filter } from 'lucide-react';
 import { Skeleton } from '../../components/Skeleton';
 
 export default function TrustLedger() {
@@ -15,6 +15,12 @@ export default function TrustLedger() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ description: '', category: '' });
   const [form, setForm] = useState({ amount: '', direction: 'CREDIT' as 'CREDIT' | 'DEBIT', description: '', clientId: '', category: 'Client Deposit' });
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterClient, setFilterClient] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterDirection, setFilterDirection] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const [accessDenied, setAccessDenied] = useState(false);
   const fetchData = () => {
@@ -89,6 +95,15 @@ export default function TrustLedger() {
     }
   };
 
+  const filteredEntries = (data.entries || []).filter((e: any) => {
+    const matchDateFrom = !filterDateFrom || new Date(e.createdAt) >= new Date(filterDateFrom);
+    const matchDateTo = !filterDateTo || new Date(e.createdAt) <= new Date(filterDateTo + 'T23:59:59');
+    const matchClient = !filterClient || (e.clientId?._id || e.clientId) === filterClient;
+    const matchCategory = !filterCategory || (e.category || '') === filterCategory;
+    const matchDirection = !filterDirection || (e.direction || '') === filterDirection;
+    return matchDateFrom && matchDateTo && matchClient && matchCategory && matchDirection;
+  });
+
   if (accessDenied) return (
     <div className="card p-12 text-center">
       <Wallet className="w-16 h-16 text-amber-500 mx-auto mb-4" />
@@ -106,7 +121,32 @@ export default function TrustLedger() {
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2"><Plus className="w-4 h-4" /> Add Transaction</button>
       </div>
-      <div className="card mt-6 flex items-center gap-4 max-w-sm">
+      <div className="mt-6 flex flex-wrap gap-4">
+        <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary flex items-center gap-2 ${showFilters ? 'ring-2 ring-ori-500' : ''}`}><Filter className="w-4 h-4" /> Filters</button>
+        {showFilters && (
+          <div className="flex flex-wrap gap-3 items-center">
+            <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="input text-sm" placeholder="From" />
+            <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="input text-sm" placeholder="To" />
+            <select value={filterClient} onChange={e => setFilterClient(e.target.value)} className="input text-sm w-40">
+              <option value="">All clients</option>
+              {clients.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}
+            </select>
+            <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="input text-sm w-36">
+              <option value="">All categories</option>
+              <option value="Client Deposit">Client Deposit</option>
+              <option value="Fee Transfer">Fee Transfer</option>
+              <option value="Refund">Refund</option>
+              <option value="Other">Other</option>
+            </select>
+            <select value={filterDirection} onChange={e => setFilterDirection(e.target.value)} className="input text-sm w-28">
+              <option value="">All</option>
+              <option value="CREDIT">Credit</option>
+              <option value="DEBIT">Debit</option>
+            </select>
+          </div>
+        )}
+      </div>
+      <div className="card mt-4 flex items-center gap-4 max-w-sm">
         <div className="w-12 h-12 rounded-xl bg-ori-100 flex items-center justify-center">
           <Wallet className="w-6 h-6 text-ori-600" />
         </div>
@@ -145,7 +185,7 @@ export default function TrustLedger() {
           <tbody>
             {loading ? (
               <tr><td colSpan={5} className="px-4 py-6"><div className="flex justify-center"><Skeleton className="h-4 w-3/4" /></div></td></tr>
-            ) : data.entries?.map((e: any) => (
+            ) : filteredEntries.map((e: any) => (
               <tr key={e._id} className="border-b border-slate-100">
                 <td className="px-4 py-3 text-slate-600">{format(new Date(e.createdAt), 'dd MMM yyyy')}</td>
                 <td className="px-4 py-3">
@@ -181,7 +221,7 @@ export default function TrustLedger() {
             ))}
           </tbody>
         </table>
-        {!loading && !data.entries?.length && <div className="p-12 text-center text-slate-500">No transactions</div>}
+        {!loading && !filteredEntries.length && <div className="p-12 text-center text-slate-500">{data.entries?.length ? 'No transactions match filters' : 'No transactions'}</div>}
       </div>
     </div>
   );

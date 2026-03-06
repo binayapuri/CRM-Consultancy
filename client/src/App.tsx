@@ -32,6 +32,7 @@ import EmployeeDetail from './pages/consultancy/EmployeeDetail';
 import TraceHistory from './pages/consultancy/TraceHistory';
 import Attendance from './pages/consultancy/Attendance';
 import LeadForm from './pages/consultancy/LeadForm';
+import LeadDetail from './pages/consultancy/LeadDetail';
 import ClientEdit from './pages/consultancy/ClientEdit';
 
 // Student pages
@@ -88,6 +89,7 @@ export default function App() {
         <Route path="leads" element={<Leads />} />
         <Route path="leads/add" element={<LeadForm />} />
         <Route path="leads/:id/edit" element={<LeadForm />} />
+        <Route path="leads/:id" element={<LeadDetail />} />
         <Route path="daily-tasks" element={<DailyTasks />} />
         <Route path="attendance" element={<Attendance />} />
         <Route path="colleges" element={<Colleges />} />
