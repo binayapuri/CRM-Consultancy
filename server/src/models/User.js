@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'STUDENT'], required: true },
+  role: { type: String, enum: ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'STUDENT'], required: true },
   profile: {
     firstName: String,
     lastName: String,
@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
   invitationToken: String,
   mustChangePassword: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
+  isTestAccount: { type: Boolean, default: false }, // Super Admin test accounts
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

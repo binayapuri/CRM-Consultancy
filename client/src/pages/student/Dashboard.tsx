@@ -179,10 +179,14 @@ export default function StudentDashboard() {
           )}
         </>
       ) : (
-        <div className="card mt-6 p-12 text-center">
+        <div className="card mt-6 p-12 text-center max-w-xl mx-auto">
           <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
           <h2 className="font-display font-semibold text-slate-900 mb-2">Get Started</h2>
           <p className="text-slate-600 mb-4">Connect with a registered migration agent to begin your Australian visa journey.</p>
+          <div className="space-y-3 text-left bg-slate-50 rounded-lg p-4 mb-6">
+            <p className="text-sm text-slate-700"><strong>Option 1:</strong> If your consultancy has enrolled you, check your email for an invitation link. Click it to activate your portal access.</p>
+            <p className="text-sm text-slate-700"><strong>Option 2:</strong> Search for verified consultancies and reach out to get enrolled.</p>
+          </div>
           <Link to="consultancies" className="btn-primary inline-flex items-center gap-2">Find Consultancy <ArrowRight className="w-4 h-4" /></Link>
         </div>
       )}

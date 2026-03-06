@@ -60,7 +60,7 @@ export const requirePermission = (feature, action = 'view') => async (req, res, 
   if (!consultancy) return res.status(404).json({ error: 'Consultancy not found' });
 
   const rolePerms = consultancy.rolePermissions || [];
-  const userRole = req.user.role === 'CONSULTANCY_ADMIN' ? 'CONSULTANCY_ADMIN' : req.user.role === 'AGENT' ? 'AGENT' : 'SUPPORT';
+  const userRole = ['CONSULTANCY_ADMIN', 'MANAGER'].includes(req.user.role) ? 'CONSULTANCY_ADMIN' : req.user.role === 'AGENT' ? 'AGENT' : 'SUPPORT';
   const rp = rolePerms.find((r) => r.role === userRole);
 
   if (!rp || !rp.permissions) {
@@ -90,10 +90,10 @@ export async function getUserPermissions(user) {
   const consultancy = await Consultancy.findById(cid).select('rolePermissions').lean();
   if (!consultancy) return {};
   const rolePerms = consultancy.rolePermissions || [];
-  const userRole = user.role === 'CONSULTANCY_ADMIN' ? 'CONSULTANCY_ADMIN' : user.role === 'AGENT' ? 'AGENT' : 'SUPPORT';
+  const userRole = ['CONSULTANCY_ADMIN', 'MANAGER'].includes(user.role) ? 'CONSULTANCY_ADMIN' : user.role === 'AGENT' ? 'AGENT' : 'SUPPORT';
   const rp = rolePerms.find((r) => r.role === userRole);
   if (!rp || !rp.permissions) {
-    if (userRole === 'CONSULTANCY_ADMIN' || userRole === 'AGENT') return null;
+    if (['CONSULTANCY_ADMIN', 'MANAGER'].includes(userRole) || userRole === 'AGENT') return null;
     return {};
   }
   return rp.permissions;

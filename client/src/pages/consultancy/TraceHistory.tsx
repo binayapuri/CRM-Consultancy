@@ -1,21 +1,39 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
+import { useAuthStore } from '../../store/auth';
 import { format } from 'date-fns';
+import EmptyState from '../../components/EmptyState';
+import StatusBadge from '../../components/StatusBadge';
+import { History } from 'lucide-react';
 
 export default function TraceHistory() {
+  const { user } = useAuthStore();
+  const [searchParams] = useSearchParams();
+  const urlConsultancyId = searchParams.get('consultancyId');
   const [logs, setLogs] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
-  const [filters, setFilters] = useState({ clientId: '', entityType: '', userId: '', assignedAgentId: '', visaSubclass: '', dateFrom: '', dateTo: '', page: 1 });
+  const [consultancies, setConsultancies] = useState<any[]>([]);
+  const [filters, setFilters] = useState({ consultancyId: urlConsultancyId || '', clientId: '', entityType: '', userId: '', assignedAgentId: '', visaSubclass: '', dateFrom: '', dateTo: '', page: 1 });
   const [total, setTotal] = useState(0);
   const [employees, setEmployees] = useState<any[]>([]);
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
-    authFetch('/api/clients').then(r => r.json()).then(setClients);
-    authFetch('/api/employees').then(r => r.json()).then(setEmployees);
-  }, []);
+    if (urlConsultancyId && !filters.consultancyId) setFilters(f => ({ ...f, consultancyId: urlConsultancyId }));
+  }, [urlConsultancyId]);
+
+  useEffect(() => {
+    const clientsUrl = filters.consultancyId ? `/api/clients?consultancyId=${filters.consultancyId}` : '/api/clients';
+    const employeesUrl = filters.consultancyId ? `/api/employees?consultancyId=${filters.consultancyId}` : '/api/employees';
+    authFetch(clientsUrl).then(r => r.json()).then(d => setClients(Array.isArray(d) ? d : []));
+    authFetch(employeesUrl).then(r => r.json()).then(d => setEmployees(Array.isArray(d) ? d : []));
+    if (isSuperAdmin) authFetch('/api/consultancies').then(r => r.json()).then(d => setConsultancies(d.consultancies || d || []));
+  }, [filters.consultancyId, isSuperAdmin]);
 
   useEffect(() => {
     const params = new URLSearchParams();
+    if (isSuperAdmin && filters.consultancyId) params.set('consultancyId', filters.consultancyId);
     if (filters.clientId) params.set('clientId', filters.clientId);
     if (filters.entityType) params.set('entityType', filters.entityType);
     if (filters.userId) params.set('userId', filters.userId);
@@ -26,13 +44,22 @@ export default function TraceHistory() {
     params.set('page', String(filters.page));
     params.set('limit', '50');
     authFetch(`/api/audit?${params}`).then(r => r.json()).then(data => { setLogs(data.logs || []); setTotal(data.total || 0); });
-  }, [filters]);
+  }, [filters, isSuperAdmin]);
 
   return (
     <div>
       <h1 className="text-2xl font-display font-bold text-slate-900">Trace History</h1>
       <p className="text-slate-500 mt-1">Every change across the system. Filter by client, user, date, visa, or assigned employee.</p>
       <div className="card mt-6 p-4 flex flex-wrap gap-4">
+        {isSuperAdmin && (
+          <div className="min-w-[200px]">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Consultancy</label>
+            <select value={filters.consultancyId} onChange={e => setFilters(f => ({ ...f, consultancyId: e.target.value, page: 1 }))} className="input">
+              <option value="">All consultancies</option>
+              {consultancies.map((c: any) => <option key={c._id} value={c._id}>{c.displayName || c.name}</option>)}
+            </select>
+          </div>
+        )}
         <div className="min-w-[180px]">
           <label className="block text-sm font-medium text-slate-700 mb-1">Client</label>
           <select value={filters.clientId} onChange={e => setFilters(f => ({ ...f, clientId: e.target.value, page: 1 }))} className="input">
@@ -83,6 +110,7 @@ export default function TraceHistory() {
             <option value="Application">Application</option>
             <option value="Task">Task</option>
             <option value="Document">Document</option>
+            <option value="Lead">Lead</option>
           </select>
         </div>
       </div>
@@ -114,7 +142,7 @@ export default function TraceHistory() {
                 <tr key={log._id} className="border-b border-slate-100 hover:bg-slate-50/50">
                   <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">{format(new Date(log.changedAt), 'dd MMM yyyy HH:mm')}</td>
                   <td className="px-4 py-3 text-sm">{log.entityType}{log.visaSubclass ? ` (${log.visaSubclass})` : ''}</td>
-                  <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs ${log.action === 'CREATE' ? 'bg-green-100 text-green-700' : log.action === 'DELETE' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{log.action}</span></td>
+                  <td className="px-4 py-3"><StatusBadge status={log.action} /></td>
                   <td className="px-4 py-3 text-sm max-w-xs truncate" title={log.description}>{log.description || '-'}</td>
                   <td className="px-4 py-3 text-sm">{log.changedBy?.profile?.firstName} {log.changedBy?.profile?.lastName}</td>
                   <td className="px-4 py-3 text-sm text-slate-500">{log.assignedAgentId ? `${log.assignedAgentId.profile?.firstName} ${log.assignedAgentId.profile?.lastName}` : '-'}</td>
@@ -123,7 +151,7 @@ export default function TraceHistory() {
             </tbody>
           </table>
         </div>
-        {!logs.length && <div className="p-12 text-center text-slate-500">No audit logs</div>}
+        {!logs.length && <EmptyState icon={History} title="No audit logs" message="No activity matches your filters. Try adjusting date range or filters." />}
       </div>
     </div>
   );

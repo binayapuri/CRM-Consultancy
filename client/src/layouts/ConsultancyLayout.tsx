@@ -85,7 +85,7 @@ export default function ConsultancyLayout() {
         </div>
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto min-w-[256px]">
           {nav.filter(n => {
-            if (n.adminOnly && !['SUPER_ADMIN', 'CONSULTANCY_ADMIN'].includes(user?.role || '')) return false;
+            if (n.adminOnly && !['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'].includes(user?.role || '')) return false;
             if (user?.role === 'SUPER_ADMIN') return true;
             if (!n.perm) return true;
             const p = permissions?.[n.perm];

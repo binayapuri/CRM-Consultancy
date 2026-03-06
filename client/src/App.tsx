@@ -10,6 +10,7 @@ import SuperAdminLayout from './layouts/SuperAdminLayout';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Activate from './pages/auth/Activate';
+import RegisterConsultancy from './pages/auth/RegisterConsultancy';
 
 // Consultancy pages
 import ConsultancyDashboard from './pages/consultancy/Dashboard';
@@ -50,6 +51,7 @@ import SuperConsultancies from './pages/super/Consultancies';
 import ConsultancyDetail from './pages/super/ConsultancyDetail';
 import ConsultancyForm from './pages/super/ConsultancyForm';
 import SuperUsers from './pages/super/Users';
+import SuperTraceHistory from './pages/super/TraceHistory';
 
 // Landing
 import Landing from './pages/Landing';
@@ -67,9 +69,10 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/register-consultancy" element={<RegisterConsultancy />} />
       <Route path="/activate" element={<Activate />} />
 
-      <Route path="/consultancy" element={<ProtectedRoute roles={['CONSULTANCY_ADMIN', 'AGENT', 'SUPER_ADMIN']}><ConsultancyLayout /></ProtectedRoute>}>
+      <Route path="/consultancy" element={<ProtectedRoute roles={['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPER_ADMIN']}><ConsultancyLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<ConsultancyDashboard />} />
         <Route path="kanban" element={<Kanban />} />
@@ -116,6 +119,7 @@ export default function App() {
         <Route path="consultancies/:id/edit" element={<ConsultancyForm />} />
         <Route path="consultancies/:id" element={<ConsultancyDetail />} />
         <Route path="users" element={<SuperUsers />} />
+        <Route path="trace-history" element={<SuperTraceHistory />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

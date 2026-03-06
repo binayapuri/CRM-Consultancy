@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { Plus, Trash2, ArrowLeft, ChevronRight, ChevronLeft, User, GraduationCap, Briefcase, Users, FileCheck } from 'lucide-react';
 
@@ -13,6 +13,8 @@ const emptyExperience: Experience = { employer: '', role: '', country: '', start
 const emptyFamily: FamilyMember = { relationship: '', firstName: '', lastName: '', dob: '', nationality: '', includedInApplication: false };
 const emptyService: Service = { serviceType: '', visaSubclass: '', status: 'PENDING', notes: '' };
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const STEPS = [
   { id: 1, label: 'Personal', icon: User },
   { id: 2, label: 'Education & Work', icon: GraduationCap },
@@ -22,6 +24,8 @@ const STEPS = [
 
 export default function ClientEnroll() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const consultancyId = searchParams.get('consultancyId');
   const [step, setStep] = useState(1);
   const [visaTypes, setVisaTypes] = useState<{ value: string; label: string }[]>([]);
   const [services, setServices] = useState<{ value: string; label: string }[]>([]);
@@ -74,14 +78,17 @@ export default function ClientEnroll() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.profile.firstName?.trim() || !form.profile.lastName?.trim() || !form.profile.email?.trim()) {
-      setError('First name, last name and email are required.');
-      return;
-    }
+    const fn = (form.profile.firstName || '').trim();
+    const ln = (form.profile.lastName || '').trim();
+    const email = (form.profile.email || '').trim();
+    if (!fn) { setError('First name is required.'); return; }
+    if (!ln) { setError('Last name is required.'); return; }
+    if (!email) { setError('Email is required.'); return; }
+    if (!EMAIL_REGEX.test(email)) { setError('Please enter a valid email address.'); return; }
     setLoading(true);
     setError('');
     try {
-      const payload = {
+      const payload: any = {
         ...form,
         profile: { ...form.profile, dob: form.profile.dob || undefined },
         education: form.education.filter(e => e.institution || e.qualification),
@@ -92,12 +99,13 @@ export default function ClientEnroll() {
         assignedAgentId: form.assignedAgentId || undefined,
         initialNotes: form.initialNotes?.trim() || undefined,
       };
+      if (consultancyId) payload.consultancyId = consultancyId;
       const res = await authFetch('/api/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const client = await res.json();
       if (!res.ok) throw new Error(client.error || 'Failed to create client');
       const id = client._id || client.id;
       if (!id) throw new Error('Server did not return client ID');
-      navigate(`/consultancy/clients/${id}`);
+      navigate(consultancyId ? `/consultancy/clients/${id}?consultancyId=${consultancyId}` : `/consultancy/clients/${id}`);
     } catch (err: any) {
       setError(err.message || 'Failed to create client');
     } finally {
@@ -107,7 +115,7 @@ export default function ClientEnroll() {
 
   return (
     <div>
-      <Link to="/consultancy/clients" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4">
+      <Link to={consultancyId ? `/consultancy/clients?consultancyId=${consultancyId}` : '/consultancy/clients'} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4">
         <ArrowLeft className="w-4 h-4" /> Back to Clients
       </Link>
       <h1 className="text-2xl font-display font-bold text-slate-900">Enroll Student / Client</h1>

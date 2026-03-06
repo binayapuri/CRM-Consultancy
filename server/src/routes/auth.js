@@ -20,13 +20,17 @@ const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } }); // 2M
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production';
 
+// Student-only: clients self-register. Agents are created by consultancy admin.
 router.post('/register', async (req, res) => {
   try {
     const { email, password, role, profile } = req.body;
+    if (role && role !== 'STUDENT') {
+      return res.status(400).json({ error: 'Only student registration is available here. Consultancy admins must register at /register-consultancy. Agents are created by your consultancy admin.' });
+    }
     if (await User.findOne({ email })) {
       return res.status(400).json({ error: 'Email already registered' });
     }
-    const user = await User.create({ email, password, role: role || 'STUDENT', profile });
+    const user = await User.create({ email, password, role: 'STUDENT', profile });
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ user: { id: user._id, _id: user._id, email: user.email, role: user.role, profile: user.profile }, token });
   } catch (err) {

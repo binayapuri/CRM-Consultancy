@@ -24,7 +24,7 @@ router.get('/today', authenticate, async (req, res) => {
   }
 });
 
-router.get('/', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN'), async (req, res) => {
+router.get('/', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'), async (req, res) => {
   try {
     const cid = getConsultancyId(req.user);
     const { clientId, entityType, userId, assignedAgentId, visaSubclass, dateFrom, dateTo, page = 1, limit = 50 } = req.query;
@@ -52,7 +52,7 @@ router.get('/', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN'), a
   }
 });
 
-router.get('/by-date', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN'), async (req, res) => {
+router.get('/by-date', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'), async (req, res) => {
   try {
     const cid = getConsultancyId(req.user);
     const { date } = req.query;

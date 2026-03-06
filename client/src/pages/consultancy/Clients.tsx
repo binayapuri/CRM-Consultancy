@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { format } from 'date-fns';
-import { Search, Plus, Filter, X } from 'lucide-react';
+import { Search, Plus, Filter, X, Users } from 'lucide-react';
 import { TableSkeleton } from '../../components/Skeleton';
+import StatusBadge from '../../components/StatusBadge';
+import EmptyState from '../../components/EmptyState';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
@@ -98,7 +100,7 @@ export default function Clients() {
                 </td>
                 <td className="px-4 py-3 text-slate-600">{c.profile?.email}</td>
                 <td className="px-4 py-3 text-slate-600">{c.profile?.currentVisa || '-'}</td>
-                <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded text-xs ${(c.status || 'ACTIVE') === 'ACTIVE' ? 'bg-green-100 text-green-700' : (c.status || '') === 'ARCHIVED' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-700'}`}>{c.status || 'ACTIVE'}</span></td>
+                <td className="px-4 py-3"><StatusBadge status={c.status || 'ACTIVE'} /></td>
                 <td className="px-4 py-3 text-slate-500 text-sm">
                   {c.lastActivityAt ? format(new Date(c.lastActivityAt), 'dd MMM yyyy') : '-'}
                 </td>
@@ -110,7 +112,7 @@ export default function Clients() {
           </tbody>
         </table>
         )}
-        {!loading && !filtered.length && <div className="p-12 text-center text-slate-500">No clients found</div>}
+        {!loading && !filtered.length && <EmptyState icon={Users} title={clients.length ? 'No clients match filters' : 'No clients'} message={clients.length ? 'Try adjusting your search or filters.' : 'Enroll your first client to get started.'} action={!clients.length && <Link to={consultancyId ? `enroll?consultancyId=${consultancyId}` : 'enroll'} className="btn-primary inline-flex items-center gap-2"><Plus className="w-4 h-4" /> Enroll Client</Link>} />}
       </div>
     </div>
   );

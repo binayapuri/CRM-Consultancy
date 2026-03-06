@@ -12,7 +12,7 @@ router.get('/:id/job-sheet', authenticate, async (req, res) => {
   try {
     const empId = req.params.id;
     const cid = getConsultancyId(req.user);
-    const canView = req.user.role === 'SUPER_ADMIN' || req.user.role === 'CONSULTANCY_ADMIN' ||
+    const canView = req.user.role === 'SUPER_ADMIN' || req.user.role === 'CONSULTANCY_ADMIN' || req.user.role === 'MANAGER' ||
       (req.user.role === 'AGENT' && req.user._id.toString() === empId);
     if (!canView) return res.status(403).json({ error: 'Not authorized' });
     const filter = req.user.role === 'SUPER_ADMIN' ? {} : { consultancyId: cid };
@@ -28,14 +28,14 @@ router.get('/:id/job-sheet', authenticate, async (req, res) => {
   }
 });
 
-router.get('/', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT'), async (req, res) => {
+router.get('/', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT'), async (req, res) => {
   try {
     const cid = getConsultancyId(req.user);
     let filter = req.user.role === 'SUPER_ADMIN' ? {} : { 'profile.consultancyId': cid };
     if (req.user.role === 'SUPER_ADMIN' && req.query.consultancyId) {
       filter = { 'profile.consultancyId': req.query.consultancyId };
     }
-    const employees = await User.find({ ...filter, role: { $in: ['CONSULTANCY_ADMIN', 'AGENT'] } })
+    const employees = await User.find({ ...filter, role: { $in: ['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT'] } })
       .select('-password')
       .populate('profile.consultancyId', 'name');
     res.json(employees);
@@ -54,7 +54,7 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.post('/', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN'), async (req, res) => {
+router.post('/', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'), async (req, res) => {
   try {
     const cid = getConsultancyId(req.user);
     const { email, password, role, profile } = req.body;
@@ -75,12 +75,12 @@ router.post('/', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN'), 
   }
 });
 
-router.patch('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT'), async (req, res) => {
+router.patch('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT'), async (req, res) => {
   try {
     const target = await User.findById(req.params.id);
     if (!target) return res.status(404).json({ error: 'Not found' });
     const cid = getConsultancyId(req.user);
-    const canEdit = req.user.role === 'SUPER_ADMIN' || req.user.role === 'CONSULTANCY_ADMIN' ||
+    const canEdit = req.user.role === 'SUPER_ADMIN' || req.user.role === 'CONSULTANCY_ADMIN' || req.user.role === 'MANAGER' ||
       (req.user.role === 'AGENT' && req.params.id === req.user._id.toString());
     if (!canEdit) return res.status(403).json({ error: 'Not authorized' });
     const { password, ...rest } = req.body;
@@ -96,7 +96,7 @@ router.patch('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN
   }
 });
 
-router.delete('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN'), async (req, res) => {
+router.delete('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'), async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: 'Not found' });

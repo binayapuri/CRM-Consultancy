@@ -208,13 +208,18 @@ export default function ClientDetail() {
     }
   };
 
+  const [sendingInvite, setSendingInvite] = useState(false);
   const handleInvite = async () => {
+    setSendingInvite(true);
     try {
       const res = await authFetch(`/api/clients/${id}/invite`, { method: 'POST' });
       const data = await safeJson<any>(res);
-      alert(`Invitation link: ${data.inviteLink}`);
+      if (!res.ok) throw new Error(data.error);
+      alert(data.emailed ? 'Invitation emailed to client.' : `Invitation link: ${data.inviteLink}`);
     } catch (e) {
       alert((e as Error).message);
+    } finally {
+      setSendingInvite(false);
     }
   };
 
@@ -640,7 +645,7 @@ export default function ClientDetail() {
         </div>
         <div className="flex gap-2">
           <Link to={consultancyId ? `/consultancy/clients/${id}/edit?consultancyId=${consultancyId}` : `/consultancy/clients/${id}/edit`} className="btn-primary flex items-center gap-2"><Edit2 className="w-4 h-4" /> Edit</Link>
-          {!client.userId && <button onClick={handleInvite} className="btn-secondary flex items-center gap-2"><Mail className="w-4 h-4" /> Send Invitation</button>}
+          {!client.userId && <button onClick={handleInvite} disabled={sendingInvite} className="btn-secondary flex items-center gap-2"><Mail className="w-4 h-4" /> {sendingInvite ? 'Sending...' : 'Send Invitation'}</button>}
           {canDelete && <button onClick={handleDelete} className="btn-secondary flex items-center gap-2 text-red-600"><Trash2 className="w-4 h-4" /> Delete</button>}
         </div>
       </div>

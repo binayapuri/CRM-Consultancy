@@ -58,7 +58,7 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const { from, to, userId, consultancyId } = req.query;
     const cid = req.user.role === 'SUPER_ADMIN' && consultancyId ? consultancyId : getConsultancyId(req.user);
-    if (!['SUPER_ADMIN', 'CONSULTANCY_ADMIN'].includes(req.user.role)) {
+    if (!['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
     const filter = { consultancyId: cid };

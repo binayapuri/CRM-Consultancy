@@ -2,6 +2,7 @@ import express from 'express';
 import crypto from 'crypto';
 import Client from '../models/Client.js';
 import User from '../models/User.js';
+import Consultancy from '../models/Consultancy.js';
 import Application from '../models/Application.js';
 import Notification from '../models/Notification.js';
 import AuditLog from '../models/AuditLog.js';
@@ -9,6 +10,20 @@ import Task from '../models/Task.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
 import { notifyUsers } from '../utils/notify.js';
+import { sendEmail } from '../utils/email.js';
+
+function getEmailProfileForUser(consultancy, user) {
+  const profiles = consultancy.emailProfiles || [];
+  const active = profiles.filter(p => p.active);
+  if (!active.length) return null;
+  const preferredId = user?.profile?.preferredEmailProfileId;
+  if (preferredId) {
+    const p = active.find(ep => String(ep._id) === String(preferredId));
+    if (p) return p;
+  }
+  const def = active.find(p => p.isDefault);
+  return def || active[0];
+}
 
 const router = express.Router();
 
@@ -104,7 +119,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
 router.post('/', authenticate, async (req, res) => {
   try {
-    const cid = getConsultancyId(req.user);
+    const cid = req.user.role === 'SUPER_ADMIN' && req.body.consultancyId ? req.body.consultancyId : getConsultancyId(req.user);
     if (!cid) {
       return res.status(400).json({ error: 'No consultancy assigned. Please contact admin to assign you to a consultancy.' });
     }
@@ -174,7 +189,7 @@ router.patch('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.delete('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN'), async (req, res) => {
+router.delete('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'), async (req, res) => {
   try {
     const client = await Client.findById(req.params.id);
     if (!client) return res.status(404).json({ error: 'Not found' });
@@ -191,28 +206,60 @@ router.delete('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMI
   }
 });
 
-router.post('/:id/invite', authenticate, async (req, res) => {
+router.post('/:id/invite', authenticate, requireRole('CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const client = await Client.findById(req.params.id);
     if (!client) return res.status(404).json({ error: 'Not found' });
+    const cid = getConsultancyId(req.user);
+    if (client.consultancyId?.toString() !== cid?.toString()) return res.status(403).json({ error: 'Not authorized for this client' });
+    const clientEmail = client.profile?.email;
+    if (!clientEmail) return res.status(400).json({ error: 'Client has no email address' });
+
     const token = crypto.randomBytes(32).toString('hex');
-    const existingUser = await User.findOne({ email: client.profile?.email });
+    const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/activate?token=${token}&email=${encodeURIComponent(clientEmail)}`;
+    const existingUser = await User.findOne({ email: clientEmail });
     if (existingUser) {
       existingUser.invitationToken = token;
       existingUser.mustChangePassword = true;
       await existingUser.save();
     }
     await Client.findByIdAndUpdate(req.params.id, { invitationToken: token, invitationSentAt: new Date() });
+
+    const consultancy = await Consultancy.findById(cid);
+    const companyName = consultancy?.displayName || consultancy?.name || 'Your Consultancy';
+    const emailProfile = consultancy ? getEmailProfileForUser(consultancy, req.user) : null;
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Client Portal Invitation</title></head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h2 style="color: #0d9488;">You're invited to the ${companyName} Client Portal</h2>
+  <p>Dear ${client.profile?.firstName || 'Client'},</p>
+  <p>${companyName} has invited you to access your migration case online. Set your password and log in to view your applications, upload documents, and track progress.</p>
+  <p><a href="${inviteLink}" style="display: inline-block; background: #0d9488; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">Activate Account</a></p>
+  <p style="font-size: 12px; color: #64748b;">Or copy this link: ${inviteLink}</p>
+  <p>This link is for your use only. If you did not expect this invitation, please ignore this email.</p>
+  <p>Kind regards,<br/>${companyName}</p>
+</body>
+</html>`;
+    await sendEmail({
+      to: clientEmail,
+      subject: `Activate your client portal - ${companyName}`,
+      html,
+      emailProfile: emailProfile || undefined,
+    });
+
     await Notification.create({
       consultancyId: client.consultancyId,
       userId: client.assignedAgentId,
       type: 'INVITATION_SENT',
       title: 'Invitation Sent',
-      message: `Invitation sent to ${client.profile?.firstName} ${client.profile?.lastName}`,
+      message: `Invitation emailed to ${client.profile?.firstName} ${client.profile?.lastName}`,
       relatedEntityType: 'Client',
       relatedEntityId: client._id,
     });
-    res.json({ success: true, token, inviteLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/activate?token=${token}&email=${client.profile?.email}` });
+    await logAudit(cid, 'Client', client._id, 'SEND', req.user._id, { description: 'Invitation emailed to client', clientId: client._id });
+    res.json({ success: true, inviteLink, emailed: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -224,7 +271,7 @@ router.post('/:id/disconnect-agent', authenticate, async (req, res) => {
     if (!client) return res.status(404).json({ error: 'Not found' });
     const cid = getConsultancyId(req.user);
     const canDisconnect = req.user.role === 'STUDENT' && client.userId?.toString() === req.user._id.toString() ||
-      ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT'].includes(req.user.role);
+      ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT'].includes(req.user.role);
     if (!canDisconnect) return res.status(403).json({ error: 'Not authorized' });
     await Client.findByIdAndUpdate(req.params.id, {
       assignedAgentId: null,

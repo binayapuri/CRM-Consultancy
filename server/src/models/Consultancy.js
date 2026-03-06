@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const rolePermissionSchema = new mongoose.Schema({
-  role: { type: String, enum: ['CONSULTANCY_ADMIN', 'AGENT', 'SUPPORT'], required: true },
+  role: { type: String, enum: ['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPPORT'], required: true },
   permissions: {
     clients: { view: { type: Boolean, default: true }, create: { type: Boolean, default: true }, edit: { type: Boolean, default: true }, delete: { type: Boolean, default: false } },
     applications: { view: { type: Boolean, default: true }, create: { type: Boolean, default: true }, edit: { type: Boolean, default: true }, delete: { type: Boolean, default: false } },

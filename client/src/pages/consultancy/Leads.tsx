@@ -2,16 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { format } from 'date-fns';
-import { Plus, Pencil, Trash2, UserPlus, Search, Filter, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, UserPlus, Search, Filter, X, UserPlus as LeadIcon } from 'lucide-react';
 import { TableSkeleton } from '../../components/Skeleton';
-
-const STATUS_COLORS: Record<string, string> = {
-  NEW: 'bg-slate-100 text-slate-700',
-  CONTACTED: 'bg-blue-100 text-blue-700',
-  QUALIFIED: 'bg-amber-100 text-amber-700',
-  CONVERTED: 'bg-green-100 text-green-700',
-  LOST: 'bg-red-100 text-red-700',
-};
+import StatusBadge from '../../components/StatusBadge';
+import EmptyState from '../../components/EmptyState';
 
 const STATUS_OPTIONS = ['', 'NEW', 'CONTACTED', 'QUALIFIED', 'CONVERTED', 'LOST'];
 const SOURCE_OPTIONS = ['', 'Website', 'Referral', 'Walk-in', 'Social'];
@@ -46,7 +40,7 @@ export default function Leads() {
       const res = await authFetch(`/api/leads/${leadId}/convert`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      if (data.client?._id) navigate(`/consultancy/clients/${data.client._id}`);
+      if (data.client?._id) navigate(consultancyId ? `/consultancy/clients/${data.client._id}?consultancyId=${consultancyId}` : `/consultancy/clients/${data.client._id}`);
       else fetchLeads();
     } catch (e) {
       alert((e as Error).message);
@@ -72,7 +66,7 @@ export default function Leads() {
           <h1 className="text-2xl font-display font-bold text-slate-900">Leads</h1>
           <p className="text-slate-500 mt-1">Manage incoming leads</p>
         </div>
-        <Link to="/consultancy/leads/add" className="btn-primary flex items-center gap-2">
+        <Link to={consultancyId ? `/consultancy/leads/add?consultancyId=${consultancyId}` : '/consultancy/leads/add'} className="btn-primary flex items-center gap-2">
           <Plus className="w-4 h-4" /> Add Lead
         </Link>
       </div>
@@ -115,14 +109,10 @@ export default function Leads() {
                 <td className="px-4 py-3 text-slate-600">{l.profile?.email}</td>
                 <td className="px-4 py-3 text-slate-600">{l.profile?.interest || '-'}</td>
                 <td className="px-4 py-3 text-slate-600">{l.source || '-'}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${STATUS_COLORS[l.status] || 'bg-slate-100'}`}>
-                    {l.status}
-                  </span>
-                </td>
+                <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
                 <td className="px-4 py-3 text-slate-500 text-sm">{format(new Date(l.createdAt), 'dd MMM yyyy')}</td>
                 <td className="px-4 py-3 flex gap-2">
-                  <Link to={`/consultancy/leads/${l._id}/edit`} className="p-2 text-ori-600 hover:bg-ori-50 rounded" title="Edit"><Pencil className="w-4 h-4" /></Link>
+                  <Link to={consultancyId ? `/consultancy/leads/${l._id}/edit?consultancyId=${consultancyId}` : `/consultancy/leads/${l._id}/edit`} className="p-2 text-ori-600 hover:bg-ori-50 rounded" title="Edit"><Pencil className="w-4 h-4" /></Link>
                   {l.status !== 'CONVERTED' && <button onClick={() => handleConvert(l._id)} className="p-2 text-green-600 hover:bg-green-50 rounded" title="Convert to Client"><UserPlus className="w-4 h-4" /></button>}
                   <button onClick={() => handleDelete(l._id)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Delete"><Trash2 className="w-4 h-4" /></button>
                 </td>
@@ -131,7 +121,7 @@ export default function Leads() {
           </tbody>
         </table>
         )}
-        {!loading && !filtered.length && <div className="p-12 text-center text-slate-500">{leads.length ? 'No leads match filters' : 'No leads'}</div>}
+        {!loading && !filtered.length && <EmptyState icon={LeadIcon} title={leads.length ? 'No leads match filters' : 'No leads'} message={leads.length ? 'Try adjusting your search or filters.' : 'Add your first lead to get started.'} action={!leads.length && <Link to={consultancyId ? `/consultancy/leads/add?consultancyId=${consultancyId}` : '/consultancy/leads/add'} className="btn-primary inline-flex items-center gap-2"><Plus className="w-4 h-4" /> Add Lead</Link>} />}
       </div>
     </div>
   );
