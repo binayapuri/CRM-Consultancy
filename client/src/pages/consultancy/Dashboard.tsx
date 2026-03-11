@@ -34,12 +34,15 @@ export default function ConsultancyDashboard() {
           ? authFetch(`/api/tasks?assignedTo=${user._id || user.id}`).catch(() => ({ ok: false, json: () => [] }))
           : Promise.resolve({ ok: false, json: () => [] }),
       ]);
-      const clients = await safeJson<any[]>(clientsRes);
-      const apps = await safeJson<any[]>(appsRes);
-      const leads = await safeJson<any[]>(leadsRes);
+      const clientsRaw = await safeJson<unknown>(clientsRes);
+      const appsRaw = await safeJson<unknown>(appsRes);
+      const leadsRaw = await safeJson<unknown>(leadsRes);
       const activity = await (activityRes?.ok ? activityRes.json() : []);
       const docs = await (docsRes?.ok ? safeJson<any[]>(docsRes) : []);
       const tasksRaw = await (tasksRes?.ok ? safeJson<any[]>(tasksRes) : []);
+      const clients = Array.isArray(clientsRaw) ? clientsRaw : [];
+      const apps = Array.isArray(appsRaw) ? appsRaw : [];
+      const leads = Array.isArray(leadsRaw) ? leadsRaw : [];
       const tasks = Array.isArray(tasksRaw) ? tasksRaw.filter((t: any) => ['PENDING', 'IN_PROGRESS'].includes(t.status)) : [];
       setStats({ clients: clients.length, applications: apps.length, leads: leads.length });
       setAllClients(clients);
@@ -59,7 +62,12 @@ export default function ConsultancyDashboard() {
     end.setDate(end.getDate() + days);
     return d >= now && d <= end;
   };
-  const visaExpiringSoon = allClients.filter((c: any) => {
+  const clientsList = Array.isArray(allClients) ? allClients : [];
+  const appsList = Array.isArray(allApps) ? allApps : [];
+  const leadsList = Array.isArray(allLeads) ? allLeads : [];
+  const docsList = Array.isArray(allDocs) ? allDocs : [];
+
+  const visaExpiringSoon = clientsList.filter((c: any) => {
     const exp = c.profile?.visaExpiry;
     if (!exp) return false;
     const d = new Date(exp);
@@ -67,20 +75,20 @@ export default function ConsultancyDashboard() {
   }).slice(0, 5);
 
   const chartData = [
-    { name: 'Onboarding', count: allApps.filter(a => a.status === 'ONBOARDING').length },
-    { name: 'Drafting', count: allApps.filter(a => a.status === 'DRAFTING').length },
-    { name: 'Pending Info', count: allApps.filter(a => a.status === 'PENDING_INFO').length },
-    { name: 'Review', count: allApps.filter(a => a.status === 'REVIEW').length },
-    { name: 'Lodged', count: allApps.filter(a => a.status === 'LODGED').length },
-    { name: 'Decision', count: allApps.filter(a => a.status === 'DECISION').length },
-    { name: 'Completed', count: allApps.filter(a => a.status === 'COMPLETED').length },
+    { name: 'Onboarding', count: appsList.filter((a: any) => a.status === 'ONBOARDING').length },
+    { name: 'Drafting', count: appsList.filter((a: any) => a.status === 'DRAFTING').length },
+    { name: 'Pending Info', count: appsList.filter((a: any) => a.status === 'PENDING_INFO').length },
+    { name: 'Review', count: appsList.filter((a: any) => a.status === 'REVIEW').length },
+    { name: 'Lodged', count: appsList.filter((a: any) => a.status === 'LODGED').length },
+    { name: 'Decision', count: appsList.filter((a: any) => a.status === 'DECISION').length },
+    { name: 'Completed', count: appsList.filter((a: any) => a.status === 'COMPLETED').length },
   ];
 
-  const convertedLeads = allLeads.filter(l => l.status === 'CONVERTED').length;
-  const conversionRate = allLeads.length > 0 ? Math.round((convertedLeads / allLeads.length) * 100) : 0;
-  const overdueApps = allApps.filter(a => a.stageDeadline && new Date(a.stageDeadline) < new Date() && !['LODGED', 'DECISION', 'COMPLETED'].includes(a.status));
-  const coeExpiringSoon = allApps.filter(a => a.visaSubclass === '500' && a.coe?.expiryDate && (() => { const d = new Date(a.coe.expiryDate); const now = new Date(); return d >= now && d <= new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); })()).slice(0, 5);
-  const docsExpiringSoon = allDocs.filter((d: any) => d.metadata?.expiryDate && (() => { const ed = new Date(d.metadata.expiryDate); const now = new Date(); return ed >= now && ed <= new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); })()).slice(0, 5);
+  const convertedLeads = leadsList.filter((l: any) => l.status === 'CONVERTED').length;
+  const conversionRate = leadsList.length > 0 ? Math.round((convertedLeads / leadsList.length) * 100) : 0;
+  const overdueApps = appsList.filter((a: any) => a.stageDeadline && new Date(a.stageDeadline) < new Date() && !['LODGED', 'DECISION', 'COMPLETED'].includes(a.status));
+  const coeExpiringSoon = appsList.filter((a: any) => a.visaSubclass === '500' && a.coe?.expiryDate && (() => { const d = new Date(a.coe.expiryDate); const n = new Date(); return d >= n && d <= new Date(n.getTime() + 90 * 24 * 60 * 60 * 1000); })()).slice(0, 5);
+  const docsExpiringSoon = docsList.filter((d: any) => d.metadata?.expiryDate && (() => { const ed = new Date(d.metadata.expiryDate); const n = new Date(); return ed >= n && ed <= new Date(n.getTime() + 90 * 24 * 60 * 60 * 1000); })()).slice(0, 5);
 
   return (
     <div>

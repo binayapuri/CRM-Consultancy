@@ -32,13 +32,14 @@ export default function Clients() {
       authFetch(url).then(r => r.json()),
       authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).catch(() => []),
     ]).then(([data, agentsData]) => {
-      setClients(data);
+      setClients(Array.isArray(data) ? data : []);
       setAgents(Array.isArray(agentsData) ? agentsData : []);
       setLoading(false);
     });
   }, [consultancyId]);
 
-  const filtered = clients.filter(c => {
+  const clientsList = Array.isArray(clients) ? clients : [];
+  const filtered = clientsList.filter(c => {
     const matchSearch = `${c.profile?.firstName} ${c.profile?.lastName} ${c.profile?.email} ${c.profile?.currentVisa}`.toLowerCase().includes(q.toLowerCase());
     const matchStatus = !filterStatus || (c.status || 'ACTIVE') === filterStatus;
     const matchAgent = !filterAgent || (c.assignedAgentId?._id || c.assignedAgentId) === filterAgent;
@@ -69,7 +70,7 @@ export default function Clients() {
             </select>
             <select value={filterAgent} onChange={e => setFilterAgent(e.target.value)} className="input w-full md:w-48">
               <option value="">All agents</option>
-              {agents.map(a => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
+              {(Array.isArray(agents) ? agents : []).map(a => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
             </select>
             {(filterStatus || filterAgent) && <button onClick={() => { setFilterStatus(''); setFilterAgent(''); }} className="text-slate-500 hover:text-slate-700 text-sm flex items-center gap-1"><X className="w-4 h-4" /> Clear</button>}
           </div>

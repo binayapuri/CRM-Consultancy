@@ -11,6 +11,9 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Activate from './pages/auth/Activate';
 import RegisterConsultancy from './pages/auth/RegisterConsultancy';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+import AuthCallback from './pages/auth/AuthCallback';
 
 // Consultancy pages
 import ConsultancyDashboard from './pages/consultancy/Dashboard';
@@ -54,6 +57,12 @@ import ConsultancyForm from './pages/super/ConsultancyForm';
 import SuperUsers from './pages/super/Users';
 import SuperTraceHistory from './pages/super/TraceHistory';
 
+// Sponsor
+import SponsorLayout from './layouts/SponsorLayout';
+import SponsorDashboard from './pages/sponsor/Dashboard';
+import SponsorDocuments from './pages/sponsor/Documents';
+import SponsorCompanyInfo from './pages/sponsor/CompanyInfo';
+
 // Landing
 import Landing from './pages/Landing';
 
@@ -69,6 +78,9 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/register" element={<Register />} />
       <Route path="/register-consultancy" element={<RegisterConsultancy />} />
       <Route path="/activate" element={<Activate />} />
@@ -111,6 +123,13 @@ export default function App() {
         <Route path="compass" element={<MigrationCompass />} />
         <Route path="consultancies" element={<ConsultancySearch />} />
         <Route path="roadmap" element={<VisaRoadmap />} />
+      </Route>
+
+      <Route path="/sponsor" element={<ProtectedRoute roles={['SPONSOR']}><SponsorLayout /></ProtectedRoute>}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<SponsorDashboard />} />
+        <Route path="documents" element={<SponsorDocuments />} />
+        <Route path="company" element={<SponsorCompanyInfo />} />
       </Route>
 
       <Route path="/admin" element={<ProtectedRoute roles={['SUPER_ADMIN']}><SuperAdminLayout /></ProtectedRoute>}>

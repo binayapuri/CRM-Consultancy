@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import passport from 'passport';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import consultancyRoutes from './routes/consultancies.js';
@@ -38,6 +39,7 @@ const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(express.json());
+app.use(passport.initialize());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health check

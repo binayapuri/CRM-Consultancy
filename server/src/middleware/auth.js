@@ -1,7 +1,9 @@
+import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Consultancy from '../models/Consultancy.js';
 
+dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production';
 
 export const authenticate = async (req, res, next) => {
@@ -17,7 +19,8 @@ export const authenticate = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
-    res.status(401).json({ error: 'Invalid token.' });
+    const message = err.name === 'TokenExpiredError' ? 'Token expired. Please sign in again.' : 'Invalid token. Please sign in again.';
+    res.status(401).json({ error: message });
   }
 };
 

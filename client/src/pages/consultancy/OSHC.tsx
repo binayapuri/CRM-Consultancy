@@ -46,7 +46,7 @@ export default function OSHC() {
 
   const fetchProviders = () => {
     setLoading(true);
-    authFetch(buildUrl()).then(r => r.json()).then(data => { setProviders(data); setLoading(false); }).catch(() => setLoading(false));
+    authFetch(buildUrl()).then(r => r.json()).then((data: unknown) => { setProviders(Array.isArray(data) ? data : []); setLoading(false); }).catch(() => setLoading(false));
   };
 
   useEffect(() => { fetchProviders(); }, [filterValues.coverageType, filterValues.applicationType, consultancyId]);
@@ -166,7 +166,7 @@ export default function OSHC() {
           <>
             {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="card flex items-start gap-3"><Skeleton className="w-10 h-10 rounded-lg" /><div className="flex-1 space-y-2"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div></div>)}
           </>
-        ) : providers.map((p: any) => (
+        ) : (Array.isArray(providers) ? providers : []).map((p: any) => (
           <div key={p._id} className="card flex items-start gap-3 group">
             <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
               <Shield className="w-5 h-5 text-blue-600" />

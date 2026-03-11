@@ -220,12 +220,12 @@ export default function Documents() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Select Client</label>
                   <select value={selectedClientId} onChange={e => setSelectedClientId(e.target.value)} className="input">
                     <option value="">Choose client...</option>
-                    {clients.filter(c => c.userId).map((c: any) => (
+                    {(Array.isArray(clients) ? clients : []).filter((c: any) => c.userId).map((c: any) => (
                       <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName} {c.profile?.email}</option>
                     ))}
-                    {clients.filter((c: any) => !c.userId).length > 0 && (
+                    {(Array.isArray(clients) ? clients : []).filter((c: any) => !c.userId).length > 0 && (
                       <optgroup label="No portal access yet">
-                        {clients.filter((c: any) => !c.userId).map((c: any) => (
+                        {(Array.isArray(clients) ? clients : []).filter((c: any) => !c.userId).map((c: any) => (
                           <option key={c._id} value={c._id} disabled>{c.profile?.firstName} {c.profile?.lastName} (invite first)</option>
                         ))}
                       </optgroup>

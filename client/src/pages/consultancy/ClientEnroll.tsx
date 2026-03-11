@@ -45,16 +45,17 @@ export default function ClientEnroll() {
   });
 
   useEffect(() => {
+    const empUrl = consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees';
     Promise.all([
       authFetch('/api/constants/visa-types').then(r => r.json()),
       authFetch('/api/constants/services').then(r => r.json()),
-      authFetch('/api/employees').then(r => r.json()),
+      authFetch(empUrl).then(r => r.json()),
     ]).then(([vt, svc, ag]) => {
-      setVisaTypes(vt);
-      setServices(svc);
-      setAgents(ag);
-    });
-  }, []);
+      setVisaTypes(Array.isArray(vt) ? vt : []);
+      setServices(Array.isArray(svc) ? svc : []);
+      setAgents(Array.isArray(ag) ? ag : []);
+    }).catch(() => { setVisaTypes([]); setServices([]); setAgents([]); });
+  }, [consultancyId]);
 
   const addEducation = () => setForm(f => ({ ...f, education: [...f.education, { ...emptyEducation }] }));
   const removeEducation = (i: number) => setForm(f => ({ ...f, education: f.education.filter((_, j) => j !== i) }));
@@ -273,7 +274,7 @@ export default function ClientEnroll() {
             <label className="block text-sm font-medium text-slate-700 mb-1">Assign Agent</label>
             <select value={form.assignedAgentId} onChange={e => setForm(f => ({ ...f, assignedAgentId: e.target.value }))} className="input">
               <option value="">Select agent</option>
-              {agents.map(a => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
+              {(Array.isArray(agents) ? agents : []).map(a => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
             </select>
           </div>
           <div className="mt-4">
