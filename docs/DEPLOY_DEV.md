@@ -69,7 +69,7 @@ In GitHub → Repo → **Settings → Secrets and variables → Actions**, add:
   TWILIO_PHONE_NUMBER=...
   ```
 
-## 4) How deploy works
+## 4) How deploy works (HTTPS-ready)
 
 - Workflow: `.github/workflows/deploy-dev.yml`
 - On push to `dev`:
@@ -81,7 +81,7 @@ In GitHub → Repo → **Settings → Secrets and variables → Actions**, add:
   - Uploads to VPS
   - Extracts into `/var/www/orivisa-dev/releases/<sha>`
   - Points `/var/www/orivisa-dev/current` at that release
-  - On the VPS:
+  - On the VPS (behind HTTPS Nginx proxy):
     - Writes `/etc/orivisa-dev.env` from the `DEV_ENV` GitHub secret
     - Installs/refreshes `orivisa-dev.service` in systemd
     - Installs/refreshes the Nginx site config for `bigfew.com`
