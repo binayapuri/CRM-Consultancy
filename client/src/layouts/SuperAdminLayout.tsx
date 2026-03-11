@@ -1,11 +1,14 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, History, LogOut } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, History, LogOut, GraduationCap, BookOpen, CheckSquare } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 
 const nav = [
   { to: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: 'consultancies', icon: Building2, label: 'Consultancies' },
+  { to: 'students', icon: GraduationCap, label: 'Students' },
   { to: 'users', icon: Users, label: 'Users' },
+  { to: 'verifications', icon: CheckSquare, label: 'Verifications' },
+  { to: 'universities', icon: BookOpen, label: 'Universities' },
   { to: 'trace-history', icon: History, label: 'Trace History' },
 ];
 

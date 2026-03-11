@@ -561,4 +561,166 @@ router.get('/:id/applications', authenticate, async (req, res) => {
   }
 });
 
+// --- NEW CRUD ROUTES FOR STUDENT DATA (CONSULTANCY/ADMIN USE) ---
+
+// Personal / Profile
+router.patch('/:id/profile', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    client.profile = { ...(client.profile || {}), ...req.body };
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.patch('/:id/profile/statement', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    client.initialStatement = req.body.initialStatement;
+    await client.save();
+    res.json({ initialStatement: client.initialStatement });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Immigration & English
+router.patch('/:id/immigration', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    client.profile = { ...(client.profile || {}), ...req.body };
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.patch('/:id/english-test', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    client.englishTest = { ...(client.englishTest || {}), ...req.body };
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Addresses
+router.patch('/:id/addresses/current', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findByIdAndUpdate(req.params.id, { 'address.current': req.body }, { new: true });
+    res.json(client.address);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/:id/addresses', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.address.previous = client.address.previous || [];
+    client.address.previous.push(req.body);
+    await client.save();
+    res.json(client.address);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/:id/addresses/:addrId', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.address.previous = client.address.previous.filter(a => a._id.toString() !== req.params.addrId);
+    await client.save();
+    res.json(client.address);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Education
+router.post('/:id/education', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.education.push(req.body);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/:id/education/:eduId', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.education = client.education.filter(e => e._id.toString() !== req.params.eduId);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Work Experience
+router.post('/:id/experience', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.experience.push(req.body);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/:id/experience/:expId', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.experience = client.experience.filter(e => e._id.toString() !== req.params.expId);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Travel History
+router.post('/:id/travel-history', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.travelHistory.push(req.body);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/:id/travel-history/:travId', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.travelHistory = client.travelHistory.filter(e => e._id.toString() !== req.params.travId);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Family Members
+router.post('/:id/family-members', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.familyMembers.push(req.body);
+    await client.save();
+    res.json(client.familyMembers);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/:id/family-members/:memId', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.familyMembers = client.familyMembers.filter(m => m._id.toString() !== req.params.memId);
+    await client.save();
+    res.json(client.familyMembers);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Skills & Health
+router.patch('/:id/skills', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findByIdAndUpdate(req.params.id, { skillsData: req.body }, { new: true });
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.patch('/:id/health', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findByIdAndUpdate(req.params.id, { healthData: req.body }, { new: true });
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 export default router;

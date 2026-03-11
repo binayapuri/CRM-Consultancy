@@ -403,6 +403,233 @@ router.get('/cv', async (req, res) => {
   }
 });
 
+// ─── PATCH /api/student/profile (enhanced with all fields) ──────────────────────
+// Re-override the profile patch to include initialStatement
+router.patch('/profile/statement', async (req, res) => {
+  try {
+    const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
+    const { initialStatement } = req.body;
+    const updated = await Client.findByIdAndUpdate(
+      client._id,
+      { $set: { initialStatement } },
+      { new: true }
+    );
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── TRAVEL HISTORY CRUD ───────────────────────────────────────────────────────
+
+router.get('/travel-history', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id }).select('travelHistory');
+    res.json(client?.travelHistory || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/travel-history', async (req, res) => {
+  try {
+    const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
+    const entry = {
+      country: req.body.country,
+      city: req.body.city,
+      purpose: req.body.purpose || 'OTHER',
+      visaType: req.body.visaType,
+      visaGranted: req.body.visaGranted,
+      visaRefused: req.body.visaRefused,
+      refusalReason: req.body.refusalReason,
+      notes: req.body.notes,
+      dateFrom: req.body.dateFrom ? new Date(req.body.dateFrom) : undefined,
+      dateTo: req.body.dateTo ? new Date(req.body.dateTo) : undefined,
+    };
+    const updated = await Client.findByIdAndUpdate(
+      client._id,
+      { $push: { travelHistory: entry } },
+      { new: true }
+    );
+    res.json(updated.travelHistory);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/travel-history/:entryId', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id });
+    if (!client) return res.status(404).json({ error: 'Profile not found' });
+    const entry = client.travelHistory.id(req.params.entryId);
+    if (!entry) return res.status(404).json({ error: 'Entry not found' });
+    Object.assign(entry, req.body);
+    if (req.body.dateFrom) entry.dateFrom = new Date(req.body.dateFrom);
+    if (req.body.dateTo) entry.dateTo = new Date(req.body.dateTo);
+    await client.save();
+    res.json(client.travelHistory);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/travel-history/:entryId', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id });
+    if (!client) return res.status(404).json({ error: 'Profile not found' });
+    client.travelHistory = client.travelHistory.filter(e => e._id.toString() !== req.params.entryId);
+    await client.save();
+    res.json(client.travelHistory);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── ADDRESS HISTORY CRUD ─────────────────────────────────────────────────────
+
+router.get('/addresses', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id }).select('previousAddresses profile');
+    res.json({
+      current: client?.profile?.address || null,
+      previous: client?.previousAddresses || [],
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update current address
+router.patch('/addresses/current', async (req, res) => {
+  try {
+    const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
+    const updated = await Client.findByIdAndUpdate(
+      client._id,
+      { $set: { 'profile.address': req.body } },
+      { new: true }
+    );
+    res.json({ current: updated.profile?.address, previous: updated.previousAddresses });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Add a previous address
+router.post('/addresses', async (req, res) => {
+  try {
+    const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
+    const entry = {
+      ...req.body,
+      from: req.body.from ? new Date(req.body.from) : undefined,
+      to: req.body.to ? new Date(req.body.to) : undefined,
+    };
+    const updated = await Client.findByIdAndUpdate(
+      client._id,
+      { $push: { previousAddresses: entry } },
+      { new: true }
+    );
+    res.json({ current: updated.profile?.address, previous: updated.previousAddresses });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/addresses/:entryId', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id });
+    if (!client) return res.status(404).json({ error: 'Profile not found' });
+    const entry = client.previousAddresses.id(req.params.entryId);
+    if (!entry) return res.status(404).json({ error: 'Address not found' });
+    Object.assign(entry, req.body);
+    if (req.body.from) entry.from = new Date(req.body.from);
+    if (req.body.to) entry.to = new Date(req.body.to);
+    await client.save();
+    res.json({ current: client.profile?.address, previous: client.previousAddresses });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/addresses/:entryId', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id });
+    if (!client) return res.status(404).json({ error: 'Profile not found' });
+    client.previousAddresses = client.previousAddresses.filter(e => e._id.toString() !== req.params.entryId);
+    await client.save();
+    res.json({ current: client.profile?.address, previous: client.previousAddresses });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── STUDENT NOTES CRUD ────────────────────────────────────────────────────────
+
+router.get('/notes', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id }).select('studentNotes initialStatement');
+    res.json({
+      notes: client?.studentNotes || [],
+      initialStatement: client?.initialStatement || '',
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/notes', async (req, res) => {
+  try {
+    const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
+    const note = {
+      title: req.body.title || '',
+      text: req.body.text,
+      category: req.body.category || 'GENERAL',
+      isPinned: req.body.isPinned || false,
+      isPrivate: req.body.isPrivate !== false, // default private
+      templateUsed: req.body.templateUsed || '',
+      tags: req.body.tags || [],
+      addedAt: new Date(),
+    };
+    const updated = await Client.findByIdAndUpdate(
+      client._id,
+      { $push: { studentNotes: note } },
+      { new: true }
+    );
+    res.json(updated.studentNotes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/notes/:noteId', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id });
+    if (!client) return res.status(404).json({ error: 'Profile not found' });
+    const note = client.studentNotes.id(req.params.noteId);
+    if (!note) return res.status(404).json({ error: 'Note not found' });
+    const allowed = ['title', 'text', 'category', 'isPinned', 'isPrivate', 'tags'];
+    for (const k of allowed) {
+      if (req.body[k] !== undefined) note[k] = req.body[k];
+    }
+    note.editedAt = new Date();
+    await client.save();
+    res.json(client.studentNotes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/notes/:noteId', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id });
+    if (!client) return res.status(404).json({ error: 'Profile not found' });
+    client.studentNotes = client.studentNotes.filter(n => n._id.toString() !== req.params.noteId);
+    await client.save();
+    res.json(client.studentNotes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── CHANGE PASSWORD ────────────────────────────────────────────────────────────
 router.post('/change-password', async (req, res) => {
   try {
@@ -419,5 +646,74 @@ router.post('/change-password', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// ─── FAMILY MEMBERS CRUD ─────────────────────────────────────────────────────
+
+router.get('/family-members', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id }).select('familyMembers');
+    res.json(client?.familyMembers || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/family-members', async (req, res) => {
+  try {
+    const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
+    const entry = {
+      relationship: req.body.relationship || 'OTHER',
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      dob: req.body.dob ? new Date(req.body.dob) : undefined,
+      nationality: req.body.nationality,
+      passportNumber: req.body.passportNumber,
+      passportExpiry: req.body.passportExpiry ? new Date(req.body.passportExpiry) : undefined,
+      includedInApplication: req.body.includedInApplication || false,
+      visaStatus: req.body.visaStatus || '',
+      notes: req.body.notes || '',
+    };
+    const updated = await Client.findByIdAndUpdate(
+      client._id,
+      { $push: { familyMembers: entry } },
+      { new: true }
+    );
+    res.json(updated.familyMembers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/family-members/:memberId', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id });
+    if (!client) return res.status(404).json({ error: 'Profile not found' });
+    const member = client.familyMembers.id(req.params.memberId);
+    if (!member) return res.status(404).json({ error: 'Family member not found' });
+    const allowed = ['relationship','firstName','lastName','dob','nationality','passportNumber','passportExpiry','includedInApplication','visaStatus','notes'];
+    for (const k of allowed) {
+      if (req.body[k] !== undefined) {
+        if ((k === 'dob' || k === 'passportExpiry') && req.body[k]) member[k] = new Date(req.body[k]);
+        else member[k] = req.body[k];
+      }
+    }
+    await client.save();
+    res.json(client.familyMembers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/family-members/:memberId', async (req, res) => {
+  try {
+    const client = await Client.findOne({ userId: req.user._id });
+    if (!client) return res.status(404).json({ error: 'Profile not found' });
+    client.familyMembers = client.familyMembers.filter(m => m._id.toString() !== req.params.memberId);
+    await client.save();
+    res.json(client.familyMembers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 export default router;
+
