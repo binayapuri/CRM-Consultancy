@@ -104,7 +104,7 @@ export default function Login() {
     <div className="min-h-screen flex flex-col bg-slate-50">
       {/* Top bar with logo (light, like Lumi) */}
       <header className="flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200">
-        <span className="text-xl font-display font-bold tracking-tight text-slate-900">orivisa</span>
+        <span className="text-xl font-display font-bold tracking-tight text-slate-900">BIGFEW</span>
         {/* Right side intentionally minimal to match Lumi layout */}
         <span className="text-sm text-slate-400" />
       </header>

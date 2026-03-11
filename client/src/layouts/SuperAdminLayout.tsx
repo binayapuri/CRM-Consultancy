@@ -17,8 +17,8 @@ export default function SuperAdminLayout() {
     <div className="min-h-screen flex bg-slate-50">
       <aside className="w-64 bg-slate-900 text-white flex flex-col fixed h-full">
         <div className="p-5 border-b border-slate-700">
-          <h1 className="text-xl font-display font-bold text-amber-400">ORIVISA</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Super Admin</p>
+          <h1 className="text-xl font-display font-bold text-amber-400">BIGFEW</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Super Admin – Platform Owner</p>
         </div>
         <nav className="flex-1 p-3 space-y-0.5">
           {nav.map(({ to, icon: Icon, label }) => (

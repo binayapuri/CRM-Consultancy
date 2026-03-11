@@ -23,8 +23,8 @@ export default function StudentLayout() {
     <div className="min-h-screen flex bg-slate-50">
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full shadow-sm">
         <div className="p-5 border-b border-slate-200">
-          <h1 className="text-xl font-display font-bold text-ori-600">ORIVISA</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Student Portal</p>
+          <h1 className="text-xl font-display font-bold text-ori-600">BIGFEW</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Student Portal – Australian Education & Migration</p>
         </div>
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {nav.map(({ to, icon: Icon, label }) => (
