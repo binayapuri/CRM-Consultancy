@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Users, FileText, Target, ArrowRight, Activity, TrendingUp, AlertTriangle, CheckSquare, User } from 'lucide-react';
+import { Users, FileText, Target, ArrowRight, Activity, TrendingUp, AlertTriangle, CheckSquare } from 'lucide-react';
 import { authFetch, safeJson } from '../../store/auth';
 import { useAuthStore } from '../../store/auth';
 import { format } from 'date-fns';
@@ -24,7 +24,7 @@ export default function ConsultancyDashboard() {
   useEffect(() => {
     (async () => {
       const qs = consultancyId ? `?consultancyId=${consultancyId}` : '';
-      const [clientsRes, appsRes, leadsRes, activityRes, docsRes, tasksRes] = await Promise.all([
+      const responses = await Promise.all([
         authFetch(`/api/clients${qs}`),
         authFetch(`/api/applications${qs}`),
         authFetch(`/api/leads${qs}`),
@@ -34,6 +34,7 @@ export default function ConsultancyDashboard() {
           ? authFetch(`/api/tasks?assignedTo=${user._id || user.id}`).catch(() => ({ ok: false, json: () => [] }))
           : Promise.resolve({ ok: false, json: () => [] }),
       ]);
+      const [clientsRes, appsRes, leadsRes, activityRes, docsRes, tasksRes] = responses as any[];
       const clientsRaw = await safeJson<unknown>(clientsRes);
       const appsRaw = await safeJson<unknown>(appsRes);
       const leadsRaw = await safeJson<unknown>(leadsRes);

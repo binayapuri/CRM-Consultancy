@@ -40,7 +40,7 @@ export default function Templates() {
         <div className="card mt-6 p-12 text-center text-slate-500">Loading...</div>
       ) : (
         <div className="mt-6 space-y-8">
-          {Object.entries(byCategory).map(([category, items]) => (
+          {(Object.entries(byCategory) as [string, any[]][]).map(([category, items]) => (
             <div key={category} className="card">
               <h2 className="font-display font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-ori-600" />

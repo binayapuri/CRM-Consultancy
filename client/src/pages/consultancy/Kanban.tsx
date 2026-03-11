@@ -40,12 +40,13 @@ export default function Kanban() {
 
   const fetchData = async () => {
     const q = consultancyId ? `?consultancyId=${consultancyId}` : '';
-    const [appsRes, tasksRes, clientsRes, agentsRes] = await Promise.all([
+    const responses = await Promise.all([
       authFetch(`/api/applications/kanban${q}`),
       authFetch(`/api/tasks${q}`),
       authFetch(`/api/clients${q}`),
       authFetch(`/api/employees${q}`).catch(() => ({ ok: false, json: () => [] })),
     ]);
+    const [appsRes, tasksRes, clientsRes, agentsRes] = responses as any[];
     const appsRaw = await safeJson<unknown>(appsRes);
     const tasksRaw = await safeJson<unknown>(tasksRes);
     const clientsRaw = await safeJson<unknown>(clientsRes);
@@ -139,7 +140,7 @@ export default function Kanban() {
 
   const openTaskDetail = async (task: any) => {
     const res = await authFetch(`/api/tasks/${task._id}`);
-    const data = await safeJson(res);
+    const data = await safeJson<any>(res);
     setSelectedTask(data);
     setTaskComment('');
   };
@@ -151,7 +152,7 @@ export default function Kanban() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assignedTo: assignedTo || null }),
       });
-      const data = await safeJson(res);
+      const data = await safeJson<any>(res);
       if (!res.ok) throw new Error((data as any).error);
       setSelectedTask((t: any) => t?._id === taskId ? { ...t, assignedTo: data.assignedTo } : t);
       fetchData();

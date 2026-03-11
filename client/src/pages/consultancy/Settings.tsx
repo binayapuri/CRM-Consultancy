@@ -27,7 +27,7 @@ export default function ConsultancySettings() {
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifyTasks, setNotifyTasks] = useState(true);
   const [notifyDocuments, setNotifyDocuments] = useState(true);
-  const [consultancy, setConsultancy] = useState<any>(null);
+  const [_, setConsultancy] = useState<any>(null);
   const [rolePermsExpanded, setRolePermsExpanded] = useState<string | null>(null);
   const [form, setForm] = useState({
     displayName: '',
@@ -55,7 +55,7 @@ export default function ConsultancySettings() {
   useEffect(() => {
     if (isAdmin) {
       const url = effectiveConsultancyId ? `/api/consultancies/me?consultancyId=${effectiveConsultancyId}` : '/api/consultancies/me';
-      authFetch(url).then(r => safeJson(r)).then(c => {
+      authFetch(url).then(r => safeJson<any>(r)).then(c => {
         setConsultancy(c);
         setForm({
           displayName: c?.displayName || c?.name || '',

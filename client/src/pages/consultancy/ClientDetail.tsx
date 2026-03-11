@@ -29,7 +29,6 @@ export default function ClientDetail() {
   const [uploadForm, setUploadForm] = useState({ type: 'PASSPORT', applicationId: '' as string, file: null as File | null });
   const [uploading, setUploading] = useState(false);
   const [activity, setActivity] = useState<any[]>([]);
-  const [clientTasks, setClientTasks] = useState<any[]>([]);
   const [newNote, setNewNote] = useState('');
   const [newNoteType, setNewNoteType] = useState('GENERAL');
   const [addingNote, setAddingNote] = useState(false);
@@ -59,7 +58,7 @@ export default function ClientDetail() {
   const [editingFamilyIdx, setEditingFamilyIdx] = useState<number | null>(null);
   const emptyTravel = { country: '', dateFrom: '', dateTo: '', purpose: 'TOURISM', visaType: '', notes: '' };
   const [newFamily, setNewFamily] = useState({ relationship: 'SPOUSE', firstName: '', lastName: '', dob: '', nationality: '', passportNumber: '', passportExpiry: '', includedInApplication: false, visaStatus: '', notes: '', travelHistory: [] as any[] });
-  const [editFamily, setEditFamily] = useState<typeof newFamily | null>(null);
+  const [editFamily, setEditFamily] = useState<any>(null);
   const [savingFamily, setSavingFamily] = useState(false);
   const [sendingDoc, setSendingDoc] = useState<string | null>(null);
 
@@ -69,28 +68,27 @@ export default function ClientDetail() {
       return;
     }
     authFetch(`/api/clients/${id}`)
-      .then(r => safeJson(r))
+      .then(r => safeJson<any>(r))
       .then(data => { if ((data as any).error) throw new Error((data as any).error); setClient(data); })
       .catch(() => navigate('/consultancy/clients', { replace: true }));
-    authFetch(`/api/clients/${id}/applications`).then(r => safeJson(r)).then(setApplications);
-    authFetch('/api/constants/document-types').then(r => safeJson(r)).then(setDocTypes);
-    authFetch('/api/sponsors').then(r => safeJson(r)).then(setSponsors).catch(() => []);
+    authFetch(`/api/clients/${id}/applications`).then(r => safeJson<any[]>(r)).then(setApplications);
+    authFetch('/api/constants/document-types').then(r => safeJson<any[]>(r)).then(setDocTypes);
+    authFetch('/api/sponsors').then(r => safeJson<any[]>(r)).then(setSponsors).catch(() => []);
     if (id) {
-      authFetch(`/api/clients/${id}/activity`).then(r => safeJson(r)).then(setActivity);
-      authFetch(`/api/clients/${id}/tasks`).then(r => safeJson(r)).then(setClientTasks);
+      authFetch(`/api/clients/${id}/activity`).then(r => safeJson<any[]>(r)).then(setActivity);
     }
   }, [id]);
 
   useEffect(() => {
     if (id && tab === 'documents') {
-      authFetch(`/api/documents?clientId=${id}`).then(r => safeJson(r)).then(setDocuments);
+      authFetch(`/api/documents?clientId=${id}`).then(r => safeJson<any[]>(r)).then(setDocuments);
     }
     if (id && tab === 'task-sheet') {
-      authFetch(`/api/clients/${id}/activity`).then(r => safeJson(r)).then(setActivity);
+      authFetch(`/api/clients/${id}/activity`).then(r => safeJson<any[]>(r)).then(setActivity);
     }
   }, [id, tab]);
 
-  const fetchApplications = () => authFetch(`/api/clients/${id}/applications`).then(r => safeJson(r)).then(setApplications);
+  const fetchApplications = () => authFetch(`/api/clients/${id}/applications`).then(r => safeJson<any[]>(r)).then(setApplications);
 
   const openCoeForm = (a: any) => {
     setCoeAppId(a._id);
@@ -179,7 +177,7 @@ export default function ClientDetail() {
       alert((e as Error).message);
     }
   };
-  const fetchDocuments = () => authFetch(`/api/documents?clientId=${id}`).then(r => safeJson(r)).then(setDocuments);
+  const fetchDocuments = () => authFetch(`/api/documents?clientId=${id}`).then(r => safeJson<any[]>(r)).then(setDocuments);
 
   const handleAddApplication = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -355,7 +353,7 @@ export default function ClientDetail() {
       const data = await safeJson<{ error?: string }>(res);
       if (!res.ok) throw new Error(data.error || 'Failed to add activity');
       setNewActivity({ text: '', type: 'DAILY_UPDATE' });
-      authFetch(`/api/clients/${id}/activity`).then(r => safeJson(r)).then(setActivity);
+      authFetch(`/api/clients/${id}/activity`).then(r => safeJson<any[]>(r)).then(setActivity);
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -373,7 +371,7 @@ export default function ClientDetail() {
         body: JSON.stringify({ text: editActivityText, type: editActivityType }),
       });
       setEditingActivityId(null);
-      authFetch(`/api/clients/${id}/activity`).then(r => safeJson(r)).then(setActivity);
+      authFetch(`/api/clients/${id}/activity`).then(r => safeJson<any[]>(r)).then(setActivity);
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -385,7 +383,7 @@ export default function ClientDetail() {
     if (!confirm('Delete this activity entry?')) return;
     try {
       await authFetch(`/api/clients/${id}/activities/${aid}`, { method: 'DELETE' });
-      if (id) authFetch(`/api/clients/${id}/activity`).then(r => safeJson(r)).then(setActivity);
+      if (id) authFetch(`/api/clients/${id}/activity`).then(r => safeJson<any[]>(r)).then(setActivity);
     } catch (e) {
       alert((e as Error).message);
     }
@@ -897,29 +895,29 @@ export default function ClientDetail() {
                       {editingFamilyIdx === i && editFamily ? (
                         <div className="space-y-3">
                           <div className="grid md:grid-cols-2 gap-2">
-                            <select value={editFamily.relationship} onChange={e => setEditFamily(f => ({ ...f!, relationship: e.target.value }))} className="input text-sm">
+                            <select value={editFamily.relationship} onChange={e => setEditFamily((f: any) => ({ ...f!, relationship: e.target.value }))} className="input text-sm">
                               <option value="SPOUSE">Spouse</option><option value="PARTNER">Partner</option><option value="CHILD">Child</option><option value="PARENT">Parent</option><option value="SIBLING">Sibling</option><option value="OTHER">Other</option>
                             </select>
-                            <input value={editFamily.firstName} onChange={e => setEditFamily(f => ({ ...f!, firstName: e.target.value }))} className="input text-sm" placeholder="First Name" />
-                            <input value={editFamily.lastName} onChange={e => setEditFamily(f => ({ ...f!, lastName: e.target.value }))} className="input text-sm" placeholder="Last Name" />
-                            <input type="date" value={editFamily.dob} onChange={e => setEditFamily(f => ({ ...f!, dob: e.target.value }))} className="input text-sm" />
-                            <input value={editFamily.nationality} onChange={e => setEditFamily(f => ({ ...f!, nationality: e.target.value }))} className="input text-sm" placeholder="Nationality" />
-                            <input value={editFamily.passportNumber} onChange={e => setEditFamily(f => ({ ...f!, passportNumber: e.target.value }))} className="input text-sm" placeholder="Passport" />
-                            <input type="date" value={editFamily.passportExpiry} onChange={e => setEditFamily(f => ({ ...f!, passportExpiry: e.target.value }))} className="input text-sm" />
-                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editFamily.includedInApplication} onChange={e => setEditFamily(f => ({ ...f!, includedInApplication: e.target.checked }))} /> In application</label>
+                            <input value={editFamily.firstName} onChange={e => setEditFamily((f: any) => ({ ...f!, firstName: e.target.value }))} className="input text-sm" placeholder="First Name" />
+                            <input value={editFamily.lastName} onChange={e => setEditFamily((f: any) => ({ ...f!, lastName: e.target.value }))} className="input text-sm" placeholder="Last Name" />
+                            <input type="date" value={editFamily.dob} onChange={e => setEditFamily((f: any) => ({ ...f!, dob: e.target.value }))} className="input text-sm" />
+                            <input value={editFamily.nationality} onChange={e => setEditFamily((f: any) => ({ ...f!, nationality: e.target.value }))} className="input text-sm" placeholder="Nationality" />
+                            <input value={editFamily.passportNumber} onChange={e => setEditFamily((f: any) => ({ ...f!, passportNumber: e.target.value }))} className="input text-sm" placeholder="Passport" />
+                            <input type="date" value={editFamily.passportExpiry} onChange={e => setEditFamily((f: any) => ({ ...f!, passportExpiry: e.target.value }))} className="input text-sm" />
+                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editFamily.includedInApplication} onChange={e => setEditFamily((f: any) => ({ ...f!, includedInApplication: e.target.checked }))} /> In application</label>
                           </div>
                           <div className="border-t pt-3">
                             <p className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> Travel History</p>
                             {(editFamily.travelHistory || []).map((t: any, ti: number) => (
                               <div key={ti} className="flex flex-wrap gap-2 mb-2 p-2 bg-white rounded border">
-                                <input value={t.country || ''} onChange={e => setEditFamily(f => ({ ...f!, travelHistory: (f.travelHistory || []).map((x, xi) => xi === ti ? { ...x, country: e.target.value } : x) }))} className="input text-sm w-24" placeholder="Country" />
-                                <input type="date" value={t.dateFrom ? new Date(t.dateFrom).toISOString().slice(0, 10) : ''} onChange={e => setEditFamily(f => ({ ...f!, travelHistory: (f.travelHistory || []).map((x, xi) => xi === ti ? { ...x, dateFrom: e.target.value } : x) }))} className="input text-sm" />
-                                <input type="date" value={t.dateTo ? new Date(t.dateTo).toISOString().slice(0, 10) : ''} onChange={e => setEditFamily(f => ({ ...f!, travelHistory: (f.travelHistory || []).map((x, xi) => xi === ti ? { ...x, dateTo: e.target.value } : x) }))} className="input text-sm" />
-                                <select value={t.purpose || 'TOURISM'} onChange={e => setEditFamily(f => ({ ...f!, travelHistory: (f.travelHistory || []).map((x, xi) => xi === ti ? { ...x, purpose: e.target.value } : x) }))} className="input text-sm"><option value="TOURISM">Tourism</option><option value="STUDY">Study</option><option value="WORK">Work</option><option value="FAMILY">Family</option><option value="TRANSIT">Transit</option><option value="OTHER">Other</option></select>
-                                <button type="button" onClick={() => setEditFamily(f => ({ ...f!, travelHistory: (f.travelHistory || []).filter((_, xi) => xi !== ti) }))} className="text-red-500 hover:bg-red-50 px-2 rounded"><X className="w-4 h-4" /></button>
+                                <input value={t.country || ''} onChange={e => setEditFamily((f: any) => ({ ...f!, travelHistory: (f.travelHistory || []).map((x: any, xi: number) => xi === ti ? { ...x, country: e.target.value } : x) }))} className="input text-sm w-24" placeholder="Country" />
+                                <input type="date" value={t.dateFrom ? new Date(t.dateFrom).toISOString().slice(0, 10) : ''} onChange={e => setEditFamily((f: any) => ({ ...f!, travelHistory: (f.travelHistory || []).map((x: any, xi: number) => xi === ti ? { ...x, dateFrom: e.target.value } : x) }))} className="input text-sm" />
+                                <input type="date" value={t.dateTo ? new Date(t.dateTo).toISOString().slice(0, 10) : ''} onChange={e => setEditFamily((f: any) => ({ ...f!, travelHistory: (f.travelHistory || []).map((x: any, xi: number) => xi === ti ? { ...x, dateTo: e.target.value } : x) }))} className="input text-sm" />
+                                <select value={t.purpose || 'TOURISM'} onChange={e => setEditFamily((f: any) => ({ ...f!, travelHistory: (f.travelHistory || []).map((x: any, xi: number) => xi === ti ? { ...x, purpose: e.target.value } : x) }))} className="input text-sm"><option value="TOURISM">Tourism</option><option value="STUDY">Study</option><option value="WORK">Work</option><option value="FAMILY">Family</option><option value="TRANSIT">Transit</option><option value="OTHER">Other</option></select>
+                                <button type="button" onClick={() => setEditFamily((f: any) => ({ ...f!, travelHistory: (f.travelHistory || []).filter((_: any, xi: number) => xi !== ti) }))} className="text-red-500 hover:bg-red-50 px-2 rounded"><X className="w-4 h-4" /></button>
                               </div>
                             ))}
-                            <button type="button" onClick={() => setEditFamily(f => ({ ...f!, travelHistory: [...(f.travelHistory || []), { ...emptyTravel }] }))} className="btn-secondary text-xs">+ Add travel</button>
+                            <button type="button" onClick={() => setEditFamily((f: any) => ({ ...f!, travelHistory: [...(f.travelHistory || []), { ...emptyTravel }] }))} className="btn-secondary text-xs">+ Add travel</button>
                           </div>
                           <div className="flex gap-2"><button onClick={() => handleUpdateFamilyMember(i)} disabled={savingFamily} className="btn-primary text-sm">{savingFamily ? 'Saving...' : 'Save'}</button><button onClick={() => { setEditingFamilyIdx(null); setEditFamily(null); }} className="btn-secondary text-sm">Cancel</button><button onClick={() => handleDeleteFamilyMember(i)} className="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-sm">Delete</button></div>
                         </div>
@@ -1164,7 +1162,7 @@ export default function ClientDetail() {
               <h2 className="font-display font-semibold text-slate-900 flex items-center gap-2"><ClipboardList className="w-5 h-5 text-ori-600" /> Task Sheet</h2>
               <p className="text-slate-500 text-sm mt-1">Every change for this client — tasks, documents, application updates, notes, tags, and more.</p>
             </div>
-            <button onClick={() => id && authFetch(`/api/clients/${id}/activity`).then(r => safeJson(r)).then(setActivity)} className="btn-secondary text-sm shrink-0">Refresh</button>
+            <button onClick={() => id && authFetch(`/api/clients/${id}/activity`).then(r => safeJson<any[]>(r)).then(setActivity)} className="btn-secondary text-sm shrink-0">Refresh</button>
           </div>
 
           {/* Add Activity form */}

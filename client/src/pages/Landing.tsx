@@ -150,16 +150,16 @@ export default function Landing() {
           <p className="text-slate-400 mb-8">Have questions? Submit an enquiry and a migration agent will contact you.</p>
           <form onSubmit={handleEnquiry} className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
-              <input value={enquiry.firstName} onChange={e => setEnquiry(x => ({ ...x, firstName: e.target.value }))} required placeholder="First Name" className="input bg-slate-800 border-slate-700 text-white placeholder-slate-500" />
-              <input value={enquiry.lastName} onChange={e => setEnquiry(x => ({ ...x, lastName: e.target.value }))} required placeholder="Last Name" className="input bg-slate-800 border-slate-700 text-white placeholder-slate-500" />
+              <input value={enquiry.firstName} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, firstName: e.target.value }))} required placeholder="First Name" className="input bg-slate-800 border-slate-700 text-white placeholder-slate-500" />
+              <input value={enquiry.lastName} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, lastName: e.target.value }))} required placeholder="Last Name" className="input bg-slate-800 border-slate-700 text-white placeholder-slate-500" />
             </div>
-            <input type="email" value={enquiry.email} onChange={e => setEnquiry(x => ({ ...x, email: e.target.value }))} required placeholder="Email" className="input bg-slate-800 border-slate-700 text-white placeholder-slate-500 w-full" />
-            <input value={enquiry.phone} onChange={e => setEnquiry(x => ({ ...x, phone: e.target.value }))} placeholder="Phone (optional)" className="input bg-slate-800 border-slate-700 text-white placeholder-slate-500 w-full" />
-            <select value={enquiry.interest} onChange={e => setEnquiry(x => ({ ...x, interest: e.target.value }))} className="input bg-slate-800 border-slate-700 text-white w-full">
+            <input type="email" value={enquiry.email} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, email: e.target.value }))} required placeholder="Email" className="input bg-slate-800 border-slate-700 text-white placeholder-slate-500 w-full" />
+            <input value={enquiry.phone} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, phone: e.target.value }))} placeholder="Phone (optional)" className="input bg-slate-800 border-slate-700 text-white placeholder-slate-500 w-full" />
+            <select value={enquiry.interest} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, interest: e.target.value }))} className="input bg-slate-800 border-slate-700 text-white w-full">
               <option value="">Select interest</option>
               {INTERESTS.map(i => <option key={i} value={i}>{i}</option>)}
             </select>
-            <textarea value={enquiry.message} onChange={e => setEnquiry(x => ({ ...x, message: e.target.value }))} placeholder="Your message (optional)" rows={3} className="input bg-slate-800 border-slate-700 text-white placeholder-slate-500 w-full" />
+            <textarea value={enquiry.message} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, message: e.target.value }))} placeholder="Your message (optional)" rows={3} className="input bg-slate-800 border-slate-700 text-white placeholder-slate-500 w-full" />
             <button type="submit" disabled={enquiryStatus === 'sending'} className="btn-primary w-full flex items-center justify-center gap-2">
               {enquiryStatus === 'sending' ? 'Sending...' : enquiryStatus === 'success' ? 'Thank you!' : <>Send Enquiry <Send className="w-4 h-4" /></>}
             </button>

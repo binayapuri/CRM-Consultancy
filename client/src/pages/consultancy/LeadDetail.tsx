@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { format } from 'date-fns';
-import { ArrowLeft, Pencil, Trash2, UserPlus, Mail, Phone, User, FileText, Calendar, Building2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, UserPlus, Mail, User, FileText, Calendar, Building2 } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
