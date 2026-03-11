@@ -28,3 +28,16 @@ body {
     @apply w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-ori-500/30 focus:border-ori-500 outline-none transition;
   }
 }
+
+@keyframes bigfew-marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.bigfew-marquee {
+  animation: bigfew-marquee 18s linear infinite;
+}
