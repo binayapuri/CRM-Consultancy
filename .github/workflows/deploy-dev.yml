@@ -87,8 +87,8 @@ jobs:
 
             echo "Writing /etc/orivisa-dev.env from DEV_ENV secret..."
             cat <<'EOF' >/etc/orivisa-dev.env
-${{ secrets.DEV_ENV }}
-EOF
+            ${{ secrets.DEV_ENV }}
+            EOF
             chmod 600 /etc/orivisa-dev.env || true
 
             echo "Installing/refreshing systemd service..."
