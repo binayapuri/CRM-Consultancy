@@ -1,0 +1,110 @@
+name: Deploy (dev)
+
+on:
+  push:
+    branches: [dev]
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install server deps
+        working-directory: server
+        run: npm ci
+
+      - name: Install client deps
+        working-directory: client
+        run: npm ci
+
+      - name: Build client
+        working-directory: client
+        run: npm run build
+
+      - name: Create release bundle
+        run: |
+          mkdir -p release
+          rsync -a --delete --exclude node_modules --exclude .env --exclude .git --exclude client/dist \
+            server/ release/server/
+          rsync -a --delete client/dist/ release/client/dist/
+          cp package.json package-lock.json release/ || true
+          cp -r deploy release/deploy
+          tar -czf release.tgz -C release .
+
+      - name: Upload and activate on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USER }}
+          key: ${{ secrets.DEV_SSH_KEY }}
+          port: ${{ secrets.DEV_SSH_PORT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            mkdir -p /var/www/orivisa-dev/releases
+            echo "Ready for upload."
+
+      - name: Copy bundle to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USER }}
+          key: ${{ secrets.DEV_SSH_KEY }}
+          port: ${{ secrets.DEV_SSH_PORT }}
+          source: release.tgz
+          target: /var/www/orivisa-dev/
+
+      - name: Deploy on VPS (extract + restart)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USER }}
+          key: ${{ secrets.DEV_SSH_KEY }}
+          port: ${{ secrets.DEV_SSH_PORT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /var/www/orivisa-dev
+            SHA="${{ github.sha }}"
+            REL="/var/www/orivisa-dev/releases/$SHA"
+            mkdir -p "$REL"
+            tar -xzf /var/www/orivisa-dev/release.tgz -C "$REL"
+            ln -sfn "$REL" /var/www/orivisa-dev/current
+
+            APP_DIR="/var/www/orivisa-dev/current"
+
+            echo "Writing /etc/orivisa-dev.env from DEV_ENV secret..."
+            cat > /etc/orivisa-dev.env <<'EOF'
+${{ secrets.DEV_ENV }}
+EOF
+            chmod 600 /etc/orivisa-dev.env || true
+
+            echo "Installing/refreshing systemd service..."
+            cp "$APP_DIR/deploy/dev/orivisa-dev.service" /etc/systemd/system/orivisa-dev.service
+            systemctl daemon-reload
+            systemctl enable --now orivisa-dev.service
+
+            echo "Installing/refreshing Nginx site for bigfew.com..."
+            if command -v nginx >/dev/null 2>&1; then
+              cp "$APP_DIR/deploy/dev/nginx-bigfew-dev.conf" /etc/nginx/sites-available/bigfew.com
+              ln -sfn /etc/nginx/sites-available/bigfew.com /etc/nginx/sites-enabled/bigfew.com
+              nginx -t && systemctl reload nginx
+            else
+              echo "Nginx not installed; skipping web server config."
+            fi
+
+            echo "Running remote deploy script (npm ci + restart)..."
+            bash "$APP_DIR/deploy/dev/deploy-remote.sh"
+
