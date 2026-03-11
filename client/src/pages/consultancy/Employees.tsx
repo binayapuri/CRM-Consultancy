@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { authFetch } from '../../store/auth';
 import { useAuthStore } from '../../store/auth';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Pencil, UserX, Search, Filter } from 'lucide-react';
+import { Plus, Pencil, UserX, Search } from 'lucide-react';
 
 export default function Employees() {
   const { user } = useAuthStore();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const consultancyId = searchParams.get('consultancyId');
   const [employees, setEmployees] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);

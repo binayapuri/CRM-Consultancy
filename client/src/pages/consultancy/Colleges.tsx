@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { authFetch, safeJson } from '../../store/auth';
-import { GraduationCap, Search, Plus, Pencil, Trash2, X, Filter, GitCompare } from 'lucide-react';
+import { GraduationCap, Search, Plus, Pencil, Trash2, X, GitCompare } from 'lucide-react';
 import { Skeleton } from '../../components/Skeleton';
 import FilterBar from '../../components/FilterBar';
 

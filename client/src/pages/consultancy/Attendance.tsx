@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { authFetch, safeJson } from '../../store/auth';
 import { format } from 'date-fns';
-import { LogIn, LogOut, Calendar, Users, Clock, Filter } from 'lucide-react';
+import { LogIn, LogOut, Users, Clock } from 'lucide-react';
 import { Skeleton } from '../../components/Skeleton';
 import FilterBar from '../../components/FilterBar';
 import { useAuthStore } from '../../store/auth';

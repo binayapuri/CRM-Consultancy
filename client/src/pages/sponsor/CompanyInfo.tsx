@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { authFetch } from '../../store/auth';
-import { Building2, Mail, Phone, MapPin } from 'lucide-react';
+import { Building2, Mail, MapPin } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 
 export default function CompanyInfo() {

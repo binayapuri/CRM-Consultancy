@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { authFetch } from '../../store/auth';
-import { FileText, FileSignature, FileCheck } from 'lucide-react';
+import { FileSignature, FileCheck } from 'lucide-react';
 
 export default function SponsorDocuments() {
   const [sponsor, setSponsor] = useState<any>(null);

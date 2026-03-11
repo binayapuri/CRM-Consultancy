@@ -8,7 +8,8 @@ type User = {
   _id?: string;
   email: string;
   role: string;
-  profile?: { firstName?: string; lastName?: string; consultancyId?: string };
+  // Broad profile type used across the app; keep it flexible to avoid TS errors
+  profile?: any;
 };
 
 type AuthState = {
