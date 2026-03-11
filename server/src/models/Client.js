@@ -5,6 +5,7 @@ const educationSchema = new mongoose.Schema({
   qualification: String,
   fieldOfStudy: String,
   country: String,
+  cricos: String,  // CRICOS provider code for Australian institutions
   startDate: Date,
   endDate: Date,
   completed: Boolean,
@@ -15,6 +16,7 @@ const experienceSchema = new mongoose.Schema({
   employer: String,
   role: String,
   country: String,
+  hoursPerWeek: String,
   startDate: Date,
   endDate: Date,
   isCurrent: Boolean,
@@ -22,13 +24,82 @@ const experienceSchema = new mongoose.Schema({
   fullTime: Boolean,
 }, { _id: true });
 
+const skillsDataSchema = new mongoose.Schema({
+  assessingBody: String,    // ACS, EA, VETASSESS, AHPRA, etc.
+  referenceNumber: String,
+  outcome: String,          // 'Suitable' | 'Not Suitable' | 'Closely Related'
+  outcomeDate: Date,
+  eoiSubmitted: String,     // 'yes' | 'invited' | 'no'
+  eoiPoints: Number,
+  eoiDate: Date,
+  invitationDate: Date,
+  stateNomination: String,  // 'applied' | 'granted' | 'declined'
+  nominatingState: String,
+}, { _id: false });
+
+const healthDataSchema = new mongoose.Schema({
+  healthStatus: String,     // 'booked' | 'completed' | 'cleared' | 'waiver'
+  hapId: String,            // Health Applicant Portal ID
+  healthDate: Date,
+  chestXray: String,        // 'yes' | 'no'
+  australiaPCC: String,     // 'applied' | 'obtained'
+  homePCC: String,
+  otherPCC: String,
+}, { _id: false });
+
+
 const travelHistorySchema = new mongoose.Schema({
   country: String,
+  city: String,
   dateFrom: Date,
   dateTo: Date,
-  purpose: { type: String, enum: ['TOURISM', 'STUDY', 'WORK', 'FAMILY', 'TRANSIT', 'OTHER'], default: 'OTHER' },
+  purpose: { type: String, enum: ['TOURISM', 'STUDY', 'WORK', 'FAMILY', 'TRANSIT', 'CONFERENCE', 'MEDICAL', 'OTHER'], default: 'OTHER' },
   visaType: String,
+  visaGranted: Boolean,
+  visaRefused: Boolean,
+  refusalReason: String,
   notes: String,
+}, { _id: true });
+
+const addressSchema = new mongoose.Schema({
+  street: String,
+  suburb: String,
+  city: String,
+  state: String,
+  postcode: String,
+  country: String,
+  from: Date,
+  to: Date,
+  isCurrent: Boolean,
+  type: { type: String, enum: ['HOME', 'RENTAL', 'HOSTEL', 'FAMILY', 'OTHER'], default: 'HOME' },
+}, { _id: true });
+
+// Student self-written notes — used to feed AI and provide journalling
+const studentNoteSchema = new mongoose.Schema({
+  title: String,
+  text: { type: String, required: true },
+  category: {
+    type: String,
+    enum: [
+      'GENERAL',         // free notes
+      'STUDY_PLAN',      // studying / enrolled
+      'WORK_LOG',        // work related
+      'VISA_UPDATE',     // visa status changes
+      'FINANCIAL',       // savings / bank
+      'HEALTH',          // health and insurance
+      'LEGAL',           // any legal / immigration notes
+      'GOAL',            // short/long term goals
+      'AI_CONTEXT',      // context specifically for AI assistant
+    ],
+    default: 'GENERAL',
+  },
+  isPinned: { type: Boolean, default: false },
+  isPrivate: { type: Boolean, default: true }, // private = not shared with agent
+  templateUsed: String,  // which template was used to generate this note
+  aiSuggested: { type: Boolean, default: false },
+  tags: [String],
+  addedAt: { type: Date, default: Date.now },
+  editedAt: Date,
 }, { _id: true });
 
 const familyMemberSchema = new mongoose.Schema({
@@ -61,6 +132,10 @@ const clientSchema = new mongoose.Schema({
     nationality: String,
     countryOfBirth: String,
     maritalStatus: String,
+    onshore: { type: Boolean, default: false },
+    anzscoCode: String,
+    targetVisa: String,
+    visaRefusalHistory: { type: String, default: 'no' },
     passportNumber: String,
     passportExpiry: Date,
     passportCountry: String,
@@ -72,12 +147,26 @@ const clientSchema = new mongoose.Schema({
   },
   education: [educationSchema],
   experience: [experienceSchema],
+  skillsData: { type: skillsDataSchema, default: () => ({}) },
+  healthData: { type: healthDataSchema, default: () => ({}) },
   familyMembers: [familyMemberSchema],
+  travelHistory: [travelHistorySchema],              // student's own travel history
+  previousAddresses: [addressSchema],                // full address history
+  studentNotes: [studentNoteSchema],                 // personal journalling + AI context
+  initialStatement: String,                          // "About me" statement for AI context
   englishTest: {
-    testType: String,
-    score: String,
+    testType: { type: String, enum: ['IELTS_AC', 'IELTS_GT', 'PTE', 'TOEFL', 'OET', 'CAE', 'PEARSON', 'NAATI', 'NONE'] },
+    score: String,           // overall/composite
+    listening: String,
+    reading: String,
+    writing: String,
+    speaking: String,
+    trf: String,             // IELTS Test Report Form number
     testDate: Date,
     expiryDate: Date,
+    testCentre: String,
+    attemptNumber: Number,   // 1st, 2nd, 3rd attempt etc.
+    plannedRetake: Date,     // if planning to retake
   },
   services: [{
     serviceType: String,
@@ -125,7 +214,7 @@ const clientSchema = new mongoose.Schema({
   }],
   assignedAgentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   agentDisconnectedAt: Date,
-  status: { type: String, enum: ['LEAD', 'ACTIVE', 'ARCHIVED', 'DISCONNECTED'], default: 'ACTIVE' },
+  status: { type: String, enum: ['LEAD', 'ACTIVE', 'ARCHIVED', 'DISCONNECTED', 'PENDING_ACCESS'], default: 'ACTIVE' },
   invitationToken: String,
   invitationSentAt: Date,
   invitationAcceptedAt: Date,

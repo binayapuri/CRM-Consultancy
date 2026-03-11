@@ -30,6 +30,19 @@ import sponsorsRoutes from './routes/sponsors.js';
 import sponsorSendRoutes from './routes/sponsor-send.js';
 import clientSendRoutes from './routes/client-send.js';
 import attendanceRoutes from './routes/attendance.js';
+import adminRoutes from './routes/admin.js';
+import universitiesRoutes from './routes/universities.js';
+import offerLettersRoutes from './routes/offer-letters.js';
+import visaTimelineRoutes from './routes/visa-timeline.js';
+import documentTemplatesRoutes from './routes/document-templates.js';
+import insuranceRoutes from './routes/insurance.js';
+
+import communityRoutes from './routes/community.js';
+import newsRoutes from './routes/news.js';
+import jobsRoutes from './routes/jobs.js';
+import appointmentsRoutes from './routes/appointments.js';
+import reviewsRoutes from './routes/reviews.js';
+import studentRoutes from './routes/student.js';
 
 dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -53,6 +66,7 @@ mongoose.connect(MONGODB_URI)
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/student', studentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/consultancies', consultancyRoutes);
 app.use('/api/clients', clientSendRoutes);
@@ -76,6 +90,18 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/sponsors', sponsorSendRoutes);
 app.use('/api/sponsors', sponsorsRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/universities', universitiesRoutes);
+app.use('/api/offer-letters', offerLettersRoutes);
+app.use('/api/visa-timeline', visaTimelineRoutes);
+app.use('/api/document-templates', documentTemplatesRoutes);
+app.use('/api/insurance', insuranceRoutes);
+
+app.use('/api/community', communityRoutes);
+app.use('/api/news', newsRoutes);
+app.use('/api/jobs', jobsRoutes);
+app.use('/api/appointments', appointmentsRoutes);
+app.use('/api/reviews', reviewsRoutes);
 
 // Serve static frontend in production
 if (process.env.NODE_ENV === 'production') {

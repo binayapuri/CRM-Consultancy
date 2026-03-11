@@ -127,9 +127,34 @@ router.post('/', authenticate, async (req, res) => {
     const body = { ...req.body, consultancyId: cid };
     if (!body.notes || !Array.isArray(body.notes)) body.notes = [];
     body.notes.unshift(enrollNote);
+
+    const clientEmail = body.profile?.email;
+    let existingUser = null;
+    if (clientEmail) {
+      existingUser = await User.findOne({ email: clientEmail, role: 'STUDENT' });
+    }
+
+    if (existingUser) {
+      body.status = 'PENDING_ACCESS';
+      body.userId = existingUser._id;
+    }
+
     const client = await Client.create(body);
+
+    if (existingUser) {
+      await Notification.create({
+        userId: existingUser._id,
+        consultancyId: cid,
+        type: 'ACCESS_REQUEST',
+        title: 'Consultancy Access Request',
+        message: 'A consultancy has requested access to your profile. Review in your dashboard.',
+        relatedEntityType: 'Client',
+        relatedEntityId: client._id
+      });
+    }
+
     await logAudit(cid, 'Client', client._id, 'CREATE', req.user._id, {
-      description: `Client ${client.profile?.firstName} ${client.profile?.lastName} created`,
+      description: existingUser ? `Requested access to existing student ${client.profile?.firstName} ${client.profile?.lastName}` : `Client ${client.profile?.firstName} ${client.profile?.lastName} created`,
       metadata: { clientName: `${client.profile?.firstName} ${client.profile?.lastName}`, userName: `${req.user.profile?.firstName} ${req.user.profile?.lastName}` },
       clientId: client._id,
       assignedAgentId: client.assignedAgentId,
@@ -201,6 +226,26 @@ router.delete('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMI
     });
     await Client.findByIdAndDelete(req.params.id);
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/:id/accept-access', authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== 'STUDENT') return res.status(403).json({ error: 'Only students can accept access requests' });
+    
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Not found' });
+    
+    if (client.userId?.toString() !== req.user.id) {
+       return res.status(403).json({ error: 'Not authorized for this client record' });
+    }
+
+    client.status = 'ACTIVE';
+    await client.save();
+
+    res.json({ success: true, client });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

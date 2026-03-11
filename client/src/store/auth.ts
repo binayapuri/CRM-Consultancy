@@ -71,29 +71,30 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-/** Returns true if the 401 response indicates the JWT is invalid/expired (so we should clear auth and redirect to login). */
+/** Returns true if the 401 response indicates the JWT is invalid/expired (cleared session). */
 function isTokenInvalid401(res: Response, body: { error?: string } | null): boolean {
+  // 403 = role-forbidden, never logout. Only 401 with JWT error strings.
   if (res.status !== 401 || !body?.error) return false;
   const msg = String(body.error).toLowerCase();
-  // Only treat as logout-worthy when the JWT itself is invalid/expired.
-  // Do NOT logout on generic "access denied / no token" messages because those can be caused by
-  // a misrouted request, missing header on a single call, or role-based endpoint restrictions.
-  return /invalid token|token expired|jwt|signature|malformed|sign in again/i.test(msg);
+  return /invalid token|token expired|jwt|signature|malformed|sign in again|no token|authorization/i.test(msg);
 }
 
 export function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
   const token = useAuthStore.getState().token;
   const headers: Record<string, string> = { ...(opts.headers as Record<string, string>) };
   if (token) headers.Authorization = `Bearer ${token}`;
+
   return fetch(url, { ...opts, headers }).then((res) => {
+    // NEVER force logout on 403 — that is a role/permission deny, not an auth failure
     if (res.status === 401) {
-      const clone = res.clone();
-      clone.json().then((body: { error?: string } | null) => {
-        if (isTokenInvalid401(res, body)) {
-          useAuthStore.getState().logout();
-          window.location.href = '/login';
-        }
-      }).catch(() => {});
+      res.clone().json()
+        .then((body: { error?: string } | null) => {
+          if (isTokenInvalid401(res, body)) {
+            useAuthStore.getState().logout();
+            window.location.href = '/login';
+          }
+        })
+        .catch(() => {/* ignore non-json 401 errors gracefully */});
     }
     return res;
   });
