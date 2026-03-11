@@ -74,7 +74,10 @@ export const useAuthStore = create<AuthState>()(
 function isTokenInvalid401(res: Response, body: { error?: string } | null): boolean {
   if (res.status !== 401 || !body?.error) return false;
   const msg = String(body.error).toLowerCase();
-  return /invalid token|token expired|access denied|no token|user not found|sign in again/i.test(msg);
+  // Only treat as logout-worthy when the JWT itself is invalid/expired.
+  // Do NOT logout on generic "access denied / no token" messages because those can be caused by
+  // a misrouted request, missing header on a single call, or role-based endpoint restrictions.
+  return /invalid token|token expired|jwt|signature|malformed|sign in again/i.test(msg);
 }
 
 export function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
