@@ -85,6 +85,10 @@ export const requirePermission = (feature, action = 'view') => async (req, res, 
   next();
 };
 
+// Backwards-compatible alias used by some routes (e.g. news.js).
+// authorize(feature, action) behaves the same as requirePermission(feature, action).
+export const authorize = (feature, action) => requirePermission(feature, action);
+
 /** Get effective permissions for current user (for frontend). When rolePermissions empty, allow all for admin/agent. */
 export async function getUserPermissions(user) {
   if (!user || user.role === 'SUPER_ADMIN') return null;
