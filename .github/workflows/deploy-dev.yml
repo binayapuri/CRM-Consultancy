@@ -86,7 +86,7 @@ jobs:
             APP_DIR="/var/www/orivisa-dev/current"
 
             echo "Writing /etc/orivisa-dev.env from DEV_ENV secret..."
-            cat > /etc/orivisa-dev.env <<'EOF'
+            cat <<'EOF' >/etc/orivisa-dev.env
 ${{ secrets.DEV_ENV }}
 EOF
             chmod 600 /etc/orivisa-dev.env || true
