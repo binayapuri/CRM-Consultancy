@@ -35,7 +35,7 @@ jobs:
 
       - name: Create release bundle
         run: |
-          mkdir -p release
+          mkdir -p release/client
           rsync -a --delete --exclude node_modules --exclude .env --exclude .git --exclude client/dist \
             server/ release/server/
           rsync -a --delete client/dist/ release/client/dist/
