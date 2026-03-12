@@ -43,17 +43,53 @@ export default function StudentProfile() {
   
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
+  const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
+  async function fetchJson(url: string) {
+    const res = await authFetch(url);
+    let data: any = null;
+    let text: string | null = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+      try {
+        text = await res.clone().text();
+      } catch {
+        text = null;
+      }
+    }
+    return { url, res, data, text };
+  }
+
   const refreshData = async () => {
     try {
-      const [pRes, aRes, nRes, fRes] = await Promise.all([
-        authFetch('/api/student/profile').then(r => r.json()),
-        authFetch('/api/student/addresses').then(r => r.json()),
-        authFetch('/api/student/notes').then(r => r.json()),
-        authFetch('/api/student/family-members').then(r => r.json())
+      setErrorBanner(null);
+      const [p, a, n, f] = await Promise.all([
+        fetchJson('/api/student/profile'),
+        fetchJson('/api/student/addresses'),
+        fetchJson('/api/student/notes'),
+        fetchJson('/api/student/family-members')
       ]);
+
+      const fmtErr = (r: { url: string; res: Response; data: any; text: string | null }, label: string) => {
+        const msg = r.data?.error
+          || (r.text ? String(r.text).slice(0, 180).replace(/\s+/g, ' ') : '')
+          || 'No response body';
+        return `${label} failed (${r.res.status}) — ${r.url} — ${msg}`;
+      };
+
+      if (!p.res.ok) throw new Error(fmtErr(p, 'Profile load'));
+      if (!a.res.ok) throw new Error(fmtErr(a, 'Addresses load'));
+      if (!n.res.ok) throw new Error(fmtErr(n, 'Notes load'));
+      if (!f.res.ok) throw new Error(fmtErr(f, 'Family load'));
+
+      const pRes = p.data;
+      const aRes = a.data;
+      const nRes = n.data;
+      const fRes = f.data;
 
       const c = pRes.client || {};
       setProfile(c.profile || {});
@@ -71,6 +107,7 @@ export default function StudentProfile() {
       setLoading(false);
     } catch (err) {
       console.error(err);
+      setErrorBanner((err as any)?.message || 'Failed to load profile data');
       setLoading(false);
     }
   };
@@ -79,8 +116,18 @@ export default function StudentProfile() {
 
   // API Handlers (wrapped to refresh UI)
   const wrapSave = (url: string, method: string = 'PATCH') => async (data: any) => {
+    setErrorBanner(null);
     const res = await authFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) { await refreshData(); showToast('Profile Updated!'); }
+    let body: any = null;
+    try { body = await res.json(); } catch { body = null; }
+    if (!res.ok) {
+      const msg = body?.error || `Save failed (${res.status})`;
+      setErrorBanner(msg);
+      showToast(msg);
+      return;
+    }
+    await refreshData();
+    showToast('Profile Updated!');
   };
 
   if (loading) return (
@@ -97,6 +144,12 @@ export default function StudentProfile() {
         <div className="fixed top-24 right-8 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-3xl shadow-2xl animate-in slide-in-from-right-10 duration-300">
           <div className="p-1.5 bg-emerald-500 rounded-full text-white"><CheckCircle2 className="w-4 h-4" /></div>
           <span className="font-black text-sm">{toast}</span>
+        </div>
+      )}
+
+      {errorBanner && (
+        <div className="mb-6 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-800">
+          {errorBanner}
         </div>
       )}
 

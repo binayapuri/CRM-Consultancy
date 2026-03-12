@@ -141,7 +141,7 @@ const clientSchema = new mongoose.Schema({
     passportCountry: String,
     currentVisa: String,
     visaExpiry: Date,
-    address: { street: String, city: String, state: String, postcode: String, country: String },
+    address: { street: String, suburb: String, city: String, state: String, postcode: String, country: String },
     photoUrl: String,
     signatureUrl: String,
   },

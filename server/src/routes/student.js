@@ -42,16 +42,31 @@ async function getOrCreateStudentClient(userId, userProfile) {
     // consultancyId is a placeholder ObjectId (student-owned)
     const mongoose = (await import('mongoose')).default;
     const STUDENT_OWNED_CONSULTANCY = new mongoose.Types.ObjectId('000000000000000000000000');
+    const safeFirstName = (userProfile?.firstName && String(userProfile.firstName).trim()) ? String(userProfile.firstName).trim() : 'Student';
+    const safeLastName = (userProfile?.lastName && String(userProfile.lastName).trim()) ? String(userProfile.lastName).trim() : 'User';
+    const safeEmail = (userProfile?.email && String(userProfile.email).trim())
+      ? String(userProfile.email).trim()
+      : `${String(userId)}@orivisa.local`;
     client = await Client.create({
       userId,
       consultancyId: STUDENT_OWNED_CONSULTANCY,
       profile: {
-        firstName: userProfile?.firstName || '',
-        lastName: userProfile?.lastName || '',
-        email: userProfile?.email || '',
+        firstName: safeFirstName,
+        lastName: safeLastName,
+        email: safeEmail,
         phone: userProfile?.phone || '',
       },
     });
+  } else {
+    // Keep client profile basics in sync (non-destructive)
+    const patch = {};
+    if (userProfile?.firstName && !client.profile?.firstName) patch['profile.firstName'] = userProfile.firstName;
+    if (userProfile?.lastName && !client.profile?.lastName) patch['profile.lastName'] = userProfile.lastName;
+    if (userProfile?.phone && !client.profile?.phone) patch['profile.phone'] = userProfile.phone;
+    if (userProfile?.email && !client.profile?.email) patch['profile.email'] = userProfile.email;
+    if (Object.keys(patch).length) {
+      client = await Client.findByIdAndUpdate(client._id, { $set: patch }, { new: true });
+    }
   }
   return client;
 }
@@ -60,7 +75,17 @@ async function getOrCreateStudentClient(userId, userProfile) {
 router.get('/profile', async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-    const client = await Client.findOne({ userId: req.user._id });
+    const baseProfile = { ...(user?.profile || {}), email: user?.email || user?.profile?.email || '' };
+    const client = await getOrCreateStudentClient(req.user._id, baseProfile);
+    // Ensure client.profile.email is populated for the UI
+    if (user?.email && (!client?.profile?.email || client.profile.email !== user.email)) {
+      const updatedClient = await Client.findByIdAndUpdate(
+        client._id,
+        { $set: { 'profile.email': user.email } },
+        { new: true }
+      );
+      return res.json({ user, client: updatedClient });
+    }
     res.json({ user, client });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -81,20 +106,18 @@ router.patch('/profile', async (req, res) => {
     const user = await User.findByIdAndUpdate(req.user._id, { $set: update }, { new: true }).select('-password');
 
     // Also sync client profile
-    const client = await getOrCreateStudentClient(req.user._id, user?.profile);
+    const baseProfile = { ...(user?.profile || {}), email: user?.email || user?.profile?.email || '' };
+    const client = await getOrCreateStudentClient(req.user._id, baseProfile);
     const clientUpdate = {};
-    if (firstName !== undefined) clientUpdate['profile.firstName'] = firstName;
-    if (lastName !== undefined) clientUpdate['profile.lastName'] = lastName;
-    if (phone !== undefined) clientUpdate['profile.phone'] = phone;
-    if (dob !== undefined) clientUpdate['profile.dob'] = dob ? new Date(dob) : null;
-    if (gender !== undefined) clientUpdate['profile.gender'] = gender;
-    if (nationality !== undefined) clientUpdate['profile.nationality'] = nationality;
-    if (countryOfBirth !== undefined) clientUpdate['profile.countryOfBirth'] = countryOfBirth;
-    if (maritalStatus !== undefined) clientUpdate['profile.maritalStatus'] = maritalStatus;
-    if (passportNumber !== undefined) clientUpdate['profile.passportNumber'] = passportNumber;
-    if (passportExpiry !== undefined) clientUpdate['profile.passportExpiry'] = passportExpiry ? new Date(passportExpiry) : null;
-    if (passportCountry !== undefined) clientUpdate['profile.passportCountry'] = passportCountry;
-    if (address !== undefined) clientUpdate['profile.address'] = address;
+    const pFields = ['firstName', 'lastName', 'phone', 'dob', 'gender', 'nationality', 'countryOfBirth', 'maritalStatus', 'passportNumber', 'passportExpiry', 'passportCountry', 'address'];
+    pFields.forEach(f => {
+      if (req.body[f] !== undefined) {
+        if (f === 'dob' || f === 'passportExpiry') clientUpdate[`profile.${f}`] = req.body[f] ? new Date(req.body[f]) : null;
+        else clientUpdate[`profile.${f}`] = req.body[f];
+      }
+    });
+    // Always keep email available on client.profile for the UI
+    if (user?.email) clientUpdate['profile.email'] = user.email;
 
     const updatedClient = await Client.findByIdAndUpdate(client._id, { $set: clientUpdate }, { new: true });
     res.json({ user, client: updatedClient });
@@ -138,12 +161,14 @@ router.patch('/immigration', async (req, res) => {
 router.patch('/english-test', async (req, res) => {
   try {
     const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
-    const { testType, score, listening, reading, writing, speaking, trf, testDate, expiryDate } = req.body;
-    const update = { englishTest: {
-      testType, score, listening, reading, writing, speaking, trf,
-      testDate: testDate ? new Date(testDate) : undefined,
-      expiryDate: expiryDate ? new Date(expiryDate) : undefined,
-    }};
+    const update = {};
+    const eFields = ['testType', 'score', 'listening', 'reading', 'writing', 'speaking', 'trf', 'testDate', 'expiryDate'];
+    eFields.forEach(f => {
+      if (req.body[f] !== undefined) {
+        if (f === 'testDate' || f === 'expiryDate') update[`englishTest.${f}`] = req.body[f] ? new Date(req.body[f]) : null;
+        else update[`englishTest.${f}`] = req.body[f];
+      }
+    });
     const updated = await Client.findByIdAndUpdate(client._id, { $set: update }, { new: true });
     res.json(updated);
   } catch (err) {

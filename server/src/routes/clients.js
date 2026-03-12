@@ -608,27 +608,27 @@ router.patch('/:id/english-test', authenticate, async (req, res) => {
 // Addresses
 router.patch('/:id/addresses/current', authenticate, async (req, res) => {
   try {
-    const client = await Client.findByIdAndUpdate(req.params.id, { 'address.current': req.body }, { new: true });
-    res.json(client.address);
+    const client = await Client.findByIdAndUpdate(req.params.id, { 'profile.address': req.body }, { new: true });
+    res.json(client.profile.address);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/:id/addresses', authenticate, async (req, res) => {
   try {
     const client = await Client.findById(req.params.id);
-    client.address.previous = client.address.previous || [];
-    client.address.previous.push(req.body);
+    client.previousAddresses = client.previousAddresses || [];
+    client.previousAddresses.push(req.body);
     await client.save();
-    res.json(client.address);
+    res.json(client.previousAddresses);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.delete('/:id/addresses/:addrId', authenticate, async (req, res) => {
   try {
     const client = await Client.findById(req.params.id);
-    client.address.previous = client.address.previous.filter(a => a._id.toString() !== req.params.addrId);
+    client.previousAddresses = (client.previousAddresses || []).filter(a => a._id.toString() !== req.params.addrId);
     await client.save();
-    res.json(client.address);
+    res.json(client.previousAddresses);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
