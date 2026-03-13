@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { authFetch } from '../../store/auth';
-import { Trash2, FileText, File, Image, Download, CheckCircle2, AlertTriangle, Plus, X, Folder, ClipboardList, Paperclip, Upload, Loader2 } from 'lucide-react';
+import { useUiStore } from '../../store/ui';
+import { Trash2, FileText, File, Image, Download, CheckCircle2, Plus, Folder, ClipboardList, Upload, Loader2 } from 'lucide-react';
 import { DOC_TYPE_ICONS } from './icons';
 
 const DOC_TYPES = [
@@ -58,14 +59,108 @@ export default function Documents() {
   const [docs, setDocs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
   const [selectedType, setSelectedType] = useState('PASSPORT');
   const [docName, setDocName] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeChecklist, setActiveChecklist] = useState<keyof typeof CHECKLISTS>('student500');
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const { openModal, closeModal, showToast, openConfirm, modal, setModalContentGetter, bumpModalContentKey } = useUiStore();
+
+  // Return form JSX with current closure so Modal can show live document type, file, and preview
+  const getUploadFormContent = () => (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Document Type</label>
+        <select value={selectedType} onChange={e => { setSelectedType(e.target.value); setDocName(''); }} className="w-full px-4 py-3 rounded-xl text-sm font-semibold bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/40">
+          {DOC_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Label (optional)</label>
+        <input value={docName} onChange={e => setDocName(e.target.value)} placeholder="e.g. IELTS result — 7.5 overall" className="w-full px-4 py-3 rounded-xl text-sm font-medium bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/40" />
+      </div>
+
+      <div>
+        <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">File</label>
+        <input type="file" ref={fileRef} className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif" />
+        {!file ? (
+          <div
+            className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-indigo-400 transition-colors bg-slate-50"
+            style={{ borderColor: '#CBD5E1' }}
+            onClick={() => fileRef.current?.click()}
+          >
+            <p className="font-bold text-slate-500 text-sm">Click to select file</p>
+            <p className="text-xs text-slate-400 mt-1">PDF, DOC, DOCX, JPG, PNG · Max 10 MB</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div
+              className="border-2 rounded-lg overflow-hidden flex flex-col"
+              style={{ borderColor: '#6366F1', background: '#EEF2FF' }}
+            >
+              {file.type.startsWith('image/') && filePreviewUrl ? (
+                <div className="relative aspect-video bg-slate-200 flex items-center justify-center min-h-[180px]">
+                  <img src={filePreviewUrl} alt={file.name} className="max-h-64 w-auto object-contain" />
+                </div>
+              ) : file.type === 'application/pdf' && filePreviewUrl ? (
+                <div className="relative aspect-[4/3] bg-slate-100 min-h-[200px]">
+                  <iframe src={filePreviewUrl} title={file.name} className="w-full h-full min-h-[200px] border-0" />
+                </div>
+              ) : (
+                <div className="p-6 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-slate-200 flex items-center justify-center shrink-0">
+                    <FileText className="w-7 h-7 text-slate-500" />
+                  </div>
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="font-bold text-slate-800 text-sm truncate">{file.name}</p>
+                    <p className="text-xs text-slate-500">{formatBytes(file.size)}</p>
+                  </div>
+                </div>
+              )}
+              <div className="px-4 py-3 border-t border-indigo-100 flex items-center justify-between gap-2 bg-white/60">
+                <span className="font-semibold text-indigo-700 text-sm truncate">{file.name}</span>
+                <span className="text-xs text-slate-500 shrink-0">{formatBytes(file.size)}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-full py-2 rounded-lg text-sm font-bold text-indigo-600 border border-indigo-200 hover:bg-indigo-50 transition-colors"
+            >
+              Choose different file
+            </button>
+          </div>
+        )}
+      </div>
+
+      <button onClick={handleUpload} disabled={!file || uploading} className="w-full py-3 rounded-lg font-black text-white text-sm disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+        {uploading ? <><Loader2 className="w-4 h-4 animate-spin" aria-hidden /> Uploading...</> : <><Upload className="w-4 h-4" aria-hidden /> Upload Document</>}
+      </button>
+    </div>
+  );
+
+  // When upload modal is open, set the content getter so Modal renders fresh form state (document type, file, preview)
+  useEffect(() => {
+    if (modal.open) {
+      setModalContentGetter(getUploadFormContent);
+      bumpModalContentKey();
+    }
+  }, [modal.open, file, selectedType, docName, description, uploading, filePreviewUrl, setModalContentGetter, bumpModalContentKey]);
+
+  // Create/revoke object URL for file preview (images, PDF)
+  useEffect(() => {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setFilePreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+      setFilePreviewUrl(null);
+    };
+  }, [file]);
 
   const fetchDocs = () => {
     authFetch('/api/student/documents')
@@ -76,9 +171,11 @@ export default function Documents() {
   useEffect(() => { fetchDocs(); }, []);
 
   const handleUpload = async () => {
-    if (!file) return setMsg({ type: 'error', text: 'Please select a file' });
+    if (!file) {
+      showToast('Please select a file', 'error');
+      return;
+    }
     setUploading(true);
-    setMsg(null);
     try {
       const fd = new FormData();
       fd.append('file', file);
@@ -88,21 +185,41 @@ export default function Documents() {
       const res = await authFetch('/api/student/documents', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed');
-      setMsg({ type: 'success', text: 'Document uploaded successfully!' });
-      setFile(null); setDocName(''); setDescription(''); setShowUpload(false);
+      setFile(null);
+      setDocName('');
+      setDescription('');
       if (fileRef.current) fileRef.current.value = '';
+      closeModal();
+      showToast('Document uploaded successfully!', 'success');
       fetchDocs();
     } catch (e: any) {
-      setMsg({ type: 'error', text: e.message });
+      showToast(e.message || 'Upload failed', 'error');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this document? This cannot be undone.')) return;
-    const res = await authFetch(`/api/student/documents/${id}`, { method: 'DELETE' });
-    if (res.ok) fetchDocs();
+  const handleDelete = (id: string) => {
+    openConfirm({
+      title: 'Delete document',
+      message: 'Delete this document? This cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        const res = await authFetch(`/api/student/documents/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast('Document deleted', 'success');
+          fetchDocs();
+        } else {
+          const data = await res.json().catch(() => ({}));
+          showToast(data.error || 'Delete failed', 'error');
+        }
+      },
+    });
+  };
+
+  const openUploadModal = () => {
+    openModal('Upload New Document', getUploadFormContent);
   };
 
   const uploadedTypes = new Set(docs.map(d => d.type));
@@ -118,66 +235,10 @@ export default function Documents() {
           </h1>
           <p className="text-slate-500 font-medium mt-2">Securely store your visa, education, and immigration documents.</p>
         </div>
-        <button onClick={() => setShowUpload(!showUpload)} className="flex items-center gap-2 px-5 py-3 rounded-lg font-black text-white text-sm" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+        <button onClick={openUploadModal} className="flex items-center gap-2 px-5 py-3 rounded-lg font-black text-white text-sm" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
           <Plus className="w-4 h-4" /> Upload Document
         </button>
       </div>
-
-      {/* Upload Panel */}
-      {showUpload && (
-        <div className="mb-6 bg-white rounded-xl p-6 space-y-4 animate-fade-in-up" style={{ border: '2px solid #C7D2FE' }}>
-          <div className="flex items-center justify-between">
-            <h3 className="font-black text-slate-900 text-lg">Upload New Document</h3>
-            <button onClick={() => { setShowUpload(false); setFile(null); setMsg(null); }}><X className="w-5 h-5 text-slate-400" /></button>
-          </div>
-
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Document Type</label>
-            <select value={selectedType} onChange={e => { setSelectedType(e.target.value); setDocName(''); }} className="w-full px-4 py-3 rounded-xl text-sm font-semibold bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/40">
-              {DOC_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Label (optional)</label>
-            <input value={docName} onChange={e => setDocName(e.target.value)} placeholder="e.g. IELTS result — 7.5 overall" className="w-full px-4 py-3 rounded-xl text-sm font-medium bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/40" />
-          </div>
-
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">File</label>
-            <div
-              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-indigo-400 transition-colors"
-              style={{ borderColor: file ? '#6366F1' : '#CBD5E1', background: file ? '#EEF2FF' : '#F8FAFC' }}
-              onClick={() => fileRef.current?.click()}
-            >
-              <input type="file" ref={fileRef} className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif" />
-              {file ? (
-                <div>
-                  <div className="mb-1 flex justify-center"><Paperclip className="w-8 h-8 text-indigo-500" aria-hidden /></div>
-                  <p className="font-bold text-indigo-700 text-sm">{file.name}</p>
-                  <p className="text-xs text-slate-400">{formatBytes(file.size)}</p>
-                </div>
-              ) : (
-                <div>
-                  <p className="font-bold text-slate-500 text-sm">Click to select file</p>
-                  <p className="text-xs text-slate-400 mt-1">PDF, DOC, DOCX, JPG, PNG · Max 10 MB</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {msg && (
-            <div className={`flex items-center gap-2 p-3 rounded-xl text-sm font-medium ${msg.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-              {msg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-              {msg.text}
-            </div>
-          )}
-
-          <button onClick={handleUpload} disabled={!file || uploading} className="w-full py-3 rounded-lg font-black text-white text-sm disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
-            {uploading ? <><Loader2 className="w-4 h-4 animate-spin" aria-hidden /> Uploading...</> : <><Upload className="w-4 h-4" aria-hidden /> Upload Document</>}
-          </button>
-        </div>
-      )}
 
       {/* Visa checklist */}
       <div className="mb-6">

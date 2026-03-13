@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { CheckCircle2, Circle, ExternalLink, Calculator } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CheckCircle2, Circle, ExternalLink, Calculator, Save } from 'lucide-react';
+import { authFetch } from '../../store/auth';
+import { useUiStore } from '../../store/ui';
 
 // ─── Official Australian Points Test (2025–2026) ──────────────────────────
 
@@ -46,6 +48,12 @@ const PARTNER_OPTIONS = [
   { value: 'partner_none', label: 'Accompanying partner — does NOT meet above criteria', pts: 0 },
 ];
 
+const VALID_ENGLISH = new Set(['superior', 'proficient', 'competent']);
+const VALID_EDUCATION = new Set(['phd', 'masters', 'bachelor', 'diploma', 'none']);
+const VALID_AUS_WORK = new Set(['8', '5', '3', '1', '0']);
+const VALID_OS_WORK = new Set(['8', '5', '3', '0']);
+const VALID_PARTNER = new Set(['partner_points', 'single', 'partner_none']);
+
 export default function PRCalculator() {
   const [age, setAge] = useState(28);
   const [english, setEnglish] = useState('proficient');
@@ -58,6 +66,81 @@ export default function PRCalculator() {
   const [professionalYear, setProfessionalYear] = useState(false);
   const [naati, setNaati] = useState(false);
   const [stemDoctorate, setStemDoctorate] = useState(false);
+  const [pointsLoading, setPointsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const showToast = useUiStore((s) => s.showToast);
+
+  // ── Load saved points on mount ─────────────────────────────────────────────
+  useEffect(() => {
+    authFetch('/api/student/points')
+      .then((r) => r.json())
+      .then((data) => {
+        const pd = data?.pointsData;
+        if (!pd) {
+          setPointsLoading(false);
+          return;
+        }
+        if (typeof pd.age === 'number' && pd.age >= 18 && pd.age <= 50) setAge(pd.age);
+        if (pd.english && VALID_ENGLISH.has(pd.english)) setEnglish(pd.english);
+        if (pd.education && VALID_EDUCATION.has(pd.education)) setEducation(pd.education);
+        if (pd.ausWork != null && VALID_AUS_WORK.has(String(pd.ausWork))) setAusWork(String(pd.ausWork));
+        if (pd.osWork != null && VALID_OS_WORK.has(String(pd.osWork))) setOsWork(String(pd.osWork));
+        if (pd.partner && VALID_PARTNER.has(pd.partner)) setPartner(pd.partner);
+        if (typeof pd.ausStudy === 'boolean') setAusStudy(pd.ausStudy);
+        if (typeof pd.regionalStudy === 'boolean') setRegionalStudy(pd.regionalStudy);
+        if (typeof pd.professionalYear === 'boolean') setProfessionalYear(pd.professionalYear);
+        if (typeof pd.naati === 'boolean') setNaati(pd.naati);
+        if (typeof pd.stemDoctorate === 'boolean') setStemDoctorate(pd.stemDoctorate);
+        setPointsLoading(false);
+      })
+      .catch(() => setPointsLoading(false));
+  }, []);
+
+  const handleSavePoints = async () => {
+    setSaveMessage(null);
+    setSaving(true);
+    const payload = {
+      age,
+      english,
+      education,
+      ausWork,
+      osWork,
+      partner,
+      ausStudy,
+      regionalStudy,
+      professionalYear,
+      naati,
+      stemDoctorate,
+      totalPoints: total,
+    };
+    // #region agent log
+    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'PRCalculator.tsx:handleSavePoints:before', message: 'PATCH save points request', data: { url: '/api/student/points', bodyKeys: Object.keys(payload), total }, timestamp: Date.now(), hypothesisId: 'H1' }) }).catch(() => {});
+    // #endregion
+    try {
+      const res = await authFetch('/api/student/points', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      // #region agent log
+      const errBody = !res.ok ? await res.clone().json().catch(() => ({})) : null;
+      fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'PRCalculator.tsx:handleSavePoints:after', message: 'PATCH response', data: { status: res.status, ok: res.ok, errBody }, timestamp: Date.now(), hypothesisId: 'H2' }) }).catch(() => {});
+      // #endregion
+      if (!res.ok) {
+        throw new Error((errBody as { error?: string })?.error || 'Failed to save');
+      }
+      showToast('Points saved.', 'success');
+      setSaveMessage({ type: 'success', text: 'Points saved.' });
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to save.';
+      showToast(msg, 'error');
+      setSaveMessage({ type: 'error', text: msg });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // ── Compute points ─────────────────────────────────────────────────────────
   const agePts = AGE_POINTS.find(a => age >= a.min && age <= a.max)?.pts ?? 0;
@@ -246,6 +329,25 @@ export default function PRCalculator() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Save my points */}
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleSavePoints}
+              disabled={saving}
+              className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl font-bold text-white transition-all disabled:opacity-60"
+              style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}
+            >
+              <Save className="w-4 h-4" aria-hidden />
+              {saving ? 'Saving…' : 'Save my points'}
+            </button>
+            {saveMessage && (
+              <p className={`text-sm font-semibold text-center ${saveMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                {saveMessage.text}
+              </p>
+            )}
           </div>
 
           {/* Breakdown */}

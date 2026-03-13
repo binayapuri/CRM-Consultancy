@@ -79,12 +79,17 @@ function isTokenInvalid401(res: Response, body: { error?: string } | null): bool
   return /invalid token|token expired|jwt|signature|malformed|sign in again|no token|authorization/i.test(msg);
 }
 
+const API_BASE =
+  (import.meta.env.VITE_API_URL as string) ||
+  (import.meta.env.DEV ? 'http://localhost:4000' : '');
+
 export function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
   const token = useAuthStore.getState().token;
   const headers: Record<string, string> = { ...(opts.headers as Record<string, string>) };
   if (token) headers.Authorization = `Bearer ${token}`;
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
 
-  return fetch(url, { ...opts, headers }).then((res) => {
+  return fetch(fullUrl, { ...opts, headers }).then((res) => {
     // NEVER force logout on 403 — that is a role/permission deny, not an auth failure
     if (res.status === 401) {
       res.clone().json()

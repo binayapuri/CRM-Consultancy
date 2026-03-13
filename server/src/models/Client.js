@@ -195,12 +195,25 @@ const clientSchema = new mongoose.Schema({
     status: { type: String, enum: ['PENDING', 'RESPONDED', 'EXTENDED', 'CLOSED'], default: 'PENDING' },
   }],
   pointsData: {
+    // Legacy fields (kept for consultancy/application views)
     age: Number,
     englishScore: String,
     educationLevel: String,
     workExperience: Number,
     partnerPoints: Number,
     totalPoints: Number,
+    // Full calculator snapshot for round-trip load/save (PR Calculator)
+    english: String,
+    education: String,
+    ausWork: String,
+    osWork: String,
+    partner: String,
+    ausStudy: Boolean,
+    regionalStudy: Boolean,
+    professionalYear: Boolean,
+    naati: Boolean,
+    stemDoctorate: Boolean,
+    savedAt: Date,
   },
   initialNotes: String,
   notes: [{

@@ -138,6 +138,91 @@ router.post('/profile/avatar', upload.single('file'), async (req, res) => {
   }
 });
 
+// ─── GET /api/student/points — Load saved PR calculator data ───────────────────
+export async function getPointsHandler(req, res) {
+  try {
+    const user = await User.findById(req.user._id).select('profile');
+    const baseProfile = { ...(user?.profile || {}), email: user?.email || user?.profile?.email || '' };
+    const client = await getOrCreateStudentClient(req.user._id, baseProfile);
+    const pointsData = client.pointsData || {};
+    res.json({ pointsData });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+// ─── PATCH /api/student/points — Save PR calculator inputs and total ───────────
+export async function savePointsHandler(req, res) {
+  // #region agent log
+  fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:entry', message: 'handler entered', data: { userId: req.user?._id?.toString(), hasBody: !!req.body, bodyKeys: req.body ? Object.keys(req.body) : [] }, timestamp: Date.now(), hypothesisId: 'H3' }) }).catch(() => {});
+  // #endregion
+  try {
+    const user = await User.findById(req.user._id).select('profile');
+    const baseProfile = { ...(user?.profile || {}), email: user?.email || user?.profile?.email || '' };
+    const client = await getOrCreateStudentClient(req.user._id, baseProfile);
+    // #region agent log
+    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:afterClient', message: 'client resolved', data: { clientId: client?._id?.toString() }, timestamp: Date.now(), hypothesisId: 'H4' }) }).catch(() => {});
+    // #endregion
+    const {
+      age,
+      english,
+      education,
+      ausWork,
+      osWork,
+      partner,
+      ausStudy,
+      regionalStudy,
+      professionalYear,
+      naati,
+      stemDoctorate,
+      totalPoints,
+    } = req.body;
+
+    const existing = (client.pointsData && typeof client.pointsData.toObject === 'function')
+      ? client.pointsData.toObject()
+      : (client.pointsData && typeof client.pointsData === 'object' ? client.pointsData : {});
+    const pointsData = {
+      ...existing,
+      age: age != null ? Number(age) : existing.age,
+      english: english != null ? String(english) : existing.english,
+      education: education != null ? String(education) : existing.education,
+      ausWork: ausWork != null ? String(ausWork) : existing.ausWork,
+      osWork: osWork != null ? String(osWork) : existing.osWork,
+      partner: partner != null ? String(partner) : existing.partner,
+      ausStudy: ausStudy != null ? Boolean(ausStudy) : existing.ausStudy,
+      regionalStudy: regionalStudy != null ? Boolean(regionalStudy) : existing.regionalStudy,
+      professionalYear: professionalYear != null ? Boolean(professionalYear) : existing.professionalYear,
+      naati: naati != null ? Boolean(naati) : existing.naati,
+      stemDoctorate: stemDoctorate != null ? Boolean(stemDoctorate) : existing.stemDoctorate,
+      totalPoints: totalPoints != null ? Number(totalPoints) : existing.totalPoints,
+      savedAt: new Date(),
+    };
+    // Legacy fields for consultancy/application views
+    if (pointsData.english != null) pointsData.englishScore = pointsData.english;
+    if (pointsData.education != null) pointsData.educationLevel = pointsData.education;
+    if (pointsData.ausWork != null) pointsData.workExperience = Number(pointsData.ausWork) || 0;
+
+    const updated = await Client.findByIdAndUpdate(
+      client._id,
+      { $set: { pointsData } },
+      { new: true }
+    );
+    // #region agent log
+    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:success', message: 'saved', data: {}, timestamp: Date.now(), hypothesisId: 'H5' }) }).catch(() => {});
+    // #endregion
+    res.json({ pointsData: updated.pointsData });
+  } catch (err) {
+    // #region agent log
+    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:catch', message: 'handler error', data: { errMessage: err?.message, errName: err?.name }, timestamp: Date.now(), hypothesisId: 'H3' }) }).catch(() => {});
+    // #endregion
+    res.status(500).json({ error: err.message });
+  }
+}
+
+router.get('/points', getPointsHandler);
+router.patch('/points', savePointsHandler);
+router.patch('/points/', savePointsHandler);
+
 // ─── PATCH /api/student/immigration ───────────────────────────────────────────
 router.patch('/immigration', async (req, res) => {
   try {

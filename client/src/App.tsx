@@ -85,6 +85,9 @@ import SponsorCompanyInfo from './pages/sponsor/CompanyInfo';
 // Landing
 import Landing from './pages/Landing';
 
+// Global UI
+import { ToastContainer, Modal, ConfirmDialog } from './components/ui';
+
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles: string[] }) {
   const { user, token } = useAuthStore();
   if (!token || !user) return <Navigate to="/login" replace />;
@@ -100,7 +103,11 @@ function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ToastContainer />
+      <Modal />
+      <ConfirmDialog />
+      <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
       <Route path="/forgot-password" element={<GuestOnlyRoute><ForgotPassword /></GuestOnlyRoute>} />
@@ -190,6 +197,7 @@ export default function App() {
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }

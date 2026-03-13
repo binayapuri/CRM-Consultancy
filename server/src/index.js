@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import passport from 'passport';
+import { authenticate } from './middleware/auth.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import consultancyRoutes from './routes/consultancies.js';
@@ -42,13 +43,30 @@ import newsRoutes from './routes/news.js';
 import jobsRoutes from './routes/jobs.js';
 import appointmentsRoutes from './routes/appointments.js';
 import reviewsRoutes from './routes/reviews.js';
-import studentRoutes from './routes/student.js';
+import studentRoutes, { getPointsHandler, savePointsHandler } from './routes/student.js';
 
 dotenv.config();
+
+// Student-only role check (must run after authenticate)
+const studentOnly = (req, res, next) => {
+  if (req.user?.role !== 'STUDENT' && req.user?.role !== 'SUPER_ADMIN') {
+    return res.status(403).json({ error: 'Student portal only' });
+  }
+  next();
+};
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// #region agent log — confirm if request reaches backend
+app.use((req, res, next) => {
+  if (req.path === '/api/student/points' || req.originalUrl?.includes('student/points')) {
+    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'index.js:incoming', message: 'request reached backend', data: { method: req.method, path: req.path, url: req.originalUrl }, timestamp: Date.now(), hypothesisId: 'H0' }) }).catch(() => {});
+  }
+  next();
+});
+// #endregion
 
 app.use(cors());
 app.use(express.json());
@@ -64,7 +82,11 @@ mongoose.connect(MONGODB_URI)
   .then(() => console.log('✓ MongoDB connected'))
   .catch(err => console.error('MongoDB error:', err));
 
-// API Routes
+// API Routes — register /api/student/points explicitly first so PATCH is always matched
+app.get('/api/student/points', authenticate, studentOnly, getPointsHandler);
+app.patch('/api/student/points', authenticate, studentOnly, savePointsHandler);
+app.patch('/api/student/points/', authenticate, studentOnly, savePointsHandler);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/users', userRoutes);
