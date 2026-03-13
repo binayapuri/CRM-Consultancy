@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, Building2, Calculator, Compass, Shield, Users, Send, ArrowRight } from 'lucide-react';
+import { useAuthStore } from '../store/auth';
+import { getDashboardPathForRole } from '../lib/authHelpers';
 
 const INTERESTS = ['Student Visa (500)', 'Graduate Visa (485)', 'Skilled Migration (189/190/491)', 'Partner Visa', 'Visitor Visa', 'Other'];
 
@@ -12,9 +14,16 @@ const visaTypes = [
 ];
 
 export default function Landing() {
+  const { user, token } = useAuthStore();
   const [enquiry, setEnquiry] = useState({ firstName: '', lastName: '', email: '', phone: '', interest: '', message: '' });
   const [enquiryStatus, setEnquiryStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [heroWordIndex, setHeroWordIndex] = useState(0);
+  const displayName = user?.profile?.firstName || user?.profile?.lastName
+    ? [user?.profile?.firstName, user?.profile?.lastName].filter(Boolean).join(' ')
+    : user?.email ?? '';
+  const initials = `${user?.profile?.firstName?.[0] ?? ''}${user?.profile?.lastName?.[0] ?? ''}`.toUpperCase()
+    || (user?.email ?? '').slice(0, 2).toUpperCase()
+    || '?';
 
   const heroWords = ['Student visas', 'PR pathways', 'Skilled migration', 'Life after graduation'];
 
@@ -71,10 +80,28 @@ export default function Landing() {
             <a href="#enquiry" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Contact</a>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="text-sm font-semibold text-white hover:text-emerald-400 transition-colors">Sign In</Link>
-            <Link to="/register" className="relative group px-6 py-2.5 rounded-full bg-white text-slate-900 font-bold overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]">
-              <span className="relative z-10 flex items-center gap-2">Start Journey <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></span>
-            </Link>
+            {token && user ? (
+              <Link
+                to={getDashboardPathForRole(user.role)}
+                className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 border border-white/10 hover:bg-white/15 hover:border-white/20 transition-all"
+              >
+                {user.profile?.avatar ? (
+                  <img src={user.profile.avatar} alt="" className="w-8 h-8 rounded-full object-cover border border-white/20" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 bg-gradient-to-br from-emerald-500 to-teal-500">
+                    {initials}
+                  </div>
+                )}
+                <span className="text-sm font-semibold text-white truncate max-w-[140px]">{displayName}</span>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm font-semibold text-white hover:text-emerald-400 transition-colors">Sign In</Link>
+                <Link to="/register" className="relative group px-6 py-2.5 rounded-full bg-white text-slate-900 font-bold overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]">
+                  <span className="relative z-10 flex items-center gap-2">Start Journey <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>

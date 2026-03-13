@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Plus, Trash2, Calendar, User, FileCheck } from 'lucide-react';
+import { Heart, Plus, Trash2, Calendar, User, FileCheck, CheckCircle2, Circle } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
 import { SI, SS, F, TA } from '../shared';
 
@@ -29,7 +29,7 @@ export const FamilyInfo: React.FC<FamilyInfoProps> = ({ items, onAdd, onDelete }
       <div className="space-y-6">
         <div className="space-y-4">
           {items.map((item) => (
-            <div key={item._id} className="relative group bg-slate-50/50 p-5 rounded-2xl border border-slate-100 hover:border-indigo-100 transition-all">
+            <div key={item._id} className="relative group bg-slate-50/50 p-5 rounded-lg border border-slate-100 hover:border-indigo-100 transition-all">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -43,7 +43,7 @@ export const FamilyInfo: React.FC<FamilyInfoProps> = ({ items, onAdd, onDelete }
                   </div>
                   <div className="mt-3 flex items-center gap-4">
                      <span className={`flex items-center gap-1.5 text-xs font-black ${item.includedInApplication ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-100'} px-3 py-1 rounded-xl`}>
-                       {item.includedInApplication ? '✅ Included in Application' : '⚪ Not Included'}
+                       {item.includedInApplication ? <><CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden /> Included in Application</> : <><Circle className="w-3.5 h-3.5 shrink-0" aria-hidden /> Not Included</>}
                      </span>
                      {item.visaStatus && <span className="text-xs font-bold text-slate-500 italic">Visa: {item.visaStatus}</span>}
                   </div>
@@ -55,11 +55,11 @@ export const FamilyInfo: React.FC<FamilyInfoProps> = ({ items, onAdd, onDelete }
         </div>
 
         {!showAddForm ? (
-          <button onClick={() => setShowAddForm(true)} className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+          <button onClick={() => setShowAddForm(true)} className="w-full py-4 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> Add Family Member Details
           </button>
         ) : (
-          <div className="bg-slate-50 p-6 rounded-3xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
+          <div className="bg-slate-50 p-6 rounded-xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <F label="Relationship"><SS value={newEntry.relationship} onChange={e => setNewEntry({...newEntry, relationship: e.target.value})}>{RELATIONS.map(r=><option key={r}>{r}</option>)}</SS></F>
               <F label="First Name"><SI value={newEntry.firstName} onChange={e => setNewEntry({...newEntry, firstName: e.target.value})} /></F>

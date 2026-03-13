@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, Circle, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Circle, ExternalLink, Calculator } from 'lucide-react';
 
 // ─── Official Australian Points Test (2025–2026) ──────────────────────────
 
@@ -113,7 +113,7 @@ export default function PRCalculator() {
   );
 
   const BoolCard = ({ label, desc, checked, onChange }: { label: string; desc: string; checked: boolean; onChange: (v: boolean) => void }) => (
-    <label className="flex items-start justify-between gap-4 p-4 rounded-2xl cursor-pointer transition-all" style={{ background: checked ? '#EEF2FF' : '#F8FAFC', border: `1.5px solid ${checked ? '#C7D2FE' : '#E2E8F0'}` }}>
+    <label className="flex items-start justify-between gap-4 p-4 rounded-lg cursor-pointer transition-all" style={{ background: checked ? '#EEF2FF' : '#F8FAFC', border: `1.5px solid ${checked ? '#C7D2FE' : '#E2E8F0'}` }}>
       <div className="flex items-start gap-3">
         <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="sr-only" />
         {checked ? <CheckCircle2 className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" /> : <Circle className="w-5 h-5 text-slate-300 shrink-0 mt-0.5" />}
@@ -127,10 +127,12 @@ export default function PRCalculator() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-black text-slate-900 tracking-tight">🧮 PR Points Calculator</h1>
+        <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <Calculator className="w-10 h-10 text-indigo-600 shrink-0" aria-hidden /> PR Points Calculator
+        </h1>
         <p className="text-slate-500 font-medium mt-2">Based on the official Australian Skilled Migration Points Test. Updated for 2025–2026.</p>
       </div>
 
@@ -139,14 +141,14 @@ export default function PRCalculator() {
         <div className="space-y-6">
 
           {/* Age */}
-          <div className="bg-white rounded-3xl p-6" style={{ border: '1px solid #E8EDFB' }}>
+          <div className="bg-white rounded-xl p-6" style={{ border: '1px solid #E8EDFB' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-black text-slate-900">1. Age</h3>
               <span className="font-black text-emerald-600 text-lg">+{agePts} pts</span>
             </div>
             <div className="flex items-center gap-4">
               <input type="range" min={18} max={50} value={age} onChange={e => setAge(Number(e.target.value))} className="flex-1" style={{ accentColor: '#6366F1' }} />
-              <div className="w-16 h-14 rounded-2xl flex items-center justify-center font-black text-2xl text-white" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>{age}</div>
+              <div className="w-16 h-14 rounded-lg flex items-center justify-center font-black text-2xl text-white" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>{age}</div>
             </div>
             <div className="flex justify-between text-xs font-bold text-slate-400 mt-2 px-0.5">
               <span>18</span><span>25</span><span>33</span><span>40</span><span>45+</span>
@@ -154,7 +156,7 @@ export default function PRCalculator() {
           </div>
 
           {/* English */}
-          <div className="bg-white rounded-3xl p-6" style={{ border: '1px solid #E8EDFB' }}>
+          <div className="bg-white rounded-xl p-6" style={{ border: '1px solid #E8EDFB' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-black text-slate-900">2. English Language</h3>
               <span className="font-black text-emerald-600 text-lg">+{engPts} pts</span>
@@ -163,7 +165,7 @@ export default function PRCalculator() {
           </div>
 
           {/* Education */}
-          <div className="bg-white rounded-3xl p-6" style={{ border: '1px solid #E8EDFB' }}>
+          <div className="bg-white rounded-xl p-6" style={{ border: '1px solid #E8EDFB' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-black text-slate-900">3. Education</h3>
               <span className="font-black text-emerald-600 text-lg">+{eduPts} pts</span>
@@ -172,7 +174,7 @@ export default function PRCalculator() {
           </div>
 
           {/* Australian work */}
-          <div className="bg-white rounded-3xl p-6" style={{ border: '1px solid #E8EDFB' }}>
+          <div className="bg-white rounded-xl p-6" style={{ border: '1px solid #E8EDFB' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-black text-slate-900">4. Australian Work Experience</h3>
               <span className="font-black text-emerald-600 text-lg">+{ausPts} pts</span>
@@ -182,7 +184,7 @@ export default function PRCalculator() {
           </div>
 
           {/* Overseas work */}
-          <div className="bg-white rounded-3xl p-6" style={{ border: '1px solid #E8EDFB' }}>
+          <div className="bg-white rounded-xl p-6" style={{ border: '1px solid #E8EDFB' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-black text-slate-900">5. Overseas Work Experience</h3>
               <span className="font-black text-emerald-600 text-lg">+{osPts} pts</span>
@@ -192,7 +194,7 @@ export default function PRCalculator() {
           </div>
 
           {/* Partner */}
-          <div className="bg-white rounded-3xl p-6" style={{ border: '1px solid #E8EDFB' }}>
+          <div className="bg-white rounded-xl p-6" style={{ border: '1px solid #E8EDFB' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-black text-slate-900">6. Partner Status</h3>
               <span className="font-black text-emerald-600 text-lg">+{ptnPts} pts</span>
@@ -201,7 +203,7 @@ export default function PRCalculator() {
           </div>
 
           {/* Bonus factors */}
-          <div className="bg-white rounded-3xl p-6" style={{ border: '1px solid #E8EDFB' }}>
+          <div className="bg-white rounded-xl p-6" style={{ border: '1px solid #E8EDFB' }}>
             <h3 className="font-black text-slate-900 mb-5">7. Bonus Points (each worth +5)</h3>
             <div className="space-y-3">
               <BoolCard label="Australian Study Requirement" desc="Completed at least 1 academic year of study in Australia" checked={ausStudy} onChange={setAusStudy} />
@@ -216,7 +218,7 @@ export default function PRCalculator() {
         {/* ── Right: Result ── */}
         <div className="space-y-6 lg:sticky lg:top-8 self-start">
           {/* Score display */}
-          <div className="rounded-3xl p-8 text-center" style={{ background: status.bg, border: `2px solid ${status.color}40` }}>
+          <div className="rounded-xl p-8 text-center" style={{ background: status.bg, border: `2px solid ${status.color}40` }}>
             <p className="text-sm font-black uppercase tracking-widest mb-3" style={{ color: status.color }}>Your Score</p>
             <div className="relative inline-block">
               <div className="text-8xl font-black leading-none" style={{ color: status.color }}>{total}</div>
@@ -228,15 +230,18 @@ export default function PRCalculator() {
             <span className="inline-block px-4 py-1.5 rounded-full text-sm font-black text-white" style={{ background: status.color }}>{status.label}</span>
             <p className="text-sm font-medium mt-3" style={{ color: status.color }}>{status.msg}</p>
 
-            <div className="mt-6 p-4 rounded-2xl bg-white/60 text-left">
+            <div className="mt-6 p-4 rounded-lg bg-white/60 text-left">
               <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-2">EOI Thresholds (May 2025)</p>
               {[
-                { label: 'Min for EOI submission', pts: 65, icon: '🔵' },
-                { label: 'Typical invitation (IT occupations)', pts: '80–90+', icon: '🟡' },
-                { label: 'Highly competitive', pts: '90+', icon: '🟢' },
+                { label: 'Min for EOI submission', pts: 65, color: 'text-blue-500' },
+                { label: 'Typical invitation (IT occupations)', pts: '80–90+', color: 'text-amber-400' },
+                { label: 'Highly competitive', pts: '90+', color: 'text-emerald-500' },
               ].map(t => (
                 <div key={t.label} className="flex justify-between items-center py-1.5 border-b border-slate-100 last:border-0">
-                  <span className="text-xs font-semibold text-slate-600">{t.icon} {t.label}</span>
+                  <span className="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                    <Circle className={`w-3 h-3 shrink-0 fill-current ${t.color}`} aria-hidden />
+                    {t.label}
+                  </span>
                   <span className="text-xs font-black text-slate-800">{t.pts} pts</span>
                 </div>
               ))}
@@ -244,7 +249,7 @@ export default function PRCalculator() {
           </div>
 
           {/* Breakdown */}
-          <div className="bg-white rounded-3xl p-6" style={{ border: '1px solid #E8EDFB' }}>
+          <div className="bg-white rounded-xl p-6" style={{ border: '1px solid #E8EDFB' }}>
             <h3 className="font-black text-slate-900 mb-4">Points Breakdown</h3>
             <div className="space-y-3">
               {breakdown.map(row => (
@@ -262,7 +267,7 @@ export default function PRCalculator() {
           </div>
 
           {/* Official link */}
-          <a href="https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189/points-tested" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 p-4 rounded-2xl font-bold text-sm text-indigo-600 transition-colors hover:bg-indigo-50" style={{ border: '1.5px solid #C7D2FE' }}>
+          <a href="https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189/points-tested" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 p-4 rounded-lg font-bold text-sm text-indigo-600 transition-colors hover:bg-indigo-50" style={{ border: '1.5px solid #C7D2FE' }}>
             <ExternalLink className="w-4 h-4" /> Verify on official IMMI website
           </a>
         </div>

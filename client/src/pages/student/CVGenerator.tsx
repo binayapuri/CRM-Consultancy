@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { authFetch } from '../../store/auth';
 import { useNavigate } from 'react-router-dom';
-import { Printer, CheckCircle2 } from 'lucide-react';
+import { Printer, CheckCircle2, FileText, ClipboardList, Mail, Phone, MapPin, Globe, Pencil } from 'lucide-react';
 
 
 
@@ -71,17 +71,17 @@ export default function CVGenerator() {
 
   if (loading) return (
     <div className="text-center py-20">
-      <div className="text-4xl mb-4 animate-pulse">📄</div>
+      <div className="mb-4 flex justify-center"><FileText className="w-12 h-12 text-indigo-500 animate-pulse" aria-hidden /></div>
       <p className="text-slate-500 font-medium">Building your CV from profile data...</p>
     </div>
   );
 
   if (!cvData?.name) return (
-    <div className="max-w-2xl mx-auto text-center py-16">
-      <div className="text-6xl mb-6">📋</div>
+    <div className="w-full text-center py-16">
+      <div className="mb-6 flex justify-center"><ClipboardList className="w-16 h-16 text-indigo-500" aria-hidden /></div>
       <h2 className="text-2xl font-black text-slate-900 mb-3">Complete Your Profile First</h2>
       <p className="text-slate-500 font-medium mb-6">Your CV is automatically generated from your profile data. Add your education, work history, and immigration details in your profile.</p>
-      <button onClick={() => navigate('/student/profile')} className="px-6 py-3 rounded-2xl font-black text-white" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+      <button onClick={() => navigate('/student/profile')} className="px-6 py-3 rounded-lg font-black text-white" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
         Complete My Profile →
       </button>
     </div>
@@ -92,15 +92,15 @@ export default function CVGenerator() {
       {/* Header */}
       <div style={{ borderBottom: `3px solid ${accent}`, paddingBottom: 16, marginBottom: 16 }}>
         <h1 style={{ fontSize: 26, fontWeight: 900, color: '#0f172a' }}>{cvData.name}</h1>
-        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-          {cvData.email && <span>✉ {cvData.email}</span>}
-          {cvData.phone && <span>📞 {cvData.phone}</span>}
-          {sections.address && cvData.location && <span>📍 {cvData.location}</span>}
-          {sections.nationality && cvData.nationality && <span>🌏 {cvData.nationality}</span>}
+        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
+          {cvData.email && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Mail size={12} /> {cvData.email}</span>}
+          {cvData.phone && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Phone size={12} /> {cvData.phone}</span>}
+          {sections.address && cvData.location && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {cvData.location}</span>}
+          {sections.nationality && cvData.nationality && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Globe size={12} /> {cvData.nationality}</span>}
         </div>
         {sections.workRights && cvData.workRights && (
           <div style={{ marginTop: 6, display: 'inline-block', background: `${accent}15`, color: accent, borderRadius: 4, padding: '2px 10px', fontSize: 10, fontWeight: 700 }}>
-            🆔 Work Rights: {cvData.workRights}
+            Work Rights: {cvData.workRights}
           </div>
         )}
         {cvData.anzscoCode && (
@@ -185,9 +185,11 @@ export default function CVGenerator() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       <div className="mb-6">
-        <h1 className="text-4xl font-black text-slate-900 tracking-tight">📄 CV Generator</h1>
+        <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <FileText className="w-10 h-10 text-indigo-600 shrink-0" aria-hidden /> CV Generator
+        </h1>
         <p className="text-slate-500 font-medium mt-2">Auto-generated from your profile. Customise and download as PDF.</p>
       </div>
 
@@ -195,7 +197,7 @@ export default function CVGenerator() {
         {/* Sidebar controls */}
         <div className="space-y-4">
           {/* Template */}
-          <div className="bg-white rounded-3xl p-5" style={{ border: '1px solid #E8EDFB' }}>
+          <div className="bg-white rounded-xl p-5" style={{ border: '1px solid #E8EDFB' }}>
             <h3 className="font-black text-slate-800 mb-3">Template</h3>
             <div className="space-y-2">
               {TEMPLATES.map(t => (
@@ -212,7 +214,7 @@ export default function CVGenerator() {
           </div>
 
           {/* Sections */}
-          <div className="bg-white rounded-3xl p-5" style={{ border: '1px solid #E8EDFB' }}>
+          <div className="bg-white rounded-xl p-5" style={{ border: '1px solid #E8EDFB' }}>
             <h3 className="font-black text-slate-800 mb-3">Show Sections</h3>
             <div className="space-y-2">
               {[
@@ -232,19 +234,19 @@ export default function CVGenerator() {
           </div>
 
           {/* Actions */}
-          <button onClick={handlePrint} className="w-full py-4 rounded-2xl font-black text-white flex items-center justify-center gap-2" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)', boxShadow: '0 4px 20px rgba(99,102,241,0.3)' }}>
+          <button onClick={handlePrint} className="w-full py-4 rounded-lg font-black text-white flex items-center justify-center gap-2" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)', boxShadow: '0 4px 20px rgba(99,102,241,0.3)' }}>
             <Printer className="w-5 h-5" /> Print / Save as PDF
           </button>
           <p className="text-xs text-slate-400 text-center font-medium">Opens a print dialog. Select "Save as PDF" in your browser to download.</p>
 
-          <button onClick={() => navigate('/student/profile')} className="w-full py-3 rounded-2xl font-bold text-sm text-indigo-600 flex items-center justify-center gap-2" style={{ background: '#EEF2FF', border: '1.5px solid #C7D2FE' }}>
-            ✏️ Edit Profile Data
+          <button onClick={() => navigate('/student/profile')} className="w-full py-3 rounded-lg font-bold text-sm text-indigo-600 flex items-center justify-center gap-2" style={{ background: '#EEF2FF', border: '1.5px solid #C7D2FE' }}>
+            <Pencil className="w-4 h-4" aria-hidden /> Edit Profile Data
           </button>
         </div>
 
         {/* CV Preview */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-3xl p-8 shadow-xl" style={{ border: '1px solid #E8EDFB', minHeight: 500 }}>
+          <div className="bg-white rounded-xl p-8 shadow-xl" style={{ border: '1px solid #E8EDFB', minHeight: 500 }}>
             <div ref={printRef}>
               <CVContent />
             </div>

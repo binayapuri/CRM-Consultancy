@@ -1,13 +1,13 @@
 import { useState, useRef } from 'react';
 import { useAuthStore, authFetch } from '../../store/auth';
-import { KeyRound, User, Camera, Shield, Trash2, Eye, EyeOff, CheckCircle2, AlertTriangle, LogOut } from 'lucide-react';
+import { KeyRound, User, Camera, Shield, Trash2, Eye, EyeOff, CheckCircle2, AlertTriangle, LogOut, Settings as SettingsIcon } from 'lucide-react';
 
 const TABS = [
-  { id: 'security', label: '🔒 Security', icon: KeyRound },
-  { id: 'account', label: '👤 Account', icon: User },
-  { id: 'avatar', label: '🖼️ Avatar', icon: Camera },
-  { id: 'privacy', label: '🛡️ Privacy', icon: Shield },
-  { id: 'danger', label: '⚠️ Danger Zone', icon: Trash2 },
+  { id: 'security', label: 'Security', icon: KeyRound },
+  { id: 'account', label: 'Account', icon: User },
+  { id: 'avatar', label: 'Avatar', icon: Camera },
+  { id: 'privacy', label: 'Privacy', icon: Shield },
+  { id: 'danger', label: 'Danger Zone', icon: Trash2 },
 ];
 
 export default function Settings() {
@@ -119,15 +119,17 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       <div className="mb-8">
-        <h1 className="text-4xl font-black text-slate-900 tracking-tight">⚙️ Settings</h1>
+        <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <SettingsIcon className="w-10 h-10 text-indigo-600 shrink-0" aria-hidden /> Settings
+        </h1>
         <p className="text-slate-500 font-medium mt-2">Manage your account, security, and privacy.</p>
       </div>
 
       {/* User badge */}
-      <div className="flex items-center gap-4 p-5 rounded-3xl mb-6" style={{ background: 'linear-gradient(135deg, #EEF2FF, #E0FDF4)', border: '1px solid #C7D2FE' }}>
-        <div className="w-14 h-14 rounded-2xl overflow-hidden bg-indigo-600 flex items-center justify-center text-white text-xl font-black">
+      <div className="flex items-center gap-4 p-5 rounded-xl mb-6" style={{ background: 'linear-gradient(135deg, #EEF2FF, #E0FDF4)', border: '1px solid #C7D2FE' }}>
+        <div className="w-14 h-14 rounded-lg overflow-hidden bg-indigo-600 flex items-center justify-center text-white text-xl font-black">
           {user?.profile?.avatar ? <img src={user.profile.avatar} alt="" className="w-full h-full object-cover" /> : (user?.profile?.firstName?.[0] || user?.email?.[0] || '?').toUpperCase()}
         </div>
         <div>
@@ -140,7 +142,7 @@ export default function Settings() {
       {/* Tab navigation */}
       <div className="flex gap-2 flex-wrap mb-6">
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className="px-4 py-2.5 rounded-2xl font-bold text-sm transition-all" style={tab === t.id ? { background: '#4338CA', color: 'white' } : { background: '#F1F5F9', color: '#64748B' }}>
+          <button key={t.id} onClick={() => setTab(t.id)} className="px-4 py-2.5 rounded-lg font-bold text-sm transition-all" style={tab === t.id ? { background: '#4338CA', color: 'white' } : { background: '#F1F5F9', color: '#64748B' }}>
             {t.label}
           </button>
         ))}
@@ -148,7 +150,7 @@ export default function Settings() {
 
       {/* Security Tab */}
       {tab === 'security' && (
-        <div className="bg-white rounded-3xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
+        <div className="bg-white rounded-xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
           <h2 className="font-black text-slate-900 text-xl">Change Password</h2>
           <div>
             <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Current Password</label>
@@ -167,7 +169,7 @@ export default function Settings() {
             <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Confirm New Password</label>
             <input type={showPw ? 'text' : 'password'} value={confirmPw} onChange={e => setConfirmPw(e.target.value)} className={inp} placeholder="Re-enter new password" />
           </div>
-          <button onClick={handlePasswordChange} disabled={pwLoading} className="px-6 py-3 rounded-2xl font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+          <button onClick={handlePasswordChange} disabled={pwLoading} className="px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
             {pwLoading ? 'Updating...' : 'Update Password'}
           </button>
           <Alert msg={pwMsg} />
@@ -185,7 +187,7 @@ export default function Settings() {
 
       {/* Account Tab */}
       {tab === 'account' && (
-        <div className="bg-white rounded-3xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
+        <div className="bg-white rounded-xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
           <h2 className="font-black text-slate-900 text-xl">Account Details</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -206,7 +208,7 @@ export default function Settings() {
             <input value={user?.email || ''} disabled className={`${inp} opacity-50 cursor-not-allowed`} />
             <p className="text-xs text-slate-400 mt-1">Email cannot be changed here. Contact support.</p>
           </div>
-          <button onClick={handleSaveAccount} disabled={accLoading} className="px-6 py-3 rounded-2xl font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+          <button onClick={handleSaveAccount} disabled={accLoading} className="px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
             {accLoading ? 'Saving...' : 'Save Changes'}
           </button>
           <Alert msg={accMsg} />
@@ -215,10 +217,10 @@ export default function Settings() {
 
       {/* Avatar Tab */}
       {tab === 'avatar' && (
-        <div className="bg-white rounded-3xl p-6 space-y-6" style={{ border: '1px solid #E8EDFB' }}>
+        <div className="bg-white rounded-xl p-6 space-y-6" style={{ border: '1px solid #E8EDFB' }}>
           <h2 className="font-black text-slate-900 text-xl">Profile Photo</h2>
           <div className="flex flex-col items-center gap-4">
-            <div className="w-32 h-32 rounded-3xl overflow-hidden bg-indigo-100 flex items-center justify-center border-4 border-indigo-100">
+            <div className="w-32 h-32 rounded-xl overflow-hidden bg-indigo-100 flex items-center justify-center border-4 border-indigo-100">
               {avatarPreview ? (
                 <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
               ) : user?.profile?.avatar ? (
@@ -236,7 +238,7 @@ export default function Settings() {
             </div>
           </div>
           {avatarPreview && (
-            <button onClick={handleAvatarUpload} disabled={avatarLoading} className="w-full py-3 rounded-2xl font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+            <button onClick={handleAvatarUpload} disabled={avatarLoading} className="w-full py-3 rounded-lg font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
               {avatarLoading ? 'Uploading...' : 'Save Photo'}
             </button>
           )}
@@ -246,10 +248,10 @@ export default function Settings() {
 
       {/* Privacy Tab */}
       {tab === 'privacy' && (
-        <div className="bg-white rounded-3xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
+        <div className="bg-white rounded-xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
           <h2 className="font-black text-slate-900 text-xl">Data Privacy</h2>
-          <div className="p-5 rounded-2xl" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-            <p className="font-black text-emerald-900">🔒 Your data is private by default</p>
+          <div className="p-5 rounded-lg" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+            <p className="font-black text-emerald-900 flex items-center gap-2"><KeyRound className="w-4 h-4 shrink-0" aria-hidden /> Your data is private by default</p>
             <p className="text-sm text-emerald-700 font-medium mt-1">Migration agents can only see your profile when you explicitly connect and choose what to share from the "Find Consultancy" page.</p>
           </div>
           <div>
@@ -281,16 +283,16 @@ export default function Settings() {
 
       {/* Danger Zone Tab */}
       {tab === 'danger' && (
-        <div className="bg-white rounded-3xl p-6 space-y-5" style={{ border: '2px solid #FEE2E2' }}>
-          <h2 className="font-black text-red-700 text-xl">⚠️ Danger Zone</h2>
-          <div className="p-5 rounded-2xl" style={{ background: '#FFF1F2', border: '1px solid #FECDD3' }}>
+        <div className="bg-white rounded-xl p-6 space-y-5" style={{ border: '2px solid #FEE2E2' }}>
+          <h2 className="font-black text-red-700 text-xl flex items-center gap-2"><AlertTriangle className="w-5 h-5 shrink-0" aria-hidden /> Danger Zone</h2>
+          <div className="p-5 rounded-lg" style={{ background: '#FFF1F2', border: '1px solid #FECDD3' }}>
             <h3 className="font-black text-red-800 mb-1">Delete Account</h3>
             <p className="text-sm text-red-700 font-medium mb-4">This will permanently delete your account and all associated data. This action is irreversible. To request deletion, please contact support or send an email.</p>
             <a href="mailto:support@orivisa.com?subject=Delete%20My%20Account&body=Please%20delete%20my%20account%20associated%20with%20this%20email." className="inline-block px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-red-600 hover:bg-red-700 transition-colors">
               Request Account Deletion
             </a>
           </div>
-          <div className="p-5 rounded-2xl" style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
+          <div className="p-5 rounded-lg" style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
             <h3 className="font-black text-amber-800 mb-1">Download My Data</h3>
             <p className="text-sm text-amber-700 font-medium mb-3">You have the right to export all your data stored in Orivisa.</p>
             <button className="px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-amber-600 hover:bg-amber-700 transition-colors">

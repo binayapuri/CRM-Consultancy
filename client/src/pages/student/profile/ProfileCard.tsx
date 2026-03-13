@@ -36,7 +36,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 mb-6">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 mb-6">
       {/* Header */}
       <div className="px-6 py-4 flex items-center justify-between border-b border-slate-50 bg-slate-50/50">
         <div className="flex items-center gap-3">
@@ -93,7 +93,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
               {editForm}
             </div>
           ) : (
-            <div className={`animate-in fade-in duration-300 ${isEmpty ? 'py-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200' : ''}`}>
+            <div className={`animate-in fade-in duration-300 ${isEmpty ? 'py-8 text-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-200' : ''}`}>
               {isEmpty ? (
                 <div className="flex flex-col items-center gap-2">
                   <p className="text-slate-400 text-sm font-medium">No information added yet</p>

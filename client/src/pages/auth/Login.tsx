@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { LogIn } from 'lucide-react';
 import { useAuthStore } from '../../store/auth';
 
 const API = '/api';
@@ -101,21 +102,16 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      {/* Top bar with logo (light, like Lumi) */}
-      <header className="flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200">
-        <span className="text-xl font-display font-bold tracking-tight text-slate-900">BIGFEW</span>
-        {/* Right side intentionally minimal to match Lumi layout */}
-        <span className="text-sm text-slate-400" />
-      </header>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-ori-950 p-4">
+      <div className="w-full max-w-md card bg-white/95 backdrop-blur">
+        <div className="flex items-center gap-2 justify-center mb-2">
+          <LogIn className="w-8 h-8 text-ori-600" />
+          <h1 className="text-2xl font-display font-bold text-slate-900">Sign in</h1>
+        </div>
+        <p className="text-slate-500 text-center text-sm mb-6">Student & Consultancy sign in</p>
 
-      {/* Centered card */}
-      <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-lg border border-slate-200/80 px-8 py-10">
-          <h1 className="text-2xl font-display font-bold text-slate-900">Student Sign in</h1>
-
-          {/* Sign in / Sign up tabs */}
-          <div className="flex gap-1 p-1 bg-slate-100 rounded-lg mt-4 mb-6">
+        {/* Sign in / Sign up tabs */}
+        <div className="flex gap-1 p-1 bg-slate-100 rounded-lg mb-6">
             <button
               type="button"
               className="flex-1 py-2.5 rounded-md text-sm font-medium bg-white shadow text-slate-900 border border-slate-200/80"
@@ -133,12 +129,12 @@ export default function Login() {
           {!showPhone ? (
             <>
               {/* Email / Password form */}
-              <form onSubmit={handleEmailSubmit} className="space-y-5">
+              <form onSubmit={handleEmailSubmit} className="space-y-4">
                 {error && (
                   <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">{error}</div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                   <input
                     type="email"
                     value={email}
@@ -149,7 +145,7 @@ export default function Login() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
@@ -178,11 +174,7 @@ export default function Login() {
                     </button>
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 text-white font-medium shadow-sm hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button type="submit" disabled={loading} className="btn-primary w-full">
                   {loading ? 'Signing in...' : 'Sign in'}
                 </button>
               </form>
@@ -193,7 +185,7 @@ export default function Login() {
                   <div className="w-full border-t border-slate-200" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-3 bg-white text-slate-500">or continue with</span>
+                  <span className="px-3 bg-white/95 text-slate-500">or continue with</span>
                 </div>
               </div>
 
@@ -224,13 +216,10 @@ export default function Login() {
                 </button>
               </div>
 
-              <div className="mt-5 space-y-2">
-                <Link to="/forgot-password" className="block text-sm text-slate-500 hover:text-slate-700 text-center">
-                  Forgot password?
-                </Link>
-                <Link to="/" className="block text-sm text-slate-400 hover:text-slate-600 text-center">
-                  ← Back to portal selection
-                </Link>
+              <div className="mt-5 space-y-2 text-center">
+                <Link to="/forgot-password" className="text-sm text-ori-600 hover:underline">Forgot password?</Link>
+                <br />
+                <Link to="/" className="text-sm text-ori-600 hover:underline">← Back to portal selection</Link>
               </div>
             </>
           ) : (
@@ -241,7 +230,7 @@ export default function Login() {
                     <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">{error}</div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Phone Number</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
                     <input
                       type="tel"
                       value={phone}
@@ -251,18 +240,10 @@ export default function Login() {
                       required
                     />
                   </div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition disabled:opacity-50"
-                  >
+                  <button type="submit" disabled={loading} className="btn-primary w-full">
                     {loading ? 'Sending...' : 'Send Code'}
                   </button>
-                  <button
-                    type="button"
-                    onClick={resetPhoneFlow}
-                    className="w-full text-sm text-slate-500 hover:text-slate-700"
-                  >
+                  <button type="button" onClick={resetPhoneFlow} className="w-full text-sm text-ori-600 hover:underline">
                     ← Back to email sign in
                   </button>
                 </form>
@@ -273,7 +254,7 @@ export default function Login() {
                   )}
                   <p className="text-sm text-slate-600">Code sent to {phone}</p>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Verification Code</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Verification Code</label>
                     <input
                       type="text"
                       value={otp}
@@ -284,18 +265,10 @@ export default function Login() {
                       required
                     />
                   </div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition disabled:opacity-50"
-                  >
+                  <button type="submit" disabled={loading} className="btn-primary w-full">
                     {loading ? 'Verifying...' : 'Verify & Sign In'}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setOtpSent(false)}
-                    className="w-full text-sm text-slate-500 hover:text-slate-700"
-                  >
+                  <button type="button" onClick={() => setOtpSent(false)} className="w-full text-sm text-ori-600 hover:underline">
                     Use different number
                   </button>
                 </form>
@@ -303,14 +276,13 @@ export default function Login() {
             </>
           )}
 
-          <p className="mt-6 text-center text-sm text-slate-500">
-            Don&apos;t have an account?{' '}
-            <Link to="/register" className="text-ori-600 hover:underline">Student</Link>
-            {' · '}
-            <Link to="/register-consultancy" className="text-ori-600 hover:underline">Consultancy</Link>
-          </p>
-        </div>
-      </main>
+        <p className="mt-6 text-center text-sm text-slate-500">
+          Don&apos;t have an account?{' '}
+          <Link to="/register" className="text-ori-600 hover:underline">Student</Link>
+          {' · '}
+          <Link to="/register-consultancy" className="text-ori-600 hover:underline">Consultancy</Link>
+        </p>
+      </div>
     </div>
   );
 }

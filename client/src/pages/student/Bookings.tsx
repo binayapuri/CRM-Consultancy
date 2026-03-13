@@ -37,7 +37,7 @@ export default function Bookings() {
   const past = appointments.filter(a => new Date(a.startTime) <= new Date()).sort((a,b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
           <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">My Consultations</h1>
@@ -60,8 +60,8 @@ export default function Bookings() {
           {loading ? (
             <div className="flex justify-center py-12"><div className="w-8 h-8 rounded-full border-4 border-ori-500 border-t-transparent animate-spin" /></div>
           ) : upcoming.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 border-dashed">
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
+            <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
+              <div className="w-16 h-16 bg-slate-50 rounded-lg flex items-center justify-center mx-auto mb-4 border border-slate-100">
                 <CalendarIcon className="w-8 h-8 text-slate-300" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-1">No upcoming sessions</h3>
@@ -73,7 +73,7 @@ export default function Bookings() {
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
               {upcoming.map(apt => (
-                <div key={apt._id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
+                <div key={apt._id} className="bg-white rounded-lg border border-slate-200 p-6 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
                   
                   <div className="relative z-10">
@@ -139,7 +139,7 @@ export default function Bookings() {
             <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
               <History className="w-5 h-5 text-slate-400" /> Past Sessions
             </h2>
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>

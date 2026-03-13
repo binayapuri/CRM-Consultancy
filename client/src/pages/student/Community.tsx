@@ -82,7 +82,7 @@ export default function Community() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">Student Community</h1>
@@ -119,13 +119,13 @@ export default function Community() {
         {loading ? (
           <div className="flex justify-center py-12"><div className="w-8 h-8 rounded-full border-4 border-ori-500 border-t-transparent animate-spin" /></div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+          <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
             <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-500 font-medium">No discussions yet. Start one!</p>
           </div>
         ) : (
           posts.map(post => (
-            <div key={post._id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition group cursor-pointer">
+            <div key={post._id} className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition group cursor-pointer">
               <div className="flex gap-4 items-start">
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleUpvote(post._id); }}
@@ -163,7 +163,7 @@ export default function Community() {
       {/* Create Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-fade-in-up">
+          <div className="bg-white rounded-lg w-full max-w-2xl overflow-hidden shadow-2xl animate-fade-in-up">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h2 className="text-lg font-bold text-slate-900">New Discussion</h2>
               <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>

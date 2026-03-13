@@ -48,7 +48,7 @@ export const NotesInfo: React.FC<NotesInfoProps> = ({ notes, statement, onSaveSt
       </div>
 
       {showAddForm && (
-        <div className="bg-white p-6 rounded-3xl border-2 border-indigo-100 mb-6 animate-in zoom-in-95">
+        <div className="bg-white p-6 rounded-xl border-2 border-indigo-100 mb-6 animate-in zoom-in-95">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <F label="Title"><SI value={newNote.title} onChange={e => setNewNote({...newNote, title: e.target.value})} /></F>
             <F label="Category"><SS value={newNote.category} onChange={e => setNewNote({...newNote, category: e.target.value})}>{Object.keys(CAT_COLORS).map(c=><option key={c}>{c}</option>)}</SS></F>
@@ -63,7 +63,7 @@ export const NotesInfo: React.FC<NotesInfoProps> = ({ notes, statement, onSaveSt
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {notes.map((note) => (
-          <div key={note._id} className={`group bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-400 transition-all shadow-sm flex flex-col justify-between`}>
+          <div key={note._id} className={`group bg-white p-5 rounded-lg border border-slate-200 hover:border-indigo-400 transition-all shadow-sm flex flex-col justify-between`}>
              <div className="flex justify-between items-start mb-2">
                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-${CAT_COLORS[note.category] || 'slate'}-100 text-${CAT_COLORS[note.category] || 'slate'}-600`}>{note.category?.replace('_', ' ')}</span>
                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -76,7 +76,7 @@ export const NotesInfo: React.FC<NotesInfoProps> = ({ notes, statement, onSaveSt
              <p className="text-[10px] font-bold text-slate-400 mt-auto">{new Date(note.addedAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
           </div>
         ))}
-        {notes.length === 0 && !showAddForm && <div className="sm:col-span-2 text-center py-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 font-medium italic">Your journal library is empty.</div>}
+        {notes.length === 0 && !showAddForm && <div className="sm:col-span-2 text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 font-medium italic">Your journal library is empty.</div>}
       </div>
     </div>
   );

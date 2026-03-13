@@ -71,7 +71,7 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({ current, previous, onS
         <div className="space-y-6">
           <div className="space-y-4">
             {previous.map((item) => (
-              <div key={item._id} className="relative group bg-slate-50/50 p-5 rounded-2xl border border-slate-100 hover:border-indigo-100 transition-all">
+              <div key={item._id} className="relative group bg-slate-50/50 p-5 rounded-lg border border-slate-100 hover:border-indigo-100 transition-all">
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
                     <p className="font-black text-slate-800 text-sm leading-tight">
@@ -89,11 +89,11 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({ current, previous, onS
           </div>
 
           {!showAddForm ? (
-            <button onClick={() => setShowAddForm(true)} className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+            <button onClick={() => setShowAddForm(true)} className="w-full py-4 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
               <Plus className="w-4 h-4" /> Add Previous Address History
             </button>
           ) : (
-            <div className="bg-slate-50 p-6 rounded-3xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
+            <div className="bg-slate-50 p-6 rounded-xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <F label="Type"><SS value={newEntry.type} onChange={e => setNewEntry({...newEntry, type: e.target.value})}>{ADDR_TYPES.map(t=><option key={t}>{t}</option>)}</SS></F>
                 <F label="Street"><SI value={newEntry.street} onChange={e => setNewEntry({...newEntry, street: e.target.value})} /></F>

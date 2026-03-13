@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plane, FileCheck, Award, Calendar, Globe } from 'lucide-react';
+import { Plane, FileCheck, Award, Calendar, Globe, MapPin } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
 import { SI, SS, F, DataRow } from '../shared';
 
@@ -81,7 +81,7 @@ export const ImmigrationInfo: React.FC<ImmigrationInfoProps> = ({ profile, engli
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1">
-          <DataRow label="Location Status" value={profile.onshore ? '📍 Onshore (Australia)' : '🌎 Offshore'} icon={<Globe className="w-4 h-4" />} />
+          <DataRow label="Location Status" value={profile.onshore ? 'Onshore (Australia)' : 'Offshore'} icon={profile.onshore ? <MapPin className="w-4 h-4" /> : <Globe className="w-4 h-4" />} />
           <DataRow label="Current Visa" value={profile.currentVisa} icon={<FileCheck className="w-4 h-4" />} />
           <DataRow label="Visa Expiry" value={profile.visaExpiry ? new Date(profile.visaExpiry).toLocaleDateString() : ''} icon={<Calendar className="w-4 h-4" />} />
           <DataRow label="Target Visa" value={profile.targetVisa} icon={<Award className="w-4 h-4" />} />
@@ -93,11 +93,11 @@ export const ImmigrationInfo: React.FC<ImmigrationInfoProps> = ({ profile, engli
           </p>
           {english.testType ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4">
-              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
                 <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Type</p>
                 <p className="text-sm font-black text-indigo-600">{english.testType.replace('_', ' ')}</p>
               </div>
-              <div className="bg-indigo-600 p-3 rounded-2xl shadow-lg shadow-indigo-200">
+              <div className="bg-indigo-600 p-3 rounded-lg shadow-lg shadow-indigo-200">
                 <p className="text-[10px] font-black text-indigo-200 uppercase leading-none mb-1">Overall</p>
                 <p className="text-sm font-black text-white">{english.score}</p>
               </div>
@@ -107,7 +107,7 @@ export const ImmigrationInfo: React.FC<ImmigrationInfoProps> = ({ profile, engli
                 { l: 'W', v: english.writing },
                 { l: 'S', v: english.speaking }
               ].map(b => (
-                <div key={b.l} className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                <div key={b.l} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">{b.l}</p>
                   <p className="text-sm font-black text-slate-700">{b.v || '-'}</p>
                 </div>

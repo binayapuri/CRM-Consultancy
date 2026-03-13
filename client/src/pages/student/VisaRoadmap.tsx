@@ -30,13 +30,13 @@ export default function VisaRoadmap() {
   const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       <div className="text-center mb-10">
         <h1 className="text-4xl font-display font-black text-slate-900 tracking-tight">My PR Journey</h1>
         <p className="text-slate-500 mt-2">Your personalized pathway to Australian Permanent Residency</p>
       </div>
 
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-8 text-white mb-10 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-8 text-white mb-10 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
@@ -44,7 +44,7 @@ export default function VisaRoadmap() {
             <h2 className="text-3xl font-display font-black">{timeline.currentStage.replace('_', ' ')}</h2>
             {timeline.targetVisa && <p className="text-slate-300 mt-1">Target Visa: Subclass {timeline.targetVisa}</p>}
           </div>
-          <div className="flex-shrink-0 bg-white/10 p-6 rounded-2xl backdrop-blur-sm border border-white/10 text-center min-w-[160px]">
+          <div className="flex-shrink-0 bg-white/10 p-6 rounded-lg backdrop-blur-sm border border-white/10 text-center min-w-[160px]">
             <p className="text-xs text-slate-300 uppercase font-bold tracking-wider mb-2">Overall Progress</p>
             <div className="text-4xl font-black font-display text-emerald-400">{progressPct}%</div>
             <div className="h-2 w-full bg-white/10 rounded-full mt-3 overflow-hidden">
@@ -66,7 +66,7 @@ export default function VisaRoadmap() {
             return (
               <div key={milestone._id || idx} className={`relative flex items-start gap-6 group transition-all duration-300 ${isCompleted ? 'opacity-70 hover:opacity-100' : ''}`}>
                 <div className="relative z-10 w-16 flex flex-col items-center">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-4 shadow-sm transition-transform group-hover:scale-110 ${
+                  <div className={`w-14 h-14 rounded-lg flex items-center justify-center border-4 shadow-sm transition-transform group-hover:scale-110 ${
                     isCompleted ? 'bg-emerald-500 border-white text-white' :
                     isBlocked ? 'bg-rose-50 border-rose-200 text-rose-500' :
                     isInProgress ? 'bg-amber-400 border-white text-white shadow-amber-400/30' :
@@ -79,7 +79,7 @@ export default function VisaRoadmap() {
                   </div>
                 </div>
 
-                <div className={`flex-1 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm transition-colors ${
+                <div className={`flex-1 bg-white border border-slate-200 rounded-lg p-6 shadow-sm transition-colors ${
                   isInProgress ? 'border-amber-200 ring-4 ring-amber-50' : 
                   isBlocked ? 'border-rose-200 bg-rose-50/50' : ''
                 }`}>
@@ -109,7 +109,7 @@ export default function VisaRoadmap() {
         </div>
       </div>
 
-      <div className="mt-12 bg-sky-50 border border-sky-100 rounded-2xl p-6 text-center">
+      <div className="mt-12 bg-sky-50 border border-sky-100 rounded-lg p-6 text-center">
         <h3 className="font-bold text-sky-900 mb-2">Ready to take the next step?</h3>
         <p className="text-sky-700 mb-4 text-sm">Review your document checklist and ensure you have all evidence prepared for your upcoming milestones.</p>
         <Link to="/student/documents" className="inline-flex items-center gap-2 px-6 py-2.5 bg-sky-600 text-white font-bold rounded-xl hover:bg-sky-700 transition shadow-sm shadow-sky-600/20 active:scale-95">

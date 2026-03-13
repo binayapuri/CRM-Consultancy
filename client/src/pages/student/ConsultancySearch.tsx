@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { authFetch } from '../../store/auth';
-import { Search, Star, MapPin, CheckCircle2, Shield, Lock, ChevronRight } from 'lucide-react';
+import { Search, Star, MapPin, CheckCircle2, Shield, Lock, ChevronRight, User, Scan, FileText, GraduationCap, Briefcase, TrendingUp, Heart, Mail } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const DATA_CATEGORIES = [
-  { id: 'profile', label: 'Basic Profile', desc: 'Name, nationality, contact details', icon: '👤', recommended: true },
-  { id: 'immigration', label: 'Immigration / Visa Status', desc: 'Current visa, ANZSCO code, onshore/offshore', icon: '🛂', recommended: true },
-  { id: 'english', label: 'English Test Results', desc: 'IELTS/PTE scores and TRF number', icon: '📝', recommended: true },
-  { id: 'education', label: 'Education History', desc: 'Degrees and qualifications', icon: '🎓', recommended: false },
-  { id: 'experience', label: 'Work History', desc: 'Employment and roles', icon: '💼', recommended: false },
-  { id: 'skills', label: 'Skills Assessment & EOI', desc: 'Assessment body, reference, EOI details', icon: '📊', recommended: false },
-  { id: 'health', label: 'Health & Character', desc: 'Police clearances and health check status', icon: '🏥', recommended: false },
+const DATA_CATEGORIES: { id: string; label: string; desc: string; icon: LucideIcon; recommended: boolean }[] = [
+  { id: 'profile', label: 'Basic Profile', desc: 'Name, nationality, contact details', icon: User, recommended: true },
+  { id: 'immigration', label: 'Immigration / Visa Status', desc: 'Current visa, ANZSCO code, onshore/offshore', icon: Scan, recommended: true },
+  { id: 'english', label: 'English Test Results', desc: 'IELTS/PTE scores and TRF number', icon: FileText, recommended: true },
+  { id: 'education', label: 'Education History', desc: 'Degrees and qualifications', icon: GraduationCap, recommended: false },
+  { id: 'experience', label: 'Work History', desc: 'Employment and roles', icon: Briefcase, recommended: false },
+  { id: 'skills', label: 'Skills Assessment & EOI', desc: 'Assessment body, reference, EOI details', icon: TrendingUp, recommended: false },
+  { id: 'health', label: 'Health & Character', desc: 'Police clearances and health check status', icon: Heart, recommended: false },
 ];
 
 export default function ConsultancySearch() {
@@ -47,16 +48,16 @@ export default function ConsultancySearch() {
 
   if (step === 'consent' && selected) {
     return (
-      <div className="max-w-2xl mx-auto animate-fade-in-up">
+      <div className="w-full animate-fade-in-up">
         <button onClick={() => { setStep('browse'); setSelected(null); setRequested(false); }} className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 mb-6 transition-colors">
           ← Back to Browse
         </button>
 
-        <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '2px solid #C7D2FE' }}>
+        <div className="bg-white rounded-xl overflow-hidden" style={{ border: '2px solid #C7D2FE' }}>
           {/* Consultancy banner */}
           <div className="p-6 border-b border-slate-100">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black text-white" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+              <div className="w-16 h-16 rounded-lg flex items-center justify-center text-2xl font-black text-white" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
                 {selected.name?.[0] || 'C'}
               </div>
               <div>
@@ -72,7 +73,7 @@ export default function ConsultancySearch() {
           {!requested ? (
             <div className="p-6 space-y-6">
               {/* Privacy notice */}
-              <div className="p-4 rounded-2xl" style={{ background: '#EEF2FF', border: '1px solid #C7D2FE' }}>
+              <div className="p-4 rounded-lg" style={{ background: '#EEF2FF', border: '1px solid #C7D2FE' }}>
                 <div className="flex items-start gap-3">
                   <Lock className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                   <div>
@@ -87,11 +88,13 @@ export default function ConsultancySearch() {
               <div>
                 <h3 className="font-black text-slate-900 mb-4">Choose what to share</h3>
                 <div className="space-y-3">
-                  {DATA_CATEGORIES.map(cat => (
-                    <label key={cat.id} className="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all" style={{ background: sharedCategories.has(cat.id) ? '#F0FDF4' : '#F8FAFC', border: `1.5px solid ${sharedCategories.has(cat.id) ? '#86EFAC' : '#E2E8F0'}` }}>
+                  {DATA_CATEGORIES.map(cat => {
+                    const Icon = cat.icon;
+                    return (
+                    <label key={cat.id} className="flex items-center gap-4 p-4 rounded-lg cursor-pointer transition-all" style={{ background: sharedCategories.has(cat.id) ? '#F0FDF4' : '#F8FAFC', border: `1.5px solid ${sharedCategories.has(cat.id) ? '#86EFAC' : '#E2E8F0'}` }}>
                       <input type="checkbox" checked={sharedCategories.has(cat.id)} onChange={() => toggleCategory(cat.id)} className="sr-only" />
                       {sharedCategories.has(cat.id) ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-300 shrink-0" />}
-                      <div className="text-xl shrink-0">{cat.icon}</div>
+                      <Icon className="w-5 h-5 text-slate-500 shrink-0" aria-hidden />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-bold text-slate-800">{cat.label}</p>
@@ -100,21 +103,21 @@ export default function ConsultancySearch() {
                         <p className="text-xs text-slate-400 font-medium mt-0.5">{cat.desc}</p>
                       </div>
                     </label>
-                  ))}
+                  ); })}
                 </div>
               </div>
 
-              <button onClick={handleConnect} className="w-full py-4 rounded-2xl font-black text-white text-base transition-all hover:opacity-90 active:scale-98" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)', boxShadow: '0 4px 20px rgba(99,102,241,0.3)' }}>
+              <button onClick={handleConnect} className="w-full py-4 rounded-lg font-black text-white text-base transition-all hover:opacity-90 active:scale-98" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)', boxShadow: '0 4px 20px rgba(99,102,241,0.3)' }}>
                 Send Consultation Request
               </button>
               <p className="text-xs text-center text-slate-400 font-medium">By connecting, you agree that only the selected data above will be shared. The consultancy will contact you to confirm an appointment.</p>
             </div>
           ) : (
             <div className="p-12 text-center">
-              <div className="text-6xl mb-4">✉️</div>
+              <div className="mb-4 flex justify-center"><Mail className="w-14 h-14 text-indigo-500" aria-hidden /></div>
               <h3 className="text-2xl font-black text-slate-900 mb-2">Request Sent!</h3>
               <p className="text-slate-500 font-medium">Your consultation request has been sent to <strong>{selected.name}</strong>. They will review your shared information and contact you within 1–2 business days.</p>
-              <div className="mt-6 p-4 rounded-2xl text-sm font-medium" style={{ background: '#EEF2FF', border: '1px solid #C7D2FE', color: '#3730A3' }}>
+              <div className="mt-6 p-4 rounded-lg text-sm font-medium" style={{ background: '#EEF2FF', border: '1px solid #C7D2FE', color: '#3730A3' }}>
                 You shared: {[...sharedCategories].map(id => DATA_CATEGORIES.find(c => c.id === id)?.label).join(', ')}
               </div>
               <button onClick={() => { setStep('browse'); setSelected(null); setRequested(false); }} className="mt-6 px-8 py-3 rounded-xl font-bold text-sm text-indigo-600 hover:bg-indigo-50 transition-colors">
@@ -128,15 +131,17 @@ export default function ConsultancySearch() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-black text-slate-900 tracking-tight">🔍 Find a Migration Agent</h1>
+        <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <Search className="w-10 h-10 text-indigo-600 shrink-0" aria-hidden /> Find a Migration Agent
+        </h1>
         <p className="text-slate-500 font-medium mt-2">Browse verified registered migration agents (MARN). You choose what data to share — if at all.</p>
       </div>
 
       {/* Privacy badge */}
-      <div className="flex items-start gap-3 p-5 rounded-3xl mb-6" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+      <div className="flex items-start gap-3 p-5 rounded-xl mb-6" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
         <Shield className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
         <div>
           <p className="font-black text-emerald-900">Your data is private by default</p>
@@ -151,7 +156,7 @@ export default function ConsultancySearch() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by name, location, or specialty..."
-          className="w-full pl-12 pr-4 py-3.5 rounded-2xl text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-indigo-500/40"
+          className="w-full pl-12 pr-4 py-3.5 rounded-lg text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-indigo-500/40"
           style={{ background: 'white', border: '2px solid #E8EDFB' }}
         />
       </div>
@@ -161,7 +166,7 @@ export default function ConsultancySearch() {
         <div className="text-center py-16 text-slate-400 font-medium">Loading consultancies...</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-5xl mb-4">🔍</div>
+          <div className="mb-4 flex justify-center"><Search className="w-14 h-14 text-slate-300" aria-hidden /></div>
           <p className="text-slate-500 font-semibold">No consultancies found</p>
           <p className="text-sm text-slate-400 mt-1">Try a different search term or browse all agents</p>
           {search && <button onClick={() => setSearch('')} className="mt-3 text-indigo-600 text-sm font-bold hover:underline">Clear search</button>}
@@ -169,9 +174,9 @@ export default function ConsultancySearch() {
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {filtered.map((c: any) => (
-            <div key={c._id} className="bg-white rounded-3xl p-6 transition-all hover:shadow-lg hover:-translate-y-0.5" style={{ border: '1px solid #E8EDFB' }}>
+            <div key={c._id} className="bg-white rounded-xl p-6 transition-all hover:shadow-lg hover:-translate-y-0.5" style={{ border: '1px solid #E8EDFB' }}>
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black text-white shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+                <div className="w-14 h-14 rounded-lg flex items-center justify-center text-xl font-black text-white shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
                   {c.name?.[0] || 'C'}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -210,7 +215,7 @@ export default function ConsultancySearch() {
                 </div>
               )}
 
-              <button onClick={() => { setSelected(c); setStep('consent'); setRequested(false); }} className="w-full py-3 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2" style={{ background: '#EEF2FF', color: '#4338CA', border: '1.5px solid #C7D2FE' }}>
+              <button onClick={() => { setSelected(c); setStep('consent'); setRequested(false); }} className="w-full py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2" style={{ background: '#EEF2FF', color: '#4338CA', border: '1.5px solid #C7D2FE' }}>
                 Connect with Agent <ChevronRight className="w-4 h-4" />
               </button>
             </div>

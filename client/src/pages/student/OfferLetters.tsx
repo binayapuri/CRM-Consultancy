@@ -54,7 +54,7 @@ export default function OfferLetters() {
   if (loading) return <div className="flex justify-center py-12"><div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" /></div>;
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       <div className="mb-8">
         <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">University Offer Letters</h1>
         <p className="text-slate-500 mt-1">Explore universities, compare courses, and apply for your offer letter directly.</p>
@@ -68,7 +68,7 @@ export default function OfferLetters() {
                 <div 
                   key={uni._id} 
                   onClick={() => selectUni(uni)}
-                  className="bg-white border border-slate-200 rounded-2xl p-6 cursor-pointer hover:border-emerald-300 hover:shadow-lg transition-all group"
+                  className="bg-white border border-slate-200 rounded-lg p-6 cursor-pointer hover:border-emerald-300 hover:shadow-lg transition-all group"
                 >
                   <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors mb-4">
                     <Building2 className="w-6 h-6" />
@@ -89,7 +89,7 @@ export default function OfferLetters() {
               >
                 ← Back to Universities
               </button>
-              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-8 text-white mb-6 relative overflow-hidden">
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl p-8 text-white mb-6 relative overflow-hidden">
                 <div className="relative z-10">
                   <h2 className="text-2xl font-bold font-display">{selectedUni.name}</h2>
                   <p className="text-emerald-100 mt-1">{selectedUni.location?.city}, {selectedUni.location?.state}</p>
@@ -103,7 +103,7 @@ export default function OfferLetters() {
                 {courses.map((course: any) => {
                   const hasApplied = applications.some((app: any) => app.courseId?._id === course._id);
                   return (
-                  <div key={course._id} className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div key={course._id} className="bg-white border border-slate-200 p-6 rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <h4 className="font-bold text-slate-900">{course.name}</h4>
                       <p className="text-sm text-slate-500">{course.level} • {course.duration} • ${course.tuitionFee}/yr</p>
@@ -129,7 +129,7 @@ export default function OfferLetters() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
             <div className="bg-slate-50 p-6 border-b border-slate-200">
               <h3 className="font-bold text-slate-900 flex items-center gap-2"><FileText className="w-5 h-5 text-slate-400" /> My Applications</h3>
             </div>

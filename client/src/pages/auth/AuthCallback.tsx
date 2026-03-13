@@ -25,10 +25,10 @@ export default function AuthCallback() {
   }, [token, navigate, loginWithToken]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-ori-950">
-      <div className="text-white text-center">
-        <div className="animate-spin w-10 h-10 border-2 border-ori-400 border-t-transparent rounded-full mx-auto mb-4" />
-        <p>Signing you in...</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-ori-950 p-4">
+      <div className="w-full max-w-md card bg-white/95 backdrop-blur text-center">
+        <div className="animate-spin w-10 h-10 border-2 border-ori-600 border-t-transparent rounded-full mx-auto mb-4" />
+        <p className="text-slate-700 font-medium">Signing you in...</p>
       </div>
     </div>
   );

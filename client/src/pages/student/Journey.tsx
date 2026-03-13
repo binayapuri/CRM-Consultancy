@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { CheckCircle2, Circle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, Star, Lightbulb, Map } from 'lucide-react';
+import { STAGE_ICONS } from './icons';
 
 // ── All stages with rich checklist content ─────────────────────────────────
 const JOURNEY_STAGES = [
   {
     id: 'planning',
-    emoji: '🗺️',
+    icon: STAGE_ICONS.planning,
     label: 'Planning & Research',
     color: '#6366F1',
     bg: '#EEF2FF',
@@ -25,7 +26,7 @@ const JOURNEY_STAGES = [
   },
   {
     id: 'prepare',
-    emoji: '📋',
+    icon: STAGE_ICONS.prepare,
     label: 'Preparing to Apply',
     color: '#0EA5E9',
     bg: '#F0F9FF',
@@ -46,7 +47,7 @@ const JOURNEY_STAGES = [
   },
   {
     id: 'studying',
-    emoji: '🎓',
+    icon: STAGE_ICONS.studying,
     label: 'Studying in Australia',
     color: '#F59E0B',
     bg: '#FEF3C7',
@@ -54,7 +55,7 @@ const JOURNEY_STAGES = [
     timeline: '1–4 years',
     description: 'You\'re in Australia on your Student Visa (subclass 500). Your priority: pass your course, respect visa conditions, and start planning your next visa.',
     todo: [
-      { id: 'st1', label: '⚠️ CRITICAL: Stay within the 48-hours/fortnight work limit during semester', important: true },
+      { id: 'st1', label: 'CRITICAL: Stay within the 48-hours/fortnight work limit during semester', important: true },
       { id: 'st2', label: 'Maintain satisfactory academic progress in all units', important: true },
       { id: 'st3', label: 'Keep your address updated in ImmiAccount within 14 days of moving', important: true },
       { id: 'st4', label: 'Start researching your skills assessing body early (ACS, EA, VETASSESS)', important: true },
@@ -67,7 +68,7 @@ const JOURNEY_STAGES = [
   },
   {
     id: 'graduate',
-    emoji: '🧑‍🎓',
+    icon: STAGE_ICONS.graduate,
     label: 'Graduate Visa (485)',
     color: '#10B981',
     bg: '#F0FDF4',
@@ -88,7 +89,7 @@ const JOURNEY_STAGES = [
   },
   {
     id: 'skilled',
-    emoji: '💼',
+    icon: STAGE_ICONS.skilled,
     label: 'Skilled Migration',
     color: '#8B5CF6',
     bg: '#F5F3FF',
@@ -109,7 +110,7 @@ const JOURNEY_STAGES = [
   },
   {
     id: 'pr',
-    emoji: '🇦🇺',
+    icon: STAGE_ICONS.pr,
     label: 'Permanent Resident',
     color: '#F43F5E',
     bg: '#FFF1F2',
@@ -153,19 +154,27 @@ export default function Journey() {
   const stageIndex = JOURNEY_STAGES.findIndex(s => s.id === currentStage);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in-up">
+    <div className="w-full space-y-8 animate-fade-in-up">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-black text-slate-900 tracking-tight">🗺️ My Journey to PR</h1>
+        <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <Map className="w-10 h-10 text-indigo-600 shrink-0" aria-hidden /> My Journey to PR
+        </h1>
         <p className="text-slate-500 font-medium mt-2">Self-managed roadmap. Track your progress at each stage of your Australian migration journey.</p>
       </div>
 
       {/* Overall progress */}
-      <div className="rounded-3xl p-6 md:p-8" style={{ background: 'linear-gradient(135deg, #0F0E2E, #1a1560)' }}>
+      <div className="rounded-xl p-6 md:p-8" style={{ background: 'linear-gradient(135deg, #0F0E2E, #1a1560)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
             <p className="text-sm font-bold uppercase tracking-widest text-emerald-400 mb-1">Current Stage</p>
-            <p className="text-3xl font-black text-white">{JOURNEY_STAGES.find(s => s.id === currentStage)?.emoji} {JOURNEY_STAGES.find(s => s.id === currentStage)?.label}</p>
+            <p className="text-3xl font-black text-white flex items-center gap-2">
+              {(() => {
+                const cur = JOURNEY_STAGES.find(s => s.id === currentStage);
+                const Icon = cur?.icon;
+                return Icon ? <><Icon className="w-8 h-8 shrink-0 text-white" aria-hidden /> {cur?.label}</> : null;
+              })()}
+            </p>
           </div>
           <div className="text-center">
             <p className="text-4xl font-black text-white">{stageIndex + 1}<span className="text-slate-400 text-xl"> / {JOURNEY_STAGES.length}</span></p>
@@ -189,7 +198,7 @@ export default function Journey() {
           const isExpanded = expandedStage === stage.id;
 
           return (
-            <div key={stage.id} className="rounded-3xl overflow-hidden transition-all duration-300" style={{ border: `2px solid ${isActive ? stage.color + '60' : isPast ? '#E2E8F0' : '#E8EDFB'}`, opacity: !isActive && !isPast && idx > stageIndex + 1 ? 0.6 : 1 }}>
+            <div key={stage.id} className="rounded-xl overflow-hidden transition-all duration-300" style={{ border: `2px solid ${isActive ? stage.color + '60' : isPast ? '#E2E8F0' : '#E8EDFB'}`, opacity: !isActive && !isPast && idx > stageIndex + 1 ? 0.6 : 1 }}>
               {/* Stage header */}
               <div
                 className="p-5 cursor-pointer flex items-center gap-4"
@@ -197,8 +206,12 @@ export default function Journey() {
                 onClick={() => setExpandedStage(isExpanded ? null : stage.id)}
               >
                 {/* Status icon */}
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0" style={{ background: isActive ? stage.color + '20' : isPast ? '#F0FDF4' : '#F8FAFC', border: `2px solid ${isActive ? stage.color + '40' : isPast ? '#BBF7D0' : '#E2E8F0'}` }}>
-                  {isPast ? '✅' : stage.emoji}
+                <div className="w-14 h-14 rounded-lg flex items-center justify-center shrink-0" style={{ background: isActive ? stage.color + '20' : isPast ? '#F0FDF4' : '#F8FAFC', border: `2px solid ${isActive ? stage.color + '40' : isPast ? '#BBF7D0' : '#E2E8F0'}` }}>
+                  {isPast ? (
+                    <CheckCircle2 className="w-7 h-7 text-emerald-600" aria-hidden />
+                  ) : (
+                    (() => { const Icon = stage.icon; return Icon ? <Icon className="w-7 h-7" style={{ color: stage.color }} aria-hidden /> : null; })()
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -233,7 +246,7 @@ export default function Journey() {
 
                   <div className="space-y-2">
                     {stage.todo.map(item => (
-                      <label key={item.id} className="flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all hover:bg-slate-50">
+                      <label key={item.id} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:bg-slate-50">
                         <input type="checkbox" checked={completedItems.has(item.id)} onChange={() => toggleItem(item.id)} className="sr-only" />
                         <div className="shrink-0">
                           {completedItems.has(item.id) ? (
@@ -242,16 +255,17 @@ export default function Journey() {
                             <Circle className="w-5 h-5 text-slate-300" />
                           )}
                         </div>
-                        <span className={`text-sm font-semibold ${completedItems.has(item.id) ? 'text-slate-400 line-through' : item.important ? 'text-slate-800' : 'text-slate-600'}`}>
-                          {item.important && !completedItems.has(item.id) && <span className="text-amber-500 mr-1">★</span>}
+                        <span className={`text-sm font-semibold flex items-center gap-1 ${completedItems.has(item.id) ? 'text-slate-400 line-through' : item.important ? 'text-slate-800' : 'text-slate-600'}`}>
+                          {item.important && !completedItems.has(item.id) && <Star className="w-4 h-4 text-amber-500 shrink-0 fill-amber-500" aria-hidden />}
                           {item.label}
                         </span>
                       </label>
                     ))}
                   </div>
 
-                  <div className="p-4 rounded-2xl text-sm font-medium" style={{ background: stage.bg, border: `1px solid ${stage.border}`, color: stage.color }}>
-                    💡 <strong>Agent Tip:</strong> {stage.tip}
+                  <div className="p-4 rounded-lg text-sm font-medium flex gap-2" style={{ background: stage.bg, border: `1px solid ${stage.border}`, color: stage.color }}>
+                    <Lightbulb className="w-5 h-5 shrink-0 mt-0.5" aria-hidden />
+                    <span><strong>Agent Tip:</strong> {stage.tip}</span>
                   </div>
                 </div>
               )}

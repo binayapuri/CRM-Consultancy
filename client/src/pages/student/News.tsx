@@ -34,7 +34,7 @@ export default function News() {
   const formatCategory = (cat: string) => cat.replace('_', ' ');
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       <div className="mb-10">
         <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">Visa News & Updates</h1>
         <p className="text-slate-500 mt-1">Stay informed with the latest immigration changes and guides from verified sources.</p>
@@ -45,8 +45,8 @@ export default function News() {
           {loading ? (
              <div className="flex justify-center py-12"><div className="w-8 h-8 rounded-full border-4 border-ori-500 border-t-transparent animate-spin" /></div>
           ) : articles.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-3xl border border-slate-200">
-               <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
+            <div className="text-center py-16 bg-white rounded-xl border border-slate-200">
+               <div className="w-16 h-16 bg-slate-50 rounded-lg flex items-center justify-center mx-auto mb-4 border border-slate-100">
                  <Newspaper className="w-8 h-8 text-slate-300" />
                </div>
                <h3 className="text-lg font-bold text-slate-900 mb-1">No news published yet</h3>
@@ -55,7 +55,7 @@ export default function News() {
           ) : (
             <div className="space-y-4">
             {articles.map((article) => (
-              <div key={article._id} className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all group flex flex-col sm:flex-row">
+              <div key={article._id} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all group flex flex-col sm:flex-row">
                 {article.coverImage ? (
                   <div className="sm:w-2/5 h-48 sm:h-auto overflow-hidden relative">
                     <img src={article.coverImage} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -109,7 +109,7 @@ export default function News() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2rem] p-8 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-8 text-white relative overflow-hidden">
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
             <h3 className="text-xl font-display font-bold mb-2 relative z-10">Subscribe to Alerts</h3>
             <p className="text-slate-400 text-sm mb-6 relative z-10">Get instant updates on skilled migration changes and visa allocations.</p>
@@ -119,7 +119,7 @@ export default function News() {
             </form>
           </div>
 
-          <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
               <h3 className="font-bold text-slate-900">Trending Topics</h3>
             </div>

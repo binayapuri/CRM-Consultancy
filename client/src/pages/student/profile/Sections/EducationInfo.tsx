@@ -46,7 +46,7 @@ export const EducationInfo: React.FC<EducationInfoProps> = ({ items, onAdd, onDe
         {/* List of existing items */}
         <div className="space-y-4">
           {items.map((item) => (
-            <div key={item._id} className="relative group bg-slate-50/50 p-5 rounded-2xl border border-slate-100 hover:border-indigo-100 hover:bg-white transition-all">
+            <div key={item._id} className="relative group bg-slate-50/50 p-5 rounded-lg border border-slate-100 hover:border-indigo-100 hover:bg-white transition-all">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <h4 className="font-black text-slate-800 text-base">{item.qualification}</h4>
@@ -77,12 +77,12 @@ export const EducationInfo: React.FC<EducationInfoProps> = ({ items, onAdd, onDe
         {!showAddForm ? (
           <button 
             onClick={() => setShowAddForm(true)}
-            className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" /> Add Education Qualification
           </button>
         ) : (
-          <div className="bg-slate-50 p-6 rounded-3xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
+          <div className="bg-slate-50 p-6 rounded-xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
             <h4 className="font-black text-slate-800 text-sm flex items-center gap-2 mb-2">
               <GraduationCap className="w-4 h-4 text-indigo-500" /> New Qualification
             </h4>

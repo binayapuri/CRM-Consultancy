@@ -1,25 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { authFetch } from '../../store/auth';
-import { Trash2, FileText, File, Image, Download, CheckCircle2, AlertTriangle, Plus, X } from 'lucide-react';
+import { Trash2, FileText, File, Image, Download, CheckCircle2, AlertTriangle, Plus, X, Folder, ClipboardList, Paperclip, Upload, Loader2 } from 'lucide-react';
+import { DOC_TYPE_ICONS } from './icons';
 
 const DOC_TYPES = [
-  { value: 'PASSPORT', label: '🛂 Passport', visa: 'all' },
-  { value: 'IELTS_TRF', label: '📝 IELTS TRF', visa: 'all' },
-  { value: 'PTE_SCORE', label: '📝 PTE Score Report', visa: 'all' },
-  { value: 'TOEFL_SCORE', label: '📝 TOEFL Score', visa: 'all' },
-  { value: 'COE', label: '📋 Confirmation of Enrolment (CoE)', visa: '500' },
-  { value: 'OSHC', label: '🏥 OSHC Certificate', visa: '500' },
-  { value: 'DEGREE', label: '🎓 Degree Certificate', visa: 'all' },
-  { value: 'TRANSCRIPT', label: '📑 Academic Transcript', visa: 'all' },
-  { value: 'EMPLOYMENT_LETTER', label: '💼 Employment Reference Letter', visa: 'skilled' },
-  { value: 'SKILLS_ASSESSMENT', label: '📊 Skills Assessment Letter', visa: 'skilled' },
-  { value: 'POLICE_CLEARANCE', label: '🚔 Police Clearance', visa: 'all' },
-  { value: 'HEALTH_EXAM', label: '🏨 Health Examination Report', visa: 'skilled' },
-  { value: 'BIRTH_CERTIFICATE', label: '📜 Birth Certificate', visa: 'all' },
-  { value: 'MARRIAGE_CERTIFICATE', label: '💍 Marriage Certificate', visa: 'all' },
-  { value: 'BANK_STATEMENT', label: '🏦 Bank Statement', visa: '500' },
-  { value: 'PAYSLIP', label: '💰 Payslip / Payroll Record', visa: 'skilled' },
-  { value: 'OTHER', label: '📁 Other Document', visa: 'all' },
+  { value: 'PASSPORT', label: 'Passport', visa: 'all' },
+  { value: 'IELTS_TRF', label: 'IELTS TRF', visa: 'all' },
+  { value: 'PTE_SCORE', label: 'PTE Score Report', visa: 'all' },
+  { value: 'TOEFL_SCORE', label: 'TOEFL Score', visa: 'all' },
+  { value: 'COE', label: 'Confirmation of Enrolment (CoE)', visa: '500' },
+  { value: 'OSHC', label: 'OSHC Certificate', visa: '500' },
+  { value: 'DEGREE', label: 'Degree Certificate', visa: 'all' },
+  { value: 'TRANSCRIPT', label: 'Academic Transcript', visa: 'all' },
+  { value: 'EMPLOYMENT_LETTER', label: 'Employment Reference Letter', visa: 'skilled' },
+  { value: 'SKILLS_ASSESSMENT', label: 'Skills Assessment Letter', visa: 'skilled' },
+  { value: 'POLICE_CLEARANCE', label: 'Police Clearance', visa: 'all' },
+  { value: 'HEALTH_EXAM', label: 'Health Examination Report', visa: 'skilled' },
+  { value: 'BIRTH_CERTIFICATE', label: 'Birth Certificate', visa: 'all' },
+  { value: 'MARRIAGE_CERTIFICATE', label: 'Marriage Certificate', visa: 'all' },
+  { value: 'BANK_STATEMENT', label: 'Bank Statement', visa: '500' },
+  { value: 'PAYSLIP', label: 'Payslip / Payroll Record', visa: 'skilled' },
+  { value: 'OTHER', label: 'Other Document', visa: 'all' },
 ];
 
 const CHECKLISTS = {
@@ -82,7 +83,7 @@ export default function Documents() {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('type', selectedType);
-      fd.append('name', docName || DOC_TYPES.find(d => d.value === selectedType)?.label?.replace(/^[^ ]+ /, '') || file.name);
+      fd.append('name', docName || DOC_TYPES.find(d => d.value === selectedType)?.label || file.name);
       fd.append('description', description);
       const res = await authFetch('/api/student/documents', { method: 'POST', body: fd });
       const data = await res.json();
@@ -108,21 +109,23 @@ export default function Documents() {
   const checklist = CHECKLISTS[activeChecklist];
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       {/* Header */}
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">📂 Document Vault</h1>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <Folder className="w-10 h-10 text-indigo-600 shrink-0" aria-hidden /> Document Vault
+          </h1>
           <p className="text-slate-500 font-medium mt-2">Securely store your visa, education, and immigration documents.</p>
         </div>
-        <button onClick={() => setShowUpload(!showUpload)} className="flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-white text-sm" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+        <button onClick={() => setShowUpload(!showUpload)} className="flex items-center gap-2 px-5 py-3 rounded-lg font-black text-white text-sm" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
           <Plus className="w-4 h-4" /> Upload Document
         </button>
       </div>
 
       {/* Upload Panel */}
       {showUpload && (
-        <div className="mb-6 bg-white rounded-3xl p-6 space-y-4 animate-fade-in-up" style={{ border: '2px solid #C7D2FE' }}>
+        <div className="mb-6 bg-white rounded-xl p-6 space-y-4 animate-fade-in-up" style={{ border: '2px solid #C7D2FE' }}>
           <div className="flex items-center justify-between">
             <h3 className="font-black text-slate-900 text-lg">Upload New Document</h3>
             <button onClick={() => { setShowUpload(false); setFile(null); setMsg(null); }}><X className="w-5 h-5 text-slate-400" /></button>
@@ -143,14 +146,14 @@ export default function Documents() {
           <div>
             <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">File</label>
             <div
-              className="border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer hover:border-indigo-400 transition-colors"
+              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-indigo-400 transition-colors"
               style={{ borderColor: file ? '#6366F1' : '#CBD5E1', background: file ? '#EEF2FF' : '#F8FAFC' }}
               onClick={() => fileRef.current?.click()}
             >
               <input type="file" ref={fileRef} className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif" />
               {file ? (
                 <div>
-                  <div className="text-2xl mb-1">📎</div>
+                  <div className="mb-1 flex justify-center"><Paperclip className="w-8 h-8 text-indigo-500" aria-hidden /></div>
                   <p className="font-bold text-indigo-700 text-sm">{file.name}</p>
                   <p className="text-xs text-slate-400">{formatBytes(file.size)}</p>
                 </div>
@@ -170,15 +173,17 @@ export default function Documents() {
             </div>
           )}
 
-          <button onClick={handleUpload} disabled={!file || uploading} className="w-full py-3 rounded-2xl font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
-            {uploading ? '⏳ Uploading...' : '⬆️ Upload Document'}
+          <button onClick={handleUpload} disabled={!file || uploading} className="w-full py-3 rounded-lg font-black text-white text-sm disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+            {uploading ? <><Loader2 className="w-4 h-4 animate-spin" aria-hidden /> Uploading...</> : <><Upload className="w-4 h-4" aria-hidden /> Upload Document</>}
           </button>
         </div>
       )}
 
       {/* Visa checklist */}
       <div className="mb-6">
-        <h2 className="font-black text-slate-800 mb-3">📋 Visa Document Checklist</h2>
+        <h2 className="font-black text-slate-800 mb-3 flex items-center gap-2">
+          <ClipboardList className="w-5 h-5 text-indigo-600 shrink-0" aria-hidden /> Visa Document Checklist
+        </h2>
         <div className="flex gap-2 mb-4 flex-wrap">
           {Object.entries(CHECKLISTS).map(([key, cl]) => (
             <button key={key} onClick={() => setActiveChecklist(key as keyof typeof CHECKLISTS)} className="px-4 py-2 rounded-xl font-bold text-sm transition-all" style={activeChecklist === key ? { background: cl.color, color: 'white' } : { background: '#F1F5F9', color: '#64748B' }}>
@@ -191,9 +196,9 @@ export default function Documents() {
             const dt = DOC_TYPES.find(d => d.value === type);
             const done = uploadedTypes.has(type);
             return (
-              <div key={type} className="p-3 rounded-2xl flex items-center gap-2" style={{ background: done ? '#F0FDF4' : '#F8FAFC', border: `1.5px solid ${done ? '#BBF7D0' : '#E2E8F0'}` }}>
-                {done ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0" />}
-                <span className={`text-xs font-bold ${done ? 'text-emerald-800' : 'text-slate-500'}`}>{dt?.label?.replace(/^[^ ]+ /, '') || type}</span>
+              <div key={type} className="p-3 rounded-lg flex items-center gap-2" style={{ background: done ? '#F0FDF4' : '#F8FAFC', border: `1.5px solid ${done ? '#BBF7D0' : '#E2E8F0'}` }}>
+                {done ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : (() => { const Icon = DOC_TYPE_ICONS[type]; return Icon ? <Icon className="w-4 h-4 text-slate-400 shrink-0" aria-hidden /> : <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0" />; })()}
+                <span className={`text-xs font-bold ${done ? 'text-emerald-800' : 'text-slate-500'}`}>{dt?.label || type}</span>
               </div>
             );
           })}
@@ -206,15 +211,15 @@ export default function Documents() {
         {loading ? (
           <p className="text-slate-400 text-center py-8 font-medium">Loading documents...</p>
         ) : docs.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-3xl" style={{ border: '1px solid #E8EDFB' }}>
-            <div className="text-5xl mb-4">📂</div>
+          <div className="text-center py-12 bg-white rounded-xl" style={{ border: '1px solid #E8EDFB' }}>
+            <div className="mb-4 flex justify-center"><Folder className="w-14 h-14 text-slate-300" aria-hidden /></div>
             <p className="font-bold text-slate-500">No documents uploaded yet</p>
             <p className="text-sm text-slate-400 mt-1">Start uploading your visa and immigration documents.</p>
           </div>
         ) : (
           <div className="grid gap-3">
             {docs.map(doc => (
-              <div key={doc._id} className="bg-white rounded-2xl p-4 flex items-center gap-4" style={{ border: '1px solid #E8EDFB' }}>
+              <div key={doc._id} className="bg-white rounded-lg p-4 flex items-center gap-4" style={{ border: '1px solid #E8EDFB' }}>
                 <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
                   <FileIcon mime={doc.mimeType} />
                 </div>
@@ -222,7 +227,7 @@ export default function Documents() {
                   <p className="font-bold text-slate-800 text-sm truncate">{doc.name}</p>
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                      {DOC_TYPES.find(t => t.value === doc.type)?.label?.replace(/^[^ ]+ /, '') || doc.type}
+                      {DOC_TYPES.find(t => t.value === doc.type)?.label || doc.type}
                     </span>
                     {doc.fileSize && <span className="text-xs text-slate-400">{formatBytes(doc.fileSize)}</span>}
                     <span className="text-xs text-slate-400">{new Date(doc.createdAt).toLocaleDateString('en-AU')}</span>

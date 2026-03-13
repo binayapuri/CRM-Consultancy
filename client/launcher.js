@@ -16,8 +16,9 @@ try {
 } catch (_) {}
 await new Promise(r => setTimeout(r, 1000));
 
-// Run vite
-const vite = spawn('npx', ['vite'], {
+// Run vite directly via node (avoids ENOENT when npx is not in PATH, e.g. on Windows)
+const viteBin = path.join(__dirname, 'node_modules', 'vite', 'bin', 'vite.js');
+const vite = spawn(process.execPath, [viteBin], {
   cwd: __dirname,
   stdio: 'inherit',
   env: { ...process.env, PORT: String(PORT) },

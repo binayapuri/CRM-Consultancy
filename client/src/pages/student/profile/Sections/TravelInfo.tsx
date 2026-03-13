@@ -29,7 +29,7 @@ export const TravelInfo: React.FC<TravelInfoProps> = ({ items, onAdd, onDelete }
       <div className="space-y-6">
         <div className="space-y-4">
           {items.map((item) => (
-            <div key={item._id} className={`relative group p-5 rounded-2xl border transition-all ${item.visaRefused ? 'bg-red-50/30 border-red-100 hover:bg-red-50' : 'bg-slate-50/50 border-slate-100 hover:bg-white hover:border-indigo-100'}`}>
+            <div key={item._id} className={`relative group p-5 rounded-lg border transition-all ${item.visaRefused ? 'bg-red-50/30 border-red-100 hover:bg-red-50' : 'bg-slate-50/50 border-slate-100 hover:bg-white hover:border-indigo-100'}`}>
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -51,11 +51,11 @@ export const TravelInfo: React.FC<TravelInfoProps> = ({ items, onAdd, onDelete }
         </div>
 
         {!showAddForm ? (
-          <button onClick={() => setShowAddForm(true)} className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-2">
+          <button onClick={() => setShowAddForm(true)} className="w-full py-4 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> Add International Travel Record
           </button>
         ) : (
-          <div className="bg-slate-50 p-6 rounded-3xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
+          <div className="bg-slate-50 p-6 rounded-xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <F label="Country"><SI value={newEntry.country} onChange={e => setNewEntry({...newEntry, country: e.target.value})} /></F>
               <F label="City / Region"><SI value={newEntry.city} onChange={e => setNewEntry({...newEntry, city: e.target.value})} /></F>

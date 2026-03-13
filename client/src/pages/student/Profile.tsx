@@ -138,17 +138,17 @@ export default function StudentProfile() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-500">
+    <div className="w-full pb-20 animate-in fade-in duration-500">
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-24 right-8 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-3xl shadow-2xl animate-in slide-in-from-right-10 duration-300">
+        <div className="fixed top-24 right-8 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl animate-in slide-in-from-right-10 duration-300">
           <div className="p-1.5 bg-emerald-500 rounded-full text-white"><CheckCircle2 className="w-4 h-4" /></div>
           <span className="font-black text-sm">{toast}</span>
         </div>
       )}
 
       {errorBanner && (
-        <div className="mb-6 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-800">
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-800">
           {errorBanner}
         </div>
       )}
@@ -159,8 +159,8 @@ export default function StudentProfile() {
           <h1 className="text-5xl font-black text-slate-900 tracking-tight mb-2">My Profile</h1>
           <p className="text-slate-500 font-bold max-w-lg">Manage your migration journey details. This is your "source of truth"—everything here helps your agent and AI Compass work for you.</p>
         </div>
-        <div className="flex items-center gap-4 bg-white p-2 rounded-3xl border border-slate-200">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-xl border border-indigo-100 uppercase">
+        <div className="flex items-center gap-4 bg-white p-2 rounded-xl border border-slate-200">
+          <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-xl border border-indigo-100 uppercase">
              {profile.firstName?.[0]}{profile.lastName?.[0]}
           </div>
           <div className="pr-4">
@@ -176,7 +176,7 @@ export default function StudentProfile() {
           <button 
             key={t.id} 
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2.5 px-6 py-3.5 rounded-2xl font-black text-xs tracking-wide transition-all shrink-0 uppercase border
+            className={`flex items-center gap-2.5 px-6 py-3.5 rounded-lg font-black text-xs tracking-wide transition-all shrink-0 uppercase border
               ${tab === t.id 
                 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-600/20 scale-[1.02]' 
                 : 'bg-white text-slate-400 border-slate-200 hover:border-indigo-200 hover:text-indigo-400'}`}

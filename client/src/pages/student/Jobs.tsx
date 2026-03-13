@@ -47,7 +47,7 @@ export default function Jobs() {
   const formatType = (type: string) => type.replace('_', ' ');
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       <div className="mb-8">
         <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">Job & Pathway Matcher</h1>
         <p className="text-slate-500 mt-1">Opportunities organically ranked by your ANZSCO code: <span className="font-bold font-mono bg-sky-100 text-sky-800 px-2 rounded">{user?.profile?.anzscoCode || 'Not Set'}</span></p>
@@ -66,7 +66,7 @@ export default function Jobs() {
             {loading ? (
               <div className="flex justify-center py-12"><div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" /></div>
             ) : jobs.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-3xl border border-slate-200">
+              <div className="text-center py-16 bg-white rounded-xl border border-slate-200">
                 <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-slate-900 mb-1">No jobs available</h3>
                 <p className="text-slate-500 font-medium">Check back later.</p>
@@ -77,7 +77,7 @@ export default function Jobs() {
                 const hasApplied = applications.some(a => a.jobId?._id === job._id);
 
                 return (
-                  <div key={job._id} className={`bg-white rounded-2xl border p-6 shadow-sm transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6 ${isMatch ? 'border-emerald-300 bg-emerald-50/10' : 'border-slate-200'}`}>
+                  <div key={job._id} className={`bg-white rounded-lg border p-6 shadow-sm transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6 ${isMatch ? 'border-emerald-300 bg-emerald-50/10' : 'border-slate-200'}`}>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase rounded-lg">
@@ -126,7 +126,7 @@ export default function Jobs() {
         </div>
 
         <div className="lg:w-1/3 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm sticky top-6">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm sticky top-6">
             <div className="bg-slate-50 p-6 border-b border-slate-200">
               <h3 className="font-bold text-slate-900 flex items-center gap-2">My Applications</h3>
             </div>

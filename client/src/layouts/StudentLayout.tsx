@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, FileText, Calculator, Compass, Search, LogOut, Map, Briefcase, Newspaper, ChevronRight, Settings } from 'lucide-react';
+import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, ChevronRight, Settings, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import AIChatWidget from '../components/AIChatWidget';
 import Notifications from '../components/Notifications';
+
+const SIDEBAR_EXPANDED = 256; // w-64
+const SIDEBAR_COLLAPSED = 80;  // icon-only
 
 const navSections = [
   {
@@ -28,7 +32,7 @@ const navSections = [
     items: [
       { to: 'jobs', icon: Briefcase, label: 'Job Board' },
       { to: 'news', icon: Newspaper, label: 'News & Rules' },
-      { to: 'consultancies', icon: Search, label: 'Find Consultancy' },
+      { to: 'consultancies', icon: SearchIcon, label: 'Find Consultancy' },
     ],
   },
   {
@@ -42,6 +46,9 @@ const navSections = [
 export default function StudentLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const sidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
   const initials = `${user?.profile?.firstName?.[0] ?? ''}${user?.profile?.lastName?.[0] ?? ''}`.toUpperCase() || 'S';
 
   const handleLogout = () => { logout(); navigate('/login'); };
@@ -50,44 +57,50 @@ export default function StudentLayout() {
     <div className="min-h-screen flex" style={{ background: '#F0F4FF', fontFamily: 'Inter, sans-serif' }}>
       {/* Sidebar */}
       <aside
-        className="w-64 flex flex-col fixed h-full z-30"
-        style={{ background: '#0F0E2E', boxShadow: '4px 0 24px rgba(0,0,0,0.25)' }}
+        className="flex flex-col fixed h-full z-30 transition-[width] duration-200 ease-in-out overflow-hidden"
+        style={{ width: sidebarWidth, background: '#0F0E2E', boxShadow: '4px 0 24px rgba(0,0,0,0.25)' }}
       >
         {/* Logo */}
-        <div className="px-6 py-5 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-lg" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>O</div>
-            <div>
-              <h1 className="text-white font-black text-lg tracking-tight leading-none">ORIVISA</h1>
-              <p className="text-xs font-medium mt-0.5" style={{ color: '#6D7ECC' }}>Your Australian Journey</p>
-            </div>
+        <div className={`border-b border-white/10 shrink-0 ${sidebarCollapsed ? 'px-3 py-4' : 'px-6 py-5'}`}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-md flex items-center justify-center font-black text-white text-lg shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>O</div>
+            {!sidebarCollapsed && (
+              <div className="min-w-0">
+                <h1 className="text-white font-black text-lg tracking-tight leading-none">ORIVISA</h1>
+                <p className="text-xs font-medium mt-0.5" style={{ color: '#6D7ECC' }}>Your Australian Journey</p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-6">
+        <nav className="flex-1 px-3 py-4 overflow-y-auto overflow-x-hidden space-y-6">
           {navSections.map(section => (
             <div key={section.label}>
-              <p className="text-xs font-bold uppercase tracking-widest px-3 mb-2" style={{ color: '#3D4A7A' }}>{section.label}</p>
+              {!sidebarCollapsed && (
+                <p className="text-xs font-bold uppercase tracking-widest px-3 mb-2" style={{ color: '#3D4A7A' }}>{section.label}</p>
+              )}
               <div className="space-y-0.5">
                 {section.items.map(({ to, icon: Icon, label }) => (
                   <NavLink
                     key={to}
                     to={to}
+                    title={sidebarCollapsed ? label : undefined}
                     className={({ isActive }) =>
-                      `flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all group ${
+                      `flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 group min-h-[40px] ${
+                        sidebarCollapsed ? 'justify-center px-0' : 'justify-between px-3'
+                      } ${
                         isActive
-                          ? 'text-white'
-                          : 'text-[#6D7ECC] hover:text-white hover:bg-white/5'
+                          ? 'text-white bg-indigo-500 shadow-md ring-1 ring-black/10'
+                          : 'text-[#6D7ECC] hover:text-white hover:bg-white/10'
                       }`
                     }
-                    style={({ isActive }) => isActive ? { background: 'linear-gradient(90deg, rgba(99,102,241,0.3), rgba(16,185,129,0.15))', borderLeft: '3px solid #6366F1' } : {}}
                   >
-                    <div className="flex items-center gap-3">
-                      <Icon className="w-4.5 h-4.5 shrink-0" style={{ width: 18, height: 18 }} />
-                      <span>{label}</span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Icon className="w-5 h-5 shrink-0" style={{ width: 20, height: 20 }} />
+                      {!sidebarCollapsed && <span className="truncate">{label}</span>}
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-50 transition-opacity" />
+                    {!sidebarCollapsed && <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />}
                   </NavLink>
                 ))}
               </div>
@@ -95,38 +108,76 @@ export default function StudentLayout() {
           ))}
         </nav>
 
-        {/* User footer */}
-        <div className="px-3 py-3 border-t border-white/10">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)' }}>
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black text-white shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
-              {initials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-white truncate">
-                {user?.profile?.firstName || 'Student'} {user?.profile?.lastName || ''}
-              </p>
-              <p className="text-xs truncate" style={{ color: '#6D7ECC' }}>{user?.email}</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <Notifications />
-              <button
-                onClick={handleLogout}
-                className="p-1.5 rounded-lg hover:bg-white/10 transition"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" style={{ color: '#6D7ECC' }} />
-              </button>
-            </div>
-          </div>
+        {/* Collapse toggle */}
+        <div className="p-3 border-t border-white/10">
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-[#6D7ECC] hover:text-white hover:bg-white/10 transition-all duration-200"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? <PanelLeft className="w-5 h-5 shrink-0" /> : <PanelLeftClose className="w-5 h-5 shrink-0" />}
+            {!sidebarCollapsed && <span className="text-sm font-medium">Collapse</span>}
+          </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 ml-64 min-h-screen">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      {/* Main: topbar + full-width content */}
+      <div className="flex-1 flex flex-col min-h-screen transition-[margin-left] duration-200 ease-in-out" style={{ marginLeft: sidebarWidth }}>
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
+          <div className="flex-1 max-w-md flex items-center gap-2">
+            <SearchIcon className="w-5 h-5 text-slate-400 shrink-0" />
+            <input
+              type="search"
+              placeholder="Search…"
+              className="w-full px-3 py-2 rounded-md border border-slate-200 bg-slate-50 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400"
+            />
+          </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Notifications />
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-100 transition"
+              >
+                {user?.profile?.avatar ? (
+                  <img src={user.profile.avatar} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-slate-200" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm text-white shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+                    {initials}
+                  </div>
+                )}
+                <span className="hidden sm:inline text-sm font-medium text-slate-700 truncate max-w-[120px]">
+                  {user?.profile?.firstName} {user?.profile?.lastName}
+                </span>
+              </button>
+              {profileOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} aria-hidden />
+                  <div className="absolute right-0 mt-2 w-56 rounded-lg bg-white shadow-xl border border-slate-200 py-2 z-50">
+                    <div className="px-4 py-3 border-b border-slate-100">
+                      <p className="font-medium text-slate-900">{user?.profile?.firstName} {user?.profile?.lastName}</p>
+                      <p className="text-sm text-slate-500 truncate">{user?.email}</p>
+                    </div>
+                    <NavLink to="profile" className="flex items-center gap-2 px-4 py-2.5 text-slate-700 hover:bg-slate-50" onClick={() => setProfileOpen(false)}>
+                      <User className="w-4 h-4" /> Profile
+                    </NavLink>
+                    <NavLink to="settings" className="flex items-center gap-2 px-4 py-2.5 text-slate-700 hover:bg-slate-50" onClick={() => setProfileOpen(false)}>
+                      <Settings className="w-4 h-4" /> Settings
+                    </NavLink>
+                    <button onClick={() => { setProfileOpen(false); handleLogout(); }} className="flex items-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 w-full text-left">
+                      <LogOut className="w-4 h-4" /> Logout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 px-6 py-8 overflow-auto">
           <Outlet />
-        </div>
-      </main>
+        </main>
+      </div>
 
       <AIChatWidget />
     </div>

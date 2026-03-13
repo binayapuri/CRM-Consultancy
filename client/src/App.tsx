@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth';
+import { getDashboardPathForRole } from './lib/authHelpers';
 
 // Layouts
 import ConsultancyLayout from './layouts/ConsultancyLayout';
@@ -91,17 +92,23 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles:
   return <>{children}</>;
 }
 
+function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, token } = useAuthStore();
+  if (token && user) return <Navigate to={getDashboardPathForRole(user.role)} replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
+      <Route path="/forgot-password" element={<GuestOnlyRoute><ForgotPassword /></GuestOnlyRoute>} />
+      <Route path="/reset-password" element={<GuestOnlyRoute><ResetPassword /></GuestOnlyRoute>} />
       <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/register-consultancy" element={<RegisterConsultancy />} />
-      <Route path="/activate" element={<Activate />} />
+      <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
+      <Route path="/register-consultancy" element={<GuestOnlyRoute><RegisterConsultancy /></GuestOnlyRoute>} />
+      <Route path="/activate" element={<GuestOnlyRoute><Activate /></GuestOnlyRoute>} />
 
       <Route path="/consultancy" element={<ProtectedRoute roles={['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPER_ADMIN']}><ConsultancyLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
