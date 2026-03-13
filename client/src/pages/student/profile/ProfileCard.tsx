@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Edit2, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { formCardClass, btnCancel, btnPrimary } from './shared';
 
 interface ProfileCardProps {
   title: string;
@@ -35,6 +36,11 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     setIsEditing(false);
   };
 
+  // List-based sections (Education, Work, Travel, Family) pass editForm={null} and render
+  // their own list + "Add [X]" button + add form in children. Always show children so the
+  // form is visible; never show generic empty state or blank edit mode.
+  const isListSection = editForm == null;
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 mb-6">
       {/* Header */}
@@ -45,42 +51,38 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           </div>
           <h3 className="font-black text-slate-800 tracking-tight">{title}</h3>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          {!isEditing ? (
+          {!isListSection && !isEditing ? (
             <>
-              <button 
+              <button
                 onClick={() => setIsEditing(true)}
                 className="p-2 hover:bg-indigo-50 text-indigo-400 hover:text-indigo-600 rounded-xl transition-colors group"
                 title="Edit Section"
               >
                 <Edit2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
               </button>
-              <button 
+              <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="p-2 hover:bg-slate-100 text-slate-400 rounded-xl transition-colors"
               >
                 {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
             </>
+          ) : !isListSection && isEditing ? (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-2 hover:bg-slate-100 text-slate-400 rounded-xl transition-colors"
+            >
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
           ) : (
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={handleCancel}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
-                disabled={isSaving}
-              >
-                <X className="w-3.5 h-3.5" /> Cancel
-              </button>
-              <button 
-                onClick={handleSave}
-                className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md shadow-indigo-600/20 transition-all active:scale-95"
-                disabled={isSaving}
-              >
-                <Save className="w-3.5 h-3.5" /> 
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-2 hover:bg-slate-100 text-slate-400 rounded-xl transition-colors"
+            >
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
           )}
         </div>
       </div>
@@ -88,23 +90,48 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
       {/* Content */}
       {isExpanded && (
         <div className="p-6">
-          {isEditing ? (
+          {isListSection ? (
+            <div className="animate-in fade-in duration-300">
+              {children}
+            </div>
+          ) : isEditing ? (
             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-              {editForm}
+              <div className={formCardClass}>
+                {editForm}
+              </div>
+              <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3">
+                <button
+                  onClick={handleCancel}
+                  className={btnCancel}
+                  disabled={isSaving}
+                >
+                  <X className="w-4 h-4" /> Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className={btnPrimary}
+                  disabled={isSaving}
+                >
+                  <Save className="w-4 h-4" />
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
             </div>
           ) : (
             <div className={`animate-in fade-in duration-300 ${isEmpty ? 'py-8 text-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-200' : ''}`}>
               {isEmpty ? (
                 <div className="flex flex-col items-center gap-2">
                   <p className="text-slate-400 text-sm font-medium">No information added yet</p>
-                  <button 
+                  <button
                     onClick={() => setIsEditing(true)}
                     className="text-xs font-bold text-indigo-600 hover:underline"
                   >
                     + Add Details
                   </button>
                 </div>
-              ) : children}
+              ) : (
+                children
+              )}
             </div>
           )}
         </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plane, FileCheck, Award, Calendar, Globe, MapPin } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
-import { SI, SS, F, DataRow } from '../shared';
+import { SI, SS, F, DataRow, formGridClass, formGridClassWide } from '../shared';
 
 interface ImmigrationInfoProps {
   profile: any;
@@ -39,7 +39,7 @@ export const ImmigrationInfo: React.FC<ImmigrationInfoProps> = ({ profile, engli
       isEmpty={!profile.currentVisa && !english.testType}
       editForm={
         <div className="space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className={formGridClass}>
             <F label="Currently in Australia?">
               <SS value={pForm.onshore ? 'yes' : 'no'} onChange={e => setPForm({...pForm, onshore: e.target.value === 'yes'})}>
                 <option value="no">No — Offshore</option>
@@ -55,7 +55,7 @@ export const ImmigrationInfo: React.FC<ImmigrationInfoProps> = ({ profile, engli
             <h4 className="text-sm font-black text-slate-800 mb-4 flex items-center gap-2">
               <Award className="w-4 h-4 text-indigo-500" /> English Test Details
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={formGridClassWide}>
               <F label="Test Type">
                 <SS value={eForm.testType || ''} onChange={e => setEForm({...eForm, testType: e.target.value})}>
                   <option value="">Select</option>

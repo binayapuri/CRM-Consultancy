@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, Calendar, Mail, Phone, Globe, CreditCard, Heart } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
-import { SI, SS, F, DataRow } from '../shared';
+import { SI, SS, F, DataRow, formGridClass } from '../shared';
 
 interface PersonalInfoProps {
   data: any;
@@ -31,7 +31,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ data, onSave }) => {
       onCancel={handleCancel}
       isEmpty={!data.firstName && !data.lastName}
       editForm={
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className={formGridClass}>
           <F label="First Name"><SI value={form.firstName || ''} onChange={e => setForm({...form, firstName: e.target.value})} /></F>
           <F label="Last Name"><SI value={form.lastName || ''} onChange={e => setForm({...form, lastName: e.target.value})} /></F>
           <F label="Date of Birth"><SI type="date" value={form.dob ? form.dob.split('T')[0] : ''} onChange={e => setForm({...form, dob: e.target.value})} /></F>

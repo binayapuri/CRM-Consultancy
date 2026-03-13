@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authFetch } from '../../store/auth';
-import { User, ShieldCheck, GraduationCap, Briefcase, Plane, MapPin, Heart, Target, StickyNote, CheckCircle2 } from 'lucide-react';
+import { useUiStore } from '../../store/ui';
+import { User, ShieldCheck, GraduationCap, Briefcase, Plane, MapPin, Heart, Target, StickyNote } from 'lucide-react';
 
 // Sub-components
 import { PersonalInfo } from './profile/Sections/PersonalInfo';
@@ -13,6 +14,7 @@ import { FamilyInfo } from './profile/Sections/FamilyInfo';
 import { SkillsInfo } from './profile/Sections/SkillsInfo';
 import { HealthInfo } from './profile/Sections/HealthInfo';
 import { NotesInfo } from './profile/Sections/NotesInfo';
+import { StudentSectionTabs } from '../../components/StudentSectionTabs';
 
 const TABS = [
   { id: 'personal', label: 'Personal', icon: <User className="w-4 h-4" /> },
@@ -42,10 +44,8 @@ export default function StudentProfile() {
   const [statement, setStatement] = useState('');
   
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
-
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  const showToast = useUiStore((s) => s.showToast);
 
   async function fetchJson(url: string) {
     const res = await authFetch(url);
@@ -123,11 +123,11 @@ export default function StudentProfile() {
     if (!res.ok) {
       const msg = body?.error || `Save failed (${res.status})`;
       setErrorBanner(msg);
-      showToast(msg);
+      showToast(msg, 'error');
       return;
     }
     await refreshData();
-    showToast('Profile Updated!');
+    showToast('Profile Updated!', 'success');
   };
 
   if (loading) return (
@@ -139,14 +139,6 @@ export default function StudentProfile() {
 
   return (
     <div className="w-full pb-20 animate-in fade-in duration-500">
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed top-24 right-8 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl animate-in slide-in-from-right-10 duration-300">
-          <div className="p-1.5 bg-emerald-500 rounded-full text-white"><CheckCircle2 className="w-4 h-4" /></div>
-          <span className="font-black text-sm">{toast}</span>
-        </div>
-      )}
-
       {errorBanner && (
         <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-800">
           {errorBanner}
@@ -171,20 +163,7 @@ export default function StudentProfile() {
       </div>
 
       {/* Modern Navigation Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-4 mb-8 scrollbar-hide no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-        {TABS.map(t => (
-          <button 
-            key={t.id} 
-            onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2.5 px-6 py-3.5 rounded-lg font-black text-xs tracking-wide transition-all shrink-0 uppercase border
-              ${tab === t.id 
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-600/20 scale-[1.02]' 
-                : 'bg-white text-slate-400 border-slate-200 hover:border-indigo-200 hover:text-indigo-400'}`}
-          >
-            {t.icon} {t.label}
-          </button>
-        ))}
-      </div>
+      <StudentSectionTabs tabs={TABS} activeId={tab} onChange={setTab} />
 
       {/* Main Content Area */}
       <div className="animate-in slide-in-from-bottom-4 duration-500">
@@ -197,7 +176,7 @@ export default function StudentProfile() {
         {tab === 'family' && <FamilyInfo items={family} onAdd={wrapSave('/api/student/family-members', 'POST')} onDelete={id => wrapSave(`/api/student/family-members/${id}`, 'DELETE')({})} />}
         {tab === 'skills' && <SkillsInfo data={skills} onSave={wrapSave('/api/student/skills')} />}
         {tab === 'health' && <HealthInfo data={health} onSave={wrapSave('/api/student/health')} />}
-        {tab === 'notes' && <NotesInfo notes={notes} statement={statement} onSaveStatement={txt => wrapSave('/api/student/profile/statement')({ initialStatement: txt })} onAddNote={wrapSave('/api/student/notes', 'POST')} onDeleteNote={id => wrapSave(`/api/student/notes/${id}`, 'DELETE')({})} onTogglePin={(id, isPinned) => wrapSave(`/api/student/notes/${id}`)({ isPinned })} />}
+        {tab === 'notes' && <NotesInfo notes={notes} statement={statement} onSaveStatement={txt => wrapSave('/api/student/profile/statement')({ initialStatement: txt })} onAddNote={wrapSave('/api/student/notes', 'POST')} onUpdateNote={(id, data) => wrapSave(`/api/student/notes/${id}`)(data)} onDeleteNote={id => wrapSave(`/api/student/notes/${id}`, 'DELETE')({})} onTogglePin={(id, isPinned) => wrapSave(`/api/student/notes/${id}`)({ isPinned })} />}
       </div>
     </div>
   );

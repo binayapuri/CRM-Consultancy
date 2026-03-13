@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, FileText, Calendar, Heart, Search } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
-import { SI, SS, F, DataRow } from '../shared';
+import { SI, SS, F, DataRow, formGridClassWide } from '../shared';
 
 interface HealthInfoProps {
   data: any;
@@ -26,7 +26,7 @@ export const HealthInfo: React.FC<HealthInfoProps> = ({ data, onSave }) => {
     <ProfileCard title="Health & Character Verifications" icon={<ShieldCheck className="w-5 h-5" />} isSaving={isSaving} onSave={handleSave} onCancel={handleCancel} isEmpty={!data.healthStatus && !data.hapId}
       editForm={
         <div className="space-y-8">
-           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className={formGridClassWide}>
             <F label="Health Exam Status"><SS value={form.healthStatus || ''} onChange={e => setForm({...form, healthStatus: e.target.value})}><option value="">Select</option><option>not-started</option><option>booked</option><option>completed</option><option>cleared</option></SS></F>
             <F label="HAP ID"><SI value={form.hapId || ''} onChange={e => setForm({...form, hapId: e.target.value})} placeholder="HAP-XXXXXXXX" /></F>
             <F label="Health Exam Date"><SI type="date" value={form.healthDate ? form.healthDate.split('T')[0] : ''} onChange={e => setForm({...form, healthDate: e.target.value})} /></F>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plane, Plus, Trash2, Calendar, Globe, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
-import { SI, SS, F, TA } from '../shared';
+import { SI, SS, F, TA, formCardClass, formGridClassWide, btnCancel, btnPrimary, btnAddDashed } from '../shared';
 
 interface TravelInfoProps {
   items: any[];
@@ -51,12 +51,12 @@ export const TravelInfo: React.FC<TravelInfoProps> = ({ items, onAdd, onDelete }
         </div>
 
         {!showAddForm ? (
-          <button onClick={() => setShowAddForm(true)} className="w-full py-4 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-2">
+          <button onClick={() => setShowAddForm(true)} className={btnAddDashed}>
             <Plus className="w-4 h-4" /> Add International Travel Record
           </button>
         ) : (
-          <div className="bg-slate-50 p-6 rounded-xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={`${formCardClass} animate-in slide-in-from-bottom-2`}>
+            <div className={formGridClassWide}>
               <F label="Country"><SI value={newEntry.country} onChange={e => setNewEntry({...newEntry, country: e.target.value})} /></F>
               <F label="City / Region"><SI value={newEntry.city} onChange={e => setNewEntry({...newEntry, city: e.target.value})} /></F>
               <F label="Visa Type Held"><SI value={newEntry.visaType} onChange={e => setNewEntry({...newEntry, visaType: e.target.value})} placeholder="e.g. Visitor (600)" /></F>
@@ -71,8 +71,8 @@ export const TravelInfo: React.FC<TravelInfoProps> = ({ items, onAdd, onDelete }
             {newEntry.visaRefused && <F label="Reason for Refusal"><TA value={newEntry.refusalReason} onChange={e => setNewEntry({...newEntry, refusalReason: e.target.value})} /></F>}
             <F label="Additional Notes"><TA value={newEntry.notes} onChange={e => setNewEntry({...newEntry, notes: e.target.value})} /></F>
             <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setShowAddForm(false)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-xl transition-colors" disabled={isSaving}>Cancel</button>
-              <button onClick={handleAdd} className="px-6 py-2 text-xs font-black text-white bg-indigo-600 rounded-xl shadow-lg hover:bg-indigo-700 transition-all" disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Record'}</button>
+              <button onClick={() => setShowAddForm(false)} className={btnCancel} disabled={isSaving}>Cancel</button>
+              <button onClick={handleAdd} className={btnPrimary} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Record'}</button>
             </div>
           </div>
         )}

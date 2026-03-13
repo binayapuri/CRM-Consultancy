@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useAuthStore, authFetch } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
 import { KeyRound, User, Camera, Shield, Trash2, Eye, EyeOff, CheckCircle2, AlertTriangle, LogOut, Settings as SettingsIcon } from 'lucide-react';
+import { StudentSectionTabs } from '../../components/StudentSectionTabs';
 
 const TABS = [
   { id: 'security', label: 'Security', icon: KeyRound },
@@ -142,13 +143,14 @@ export default function Settings() {
       </div>
 
       {/* Tab navigation */}
-      <div className="flex gap-2 flex-wrap mb-6">
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className="px-4 py-2.5 rounded-lg font-bold text-sm transition-all" style={tab === t.id ? { background: '#4338CA', color: 'white' } : { background: '#F1F5F9', color: '#64748B' }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <StudentSectionTabs
+        tabs={TABS.map((t) => {
+          const Icon = t.icon;
+          return { id: t.id, label: t.label, icon: <Icon className="w-4 h-4" aria-hidden /> };
+        })}
+        activeId={tab}
+        onChange={setTab}
+      />
 
       {/* Security Tab */}
       {tab === 'security' && (

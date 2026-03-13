@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GraduationCap, Plus, Trash2, Calendar, MapPin, Building2 } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
-import { SI, F } from '../shared';
+import { SI, F, formCardClass, formGridClass, btnCancel, btnPrimary, btnAddDashed } from '../shared';
 
 interface EducationInfoProps {
   items: any[];
@@ -75,18 +75,15 @@ export const EducationInfo: React.FC<EducationInfoProps> = ({ items, onAdd, onDe
 
         {/* Add Form / Button */}
         {!showAddForm ? (
-          <button 
-            onClick={() => setShowAddForm(true)}
-            className="w-full py-4 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-2"
-          >
+          <button onClick={() => setShowAddForm(true)} className={btnAddDashed}>
             <Plus className="w-4 h-4" /> Add Education Qualification
           </button>
         ) : (
-          <div className="bg-slate-50 p-6 rounded-xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
+          <div className={`${formCardClass} animate-in slide-in-from-bottom-2`}>
             <h4 className="font-black text-slate-800 text-sm flex items-center gap-2 mb-2">
               <GraduationCap className="w-4 h-4 text-indigo-500" /> New Qualification
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className={formGridClass}>
               <F label="Institution"><SI value={newEntry.institution} onChange={e => setNewEntry({...newEntry, institution: e.target.value})} placeholder="e.g. University of Sydney" /></F>
               <F label="Qualification"><SI value={newEntry.qualification} onChange={e => setNewEntry({...newEntry, qualification: e.target.value})} placeholder="e.g. Bachelor of IT" /></F>
               <F label="Field of Study"><SI value={newEntry.fieldOfStudy} onChange={e => setNewEntry({...newEntry, fieldOfStudy: e.target.value})} /></F>
@@ -106,20 +103,8 @@ export const EducationInfo: React.FC<EducationInfoProps> = ({ items, onAdd, onDe
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
-              <button 
-                onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-xl transition-colors"
-                disabled={isSaving}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleAdd}
-                className="px-6 py-2 text-xs font-black text-white bg-indigo-600 rounded-xl shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all"
-                disabled={isSaving}
-              >
-                {isSaving ? 'Processing...' : 'Add Opportunity'}
-              </button>
+              <button onClick={() => setShowAddForm(false)} className={btnCancel} disabled={isSaving}>Cancel</button>
+              <button onClick={handleAdd} className={btnPrimary} disabled={isSaving}>{isSaving ? 'Processing...' : 'Add Opportunity'}</button>
             </div>
           </div>
         )}

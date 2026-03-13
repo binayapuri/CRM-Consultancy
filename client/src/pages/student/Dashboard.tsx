@@ -152,7 +152,7 @@ export default function StudentDashboard() {
             <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#10B981' }}>My PR Points</p>
             <p className="text-6xl font-black text-white leading-none">{prPoints}</p>
             <p className="text-xs mt-2" style={{ color: '#94A3B8' }}>Estimate · Complete profile for accuracy</p>
-            <Link to="calculator" className="mt-3 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full transition hover:opacity-80" style={{ background: 'rgba(99,102,241,0.4)', color: '#C7D2FE' }}>
+            <Link to="../calculator" className="mt-3 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full transition hover:opacity-80" style={{ background: 'rgba(99,102,241,0.4)', color: '#C7D2FE' }}>
               Full Calculator <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -198,7 +198,7 @@ export default function StudentDashboard() {
               {currentActions.map((item, i) => (
                 <Link
                   key={i}
-                  to={item.link}
+                  to={`../${item.link}`}
                   className="flex items-center gap-4 p-4 rounded-lg group transition-all hover:scale-[1.01]"
                   style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
                 >
@@ -224,7 +224,7 @@ export default function StudentDashboard() {
                 return (
                 <Link
                   key={to}
-                  to={to}
+                  to={`../${to}`}
                   className="flex items-center gap-3 p-3 rounded-lg group transition-all hover:scale-[1.01]"
                   style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
                 >
@@ -249,7 +249,7 @@ export default function StudentDashboard() {
             <p className="text-sm font-semibold text-indigo-900 leading-relaxed">
               Your profile data stays <strong>100% private</strong>. If you choose to connect with a verified MARN agent, you control exactly what they can see.
             </p>
-            <Link to="consultancies" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+            <Link to="../consultancies" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
               Browse agents <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -265,7 +265,7 @@ export default function StudentDashboard() {
             return (
             <Link
               key={to}
-              to={to}
+              to={`../${to}`}
               className="bg-white p-6 rounded-xl group transition-all hover:shadow-lg hover:-translate-y-1"
               style={{ border: '1px solid #E8EDFB' }}
             >

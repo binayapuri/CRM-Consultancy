@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Plus, Trash2, Calendar, User, FileCheck, CheckCircle2, Circle } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
-import { SI, SS, F, TA } from '../shared';
+import { SI, SS, F, TA, formCardClass, formGridClassWide, btnCancel, btnPrimary, btnAddDashed } from '../shared';
 
 interface FamilyInfoProps {
   items: any[];
@@ -55,12 +55,12 @@ export const FamilyInfo: React.FC<FamilyInfoProps> = ({ items, onAdd, onDelete }
         </div>
 
         {!showAddForm ? (
-          <button onClick={() => setShowAddForm(true)} className="w-full py-4 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+          <button onClick={() => setShowAddForm(true)} className={btnAddDashed}>
             <Plus className="w-4 h-4" /> Add Family Member Details
           </button>
         ) : (
-          <div className="bg-slate-50 p-6 rounded-xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={`${formCardClass} animate-in slide-in-from-bottom-2`}>
+            <div className={formGridClassWide}>
               <F label="Relationship"><SS value={newEntry.relationship} onChange={e => setNewEntry({...newEntry, relationship: e.target.value})}>{RELATIONS.map(r=><option key={r}>{r}</option>)}</SS></F>
               <F label="First Name"><SI value={newEntry.firstName} onChange={e => setNewEntry({...newEntry, firstName: e.target.value})} /></F>
               <F label="Last Name"><SI value={newEntry.lastName} onChange={e => setNewEntry({...newEntry, lastName: e.target.value})} /></F>
@@ -75,8 +75,8 @@ export const FamilyInfo: React.FC<FamilyInfoProps> = ({ items, onAdd, onDelete }
             </div>
             <F label="Additional Notes"><TA value={newEntry.notes} onChange={e => setNewEntry({...newEntry, notes: e.target.value})} /></F>
             <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setShowAddForm(false)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-xl transition-colors" disabled={isSaving}>Cancel</button>
-              <button onClick={handleAdd} className="px-6 py-2 text-xs font-black text-white bg-indigo-600 rounded-xl shadow-lg hover:bg-indigo-700 transition-all" disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Member'}</button>
+              <button onClick={() => setShowAddForm(false)} className={btnCancel} disabled={isSaving}>Cancel</button>
+              <button onClick={handleAdd} className={btnPrimary} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Member'}</button>
             </div>
           </div>
         )}

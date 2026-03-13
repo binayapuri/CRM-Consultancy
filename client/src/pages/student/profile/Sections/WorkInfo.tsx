@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Briefcase, Plus, Trash2, Calendar, MapPin, Building2, Clock } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
-import { SI, F, TA } from '../shared';
+import { SI, F, TA, formCardClass, formGridClass, btnCancel, btnPrimary, btnAddDashed } from '../shared';
 
 interface WorkInfoProps {
   items: any[];
@@ -61,13 +61,13 @@ export const WorkInfo: React.FC<WorkInfoProps> = ({ items, onAdd, onDelete }) =>
         </div>
 
         {!showAddForm ? (
-          <button onClick={() => setShowAddForm(true)} className="w-full py-4 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-2">
+          <button onClick={() => setShowAddForm(true)} className={btnAddDashed}>
             <Plus className="w-4 h-4" /> Add Work Experience
           </button>
         ) : (
-          <div className="bg-slate-50 p-6 rounded-xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
+          <div className={`${formCardClass} animate-in slide-in-from-bottom-2`}>
             <h4 className="font-black text-slate-800 text-sm flex items-center gap-2 mb-2"><Briefcase className="w-4 h-4 text-indigo-500" /> New Experience</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className={formGridClass}>
               <F label="Employer"><SI value={newEntry.employer} onChange={e => setNewEntry({...newEntry, employer: e.target.value})} /></F>
               <F label="Role / Job Title"><SI value={newEntry.role} onChange={e => setNewEntry({...newEntry, role: e.target.value})} /></F>
               <F label="Country"><SI value={newEntry.country} onChange={e => setNewEntry({...newEntry, country: e.target.value})} /></F>
@@ -78,8 +78,8 @@ export const WorkInfo: React.FC<WorkInfoProps> = ({ items, onAdd, onDelete }) =>
             </div>
             <F label="Responsibilities / Description"><TA value={newEntry.description} onChange={e => setNewEntry({...newEntry, description: e.target.value})} placeholder="Describe your key tasks..." /></F>
             <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setShowAddForm(false)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-xl transition-colors" disabled={isSaving}>Cancel</button>
-              <button onClick={handleAdd} className="px-6 py-2 text-xs font-black text-white bg-indigo-600 rounded-xl shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all" disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Role'}</button>
+              <button onClick={() => setShowAddForm(false)} className={btnCancel} disabled={isSaving}>Cancel</button>
+              <button onClick={handleAdd} className={btnPrimary} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Role'}</button>
             </div>
           </div>
         )}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, ExternalLink, Clock, DollarSign, AlertTriangle, CheckCircle2, ArrowRight, Map, Scan, Lightbulb, Route, GraduationCap, ClipboardList, TrendingUp, Briefcase, Tag } from 'lucide-react';
 import { STAGE_ICONS } from './icons';
 import { Building2, Leaf } from './icons';
+import { StudentSectionTabs } from '../../components/StudentSectionTabs';
 
 // ── Static IMMI-sourced visa data ──────────────────────────────────────────
 const VISAS = [
@@ -243,13 +244,15 @@ export default function VisaGuide() {
       </div>
 
       {/* Section tabs */}
-      <div className="flex gap-2 p-1 rounded-lg w-fit" style={{ background: '#EEF2FF', border: '1px solid #C7D2FE' }}>
-        {([['visas', 'Visa Types', Scan], ['pathway', 'PR Pathway', Map], ['conditions', 'Visa Conditions', AlertTriangle]] as const).map(([id, label, TabIcon]) => (
-          <button key={id} onClick={() => setActiveSection(id)} className="px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2" style={activeSection === id ? { background: 'white', color: '#4338CA', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' } : { color: '#6366F1' }}>
-            <TabIcon className="w-4 h-4 shrink-0" aria-hidden /> {label}
-          </button>
-        ))}
-      </div>
+      <StudentSectionTabs
+        tabs={[
+          { id: 'visas', label: 'Visa Types', icon: <Scan className="w-4 h-4 shrink-0" aria-hidden /> },
+          { id: 'pathway', label: 'PR Pathway', icon: <Map className="w-4 h-4 shrink-0" aria-hidden /> },
+          { id: 'conditions', label: 'Visa Conditions', icon: <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden /> },
+        ]}
+        activeId={activeSection}
+        onChange={(id) => setActiveSection(id as 'visas' | 'pathway' | 'conditions')}
+      />
 
       {/* Visa Types Section */}
       {activeSection === 'visas' && (

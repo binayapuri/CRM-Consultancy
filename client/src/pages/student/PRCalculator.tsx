@@ -166,6 +166,15 @@ export default function PRCalculator() {
 
   const status = getStatus();
 
+  if (pointsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+        <div className="w-10 h-10 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <p className="text-sm font-medium text-slate-500">Loading saved points...</p>
+      </div>
+    );
+  }
+
   const breakdown = [
     { label: 'Age', value: agePts, max: 30, detail: `Age ${age}` },
     { label: 'English Language', value: engPts, max: 20, detail: ENGLISH_OPTIONS.find(e=>e.value===english)?.label.split('—')[0].trim()??'' },

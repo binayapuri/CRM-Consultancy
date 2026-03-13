@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { authFetch } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
 import { Trash2, FileText, File, Image, Download, CheckCircle2, Plus, Folder, ClipboardList, Upload, Loader2 } from 'lucide-react';
+import { StudentSectionTabs } from '../../components/StudentSectionTabs';
 import { DOC_TYPE_ICONS } from './icons';
 
 const DOC_TYPES = [
@@ -245,14 +246,12 @@ export default function Documents() {
         <h2 className="font-black text-slate-800 mb-3 flex items-center gap-2">
           <ClipboardList className="w-5 h-5 text-indigo-600 shrink-0" aria-hidden /> Visa Document Checklist
         </h2>
-        <div className="flex gap-2 mb-4 flex-wrap">
-          {Object.entries(CHECKLISTS).map(([key, cl]) => (
-            <button key={key} onClick={() => setActiveChecklist(key as keyof typeof CHECKLISTS)} className="px-4 py-2 rounded-xl font-bold text-sm transition-all" style={activeChecklist === key ? { background: cl.color, color: 'white' } : { background: '#F1F5F9', color: '#64748B' }}>
-              {cl.label}
-            </button>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StudentSectionTabs
+          tabs={Object.entries(CHECKLISTS).map(([key, cl]) => ({ id: key, label: cl.label }))}
+          activeId={activeChecklist}
+          onChange={(id) => setActiveChecklist(id as keyof typeof CHECKLISTS)}
+        />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 -mt-4">
           {checklist.docs.map(type => {
             const dt = DOC_TYPES.find(d => d.value === type);
             const done = uploadedTypes.has(type);

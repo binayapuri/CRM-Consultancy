@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Target, FileCheck, MapPin, Award } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
-import { SI, SS, F, DataRow } from '../shared';
+import { SI, SS, F, DataRow, formGridClassWide } from '../shared';
 
 interface SkillsInfoProps {
   data: any;
@@ -29,7 +29,7 @@ export const SkillsInfo: React.FC<SkillsInfoProps> = ({ data, onSave }) => {
     <ProfileCard title="Skills Assessment & EOI" icon={<Target className="w-5 h-5" />} isSaving={isSaving} onSave={handleSave} onCancel={handleCancel} isEmpty={!data.assessingBody}
       editForm={
         <div className="space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className={formGridClassWide}>
             <F label="Assessing Body"><SS value={form.assessingBody || ''} onChange={e => setForm({...form, assessingBody: e.target.value})}><option value="">Select</option>{BODIES.map(b=><option key={b}>{b}</option>)}</SS></F>
             <F label="Reference Number"><SI value={form.referenceNumber || ''} onChange={e => setForm({...form, referenceNumber: e.target.value})} /></F>
             <F label="Outcome"><SS value={form.outcome || ''} onChange={e => setForm({...form, outcome: e.target.value})}><option value="">Select</option><option>Suitable</option><option>Closely Related</option><option>Not Suitable</option><option>Pending</option></SS></F>

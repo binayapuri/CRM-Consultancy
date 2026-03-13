@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MapPin, Plus, Trash2, Home, Globe, Calendar } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
-import { SI, SS, F, DataRow } from '../shared';
+import { SI, SS, F, DataRow, formCardClass, formGridClass, btnCancel, btnPrimary, btnAddDashed } from '../shared';
 
 interface AddressInfoProps {
   current: any;
@@ -43,7 +43,7 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({ current, previous, onS
         onCancel={() => setCForm({ ...current })}
         isEmpty={!current.street}
         editForm={
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className={formGridClass}>
             <F label="Street Address"><SI value={cForm.street || ''} onChange={e => setCForm({...cForm, street: e.target.value})} /></F>
             <F label="Suburb"><SI value={cForm.suburb || ''} onChange={e => setCForm({...cForm, suburb: e.target.value})} /></F>
             <F label="City"><SI value={cForm.city || ''} onChange={e => setCForm({...cForm, city: e.target.value})} /></F>
@@ -89,12 +89,12 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({ current, previous, onS
           </div>
 
           {!showAddForm ? (
-            <button onClick={() => setShowAddForm(true)} className="w-full py-4 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+            <button onClick={() => setShowAddForm(true)} className={btnAddDashed}>
               <Plus className="w-4 h-4" /> Add Previous Address History
             </button>
           ) : (
-            <div className="bg-slate-50 p-6 rounded-xl border-2 border-indigo-100 space-y-4 animate-in slide-in-from-bottom-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className={`${formCardClass} animate-in slide-in-from-bottom-2`}>
+              <div className={formGridClass}>
                 <F label="Type"><SS value={newEntry.type} onChange={e => setNewEntry({...newEntry, type: e.target.value})}>{ADDR_TYPES.map(t=><option key={t}>{t}</option>)}</SS></F>
                 <F label="Street"><SI value={newEntry.street} onChange={e => setNewEntry({...newEntry, street: e.target.value})} /></F>
                 <F label="Suburb"><SI value={newEntry.suburb} onChange={e => setNewEntry({...newEntry, suburb: e.target.value})} /></F>
@@ -108,8 +108,8 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({ current, previous, onS
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button onClick={() => setShowAddForm(false)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-xl transition-colors" disabled={isSaving}>Cancel</button>
-                <button onClick={handleAddPrevious} className="px-6 py-2 text-xs font-black text-white bg-indigo-600 rounded-xl shadow-lg hover:bg-indigo-700 transition-all" disabled={isSaving}>{isSaving ? 'Saving...' : 'Add History'}</button>
+                <button onClick={() => setShowAddForm(false)} className={btnCancel} disabled={isSaving}>Cancel</button>
+                <button onClick={handleAddPrevious} className={btnPrimary} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add History'}</button>
               </div>
             </div>
           )}

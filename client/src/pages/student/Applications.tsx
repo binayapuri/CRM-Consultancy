@@ -92,7 +92,7 @@ export default function StudentApplications() {
       <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
       <h2 className="font-display font-semibold text-slate-900 mb-2">No Profile Linked</h2>
       <p className="text-slate-600 mb-4">Contact a consultancy to get enrolled. Once enrolled, your applications will appear here.</p>
-      <Link to="consultancies" className="btn-primary inline-flex items-center gap-2">Find Consultancy <ChevronRight className="w-4 h-4" /></Link>
+      <Link to="../consultancies" className="btn-primary inline-flex items-center gap-2">Find Consultancy <ChevronRight className="w-4 h-4" /></Link>
     </div>
   );
 
@@ -170,7 +170,7 @@ export default function StudentApplications() {
                   </div>
                 )}
                 <div className="p-4 border-t border-slate-100 flex justify-between items-center">
-                  <Link to="documents" className="text-ori-600 hover:text-ori-700 text-sm font-medium flex items-center gap-1">
+                  <Link to="../documents" className="text-ori-600 hover:text-ori-700 text-sm font-medium flex items-center gap-1">
                     Upload documents <ExternalLink className="w-4 h-4" />
                   </Link>
                   {app.agentId && <p className="text-xs text-slate-500">Agent: {app.agentId.profile?.firstName} {app.agentId.profile?.lastName}</p>}
