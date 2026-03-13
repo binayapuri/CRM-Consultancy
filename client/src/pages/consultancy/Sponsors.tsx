@@ -30,7 +30,8 @@ export default function Sponsors() {
 
   useEffect(() => { fetchSponsors(); }, [consultancyId]);
 
-  const filteredSponsors = sponsors.filter((s: any) => {
+  const sponsorsList = Array.isArray(sponsors) ? sponsors : [];
+  const filteredSponsors = sponsorsList.filter((s: any) => {
     const str = `${s.companyName} ${s.abn} ${s.acn} ${s.contactPerson?.firstName} ${s.contactPerson?.lastName} ${s.email}`.toLowerCase();
     return !filterSearch || str.includes(filterSearch.toLowerCase());
   });

@@ -1,0 +1,18 @@
+[Unit]
+Description=ORIVISA Dev (Node/Express)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/orivisa-dev/current/server
+EnvironmentFile=/etc/orivisa-dev.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /var/www/orivisa-dev/current/server/src/index.js
+Restart=always
+RestartSec=3
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
+

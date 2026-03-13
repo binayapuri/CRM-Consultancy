@@ -25,14 +25,15 @@ export default function Leads() {
 
   const fetchLeads = () => {
     const url = consultancyId ? `/api/leads?consultancyId=${consultancyId}` : '/api/leads';
-    authFetch(url).then(r => r.json()).then(data => { setLeads(data); setLoading(false); });
+    authFetch(url).then(r => r.json()).then((data: unknown) => { setLeads(Array.isArray(data) ? data : []); setLoading(false); });
   };
   useEffect(() => { setLoading(true); fetchLeads(); }, [consultancyId]);
   useEffect(() => {
-    authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).then(d => setAgents(Array.isArray(d) ? d : [])).catch(() => []);
+    authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).then((d: unknown) => setAgents(Array.isArray(d) ? d : [])).catch(() => setAgents([]));
   }, [consultancyId]);
 
-  const filtered = leads.filter(l => {
+  const leadsList = Array.isArray(leads) ? leads : [];
+  const filtered = leadsList.filter(l => {
     const matchSearch = `${l.profile?.firstName} ${l.profile?.lastName} ${l.profile?.email} ${l.profile?.interest}`.toLowerCase().includes(q.toLowerCase());
     const matchStatus = !filterStatus || l.status === filterStatus;
     const matchSource = !filterSource || (l.source || '').toLowerCase() === filterSource.toLowerCase();
@@ -92,7 +93,7 @@ export default function Leads() {
             </select>
             <select value={filterAgent} onChange={e => setFilterAgent(e.target.value)} className="input w-full md:w-40">
               <option value="">All agents</option>
-              {agents.map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
+              {(Array.isArray(agents) ? agents : []).map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
             </select>
             {(filterStatus || filterSource || filterAgent) && <button onClick={() => { setFilterStatus(''); setFilterSource(''); setFilterAgent(''); }} className="text-slate-500 hover:text-slate-700 text-sm flex items-center gap-1"><X className="w-4 h-4" /> Clear</button>}
           </div>

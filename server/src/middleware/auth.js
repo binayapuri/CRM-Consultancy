@@ -1,7 +1,9 @@
+import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Consultancy from '../models/Consultancy.js';
 
+dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production';
 
 export const authenticate = async (req, res, next) => {
@@ -17,7 +19,8 @@ export const authenticate = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
-    res.status(401).json({ error: 'Invalid token.' });
+    const message = err.name === 'TokenExpiredError' ? 'Token expired. Please sign in again.' : 'Invalid token. Please sign in again.';
+    res.status(401).json({ error: message });
   }
 };
 
@@ -80,6 +83,23 @@ export const requirePermission = (feature, action = 'view') => async (req, res, 
   const perm = rp.permissions[fm.path];
   if (!perm || perm[action] === false) return res.status(403).json({ error: 'Insufficient permissions' });
   next();
+};
+
+/**
+ * Backwards-compatible authorize() helper.
+ *
+ * Historically some routes used `authorize('SUPER_ADMIN', ...)` as a role-check,
+ * while others may use `authorize('clients','edit')` as a permission-check.
+ *
+ * This implementation supports BOTH:
+ * - authorize(...roles) => requireRole(...roles)
+ * - authorize(feature, action?) => requirePermission(feature, action)
+ */
+export const authorize = (...args) => {
+  const [first, second] = args;
+  const isPermissionStyle = typeof first === 'string' && Object.prototype.hasOwnProperty.call(FEATURE_MAP, first);
+  if (isPermissionStyle) return requirePermission(first, typeof second === 'string' ? second : 'view');
+  return requireRole(...args);
 };
 
 /** Get effective permissions for current user (for frontend). When rolePermissions empty, allow all for admin/agent. */

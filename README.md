@@ -31,7 +31,7 @@ A full-stack application bridging **students** and **consultancies** in the Aust
 - **Frontend**: React, TypeScript, Vite, Tailwind CSS
 - **State**: Zustand
 
-## Setup
+## Setup (local dev)
 
 ```bash
 # Install all dependencies
@@ -63,6 +63,10 @@ MONGODB_URI=mongodb://localhost:27017/orivisa
 JWT_SECRET=your-secret-key
 PORT=5000
 ```
+
+## Dev deployment (GitHub Actions)
+
+- Push to the `dev` branch to trigger the **Deploy (dev)** workflow and update the VPS environment.
 
 ## Data Sovereignty
 

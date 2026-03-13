@@ -34,7 +34,7 @@ export default function StudentTasks() {
       <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
       <h2 className="font-display font-semibold text-slate-900 mb-2">No Profile Linked</h2>
       <p className="text-slate-600 mb-4">Contact a consultancy to get enrolled. Tasks from your agent will appear here.</p>
-      <Link to="consultancies" className="btn-primary inline-flex items-center gap-2">Find Consultancy</Link>
+      <Link to="../consultancies" className="btn-primary inline-flex items-center gap-2">Find Consultancy</Link>
     </div>
   );
 

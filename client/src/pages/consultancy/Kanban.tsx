@@ -36,18 +36,34 @@ export default function Kanban() {
   const [filterAgent, setFilterAgent] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
+  const emptyAppColumns = () => Object.fromEntries(APP_COLUMNS.map(({ key }) => [key, []]));
+
   const fetchData = async () => {
     const q = consultancyId ? `?consultancyId=${consultancyId}` : '';
-    const [appsRes, tasksRes, clientsRes, agentsRes] = await Promise.all([
+    const responses = await Promise.all([
       authFetch(`/api/applications/kanban${q}`),
       authFetch(`/api/tasks${q}`),
       authFetch(`/api/clients${q}`),
-      authFetch(`/api/employees${q}`).catch(() => ({ json: () => [] })),
+      authFetch(`/api/employees${q}`).catch(() => ({ ok: false, json: () => [] })),
     ]);
-    setAppColumns(await safeJson(appsRes));
-    setTasks(await safeJson(tasksRes));
-    setClients(await safeJson(clientsRes));
-    setAgents(await safeJson(agentsRes));
+    const [appsRes, tasksRes, clientsRes, agentsRes] = responses as any[];
+    const appsRaw = await safeJson<unknown>(appsRes);
+    const tasksRaw = await safeJson<unknown>(tasksRes);
+    const clientsRaw = await safeJson<unknown>(clientsRes);
+    const agentsRaw = await safeJson<unknown>(agentsRes);
+    if (appsRaw && typeof appsRaw === 'object' && !Array.isArray(appsRaw)) {
+      const obj = appsRaw as Record<string, unknown>;
+      const normalized: Record<string, any[]> = {};
+      for (const { key } of APP_COLUMNS) {
+        normalized[key] = Array.isArray(obj[key]) ? obj[key] : [];
+      }
+      setAppColumns(normalized);
+    } else {
+      setAppColumns(emptyAppColumns());
+    }
+    setTasks(Array.isArray(tasksRaw) ? tasksRaw : []);
+    setClients(Array.isArray(clientsRaw) ? clientsRaw : []);
+    setAgents(Array.isArray(agentsRaw) ? agentsRaw : []);
   };
 
   useEffect(() => { fetchData(); }, [consultancyId]);
@@ -110,8 +126,13 @@ export default function Kanban() {
     const matchAgent = !filterAgent || (app.agentId?._id || app.agentId) === filterAgent;
     return matchSearch && matchClient && matchAgent;
   };
-  const filteredTasks = tasks.filter(filterTask);
-  const filteredApps = Object.fromEntries(Object.entries(appColumns).map(([k, arr]) => [k, (arr || []).filter(filterApp)]));
+  const tasksList = Array.isArray(tasks) ? tasks : [];
+  const clientsList = Array.isArray(clients) ? clients : [];
+  const agentsList = Array.isArray(agents) ? agents : [];
+  const filteredTasks = tasksList.filter(filterTask);
+  const filteredApps = Object.fromEntries(
+    Object.entries(appColumns || {}).map(([k, arr]) => [k, (Array.isArray(arr) ? arr : []).filter(filterApp)])
+  );
   const taskColumns = TASK_COLUMNS.reduce((acc, { key }) => {
     acc[key] = filteredTasks.filter((t: any) => t.status === key);
     return acc;
@@ -119,7 +140,7 @@ export default function Kanban() {
 
   const openTaskDetail = async (task: any) => {
     const res = await authFetch(`/api/tasks/${task._id}`);
-    const data = await safeJson(res);
+    const data = await safeJson<any>(res);
     setSelectedTask(data);
     setTaskComment('');
   };
@@ -131,7 +152,7 @@ export default function Kanban() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assignedTo: assignedTo || null }),
       });
-      const data = await safeJson(res);
+      const data = await safeJson<any>(res);
       if (!res.ok) throw new Error((data as any).error);
       setSelectedTask((t: any) => t?._id === taskId ? { ...t, assignedTo: data.assignedTo } : t);
       fetchData();
@@ -213,11 +234,11 @@ export default function Kanban() {
             <div className="flex flex-wrap gap-3 w-full sm:w-auto">
               <select value={filterClient} onChange={e => setFilterClient(e.target.value)} className="input text-sm w-full sm:w-40">
                 <option value="">All clients</option>
-                {clients.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}
+                {clientsList.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}
               </select>
               <select value={filterAgent} onChange={e => setFilterAgent(e.target.value)} className="input text-sm w-full sm:w-40">
                 <option value="">All agents</option>
-                {agents.map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
+                {agentsList.map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
               </select>
             </div>
           )}
@@ -236,8 +257,8 @@ export default function Kanban() {
           <h3 className="font-semibold text-slate-900 mb-4">New Task (from Kanban)</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Title *</label><input value={newTask.title} onChange={e => setNewTask(t => ({ ...t, title: e.target.value }))} className="input" required placeholder="e.g. Request AFP Police Check" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Client</label><select value={newTask.clientId} onChange={e => setNewTask(t => ({ ...t, clientId: e.target.value }))} className="input"><option value="">Select</option>{clients.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}</select></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To</label><select value={newTask.assignedTo} onChange={e => setNewTask(t => ({ ...t, assignedTo: e.target.value }))} className="input"><option value="">Select</option>{agents.map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}</select></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Client</label><select value={newTask.clientId} onChange={e => setNewTask(t => ({ ...t, clientId: e.target.value }))} className="input"><option value="">Select</option>{clientsList.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}</select></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To</label><select value={newTask.assignedTo} onChange={e => setNewTask(t => ({ ...t, assignedTo: e.target.value }))} className="input"><option value="">Select</option>{agentsList.map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}</select></div>
             <div><label className="block text-sm font-medium text-slate-700 mb-1">Priority</label><select value={newTask.priority} onChange={e => setNewTask(t => ({ ...t, priority: e.target.value }))} className="input"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="CRITICAL">Critical</option></select></div>
           </div>
           <div className="flex gap-2 mt-4">
@@ -338,7 +359,7 @@ export default function Kanban() {
                   <span className="text-sm text-slate-500">Assign:</span>
                   <select value={selectedTask.assignedTo?._id || selectedTask.assignedTo || ''} onChange={e => assignTask(selectedTask._id, e.target.value)} className="input text-sm py-1 w-40">
                     <option value="">Unassigned</option>
-                    {agents.map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
+                    {agentsList.map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
                   </select>
                 </div>
                 {selectedTask.clientId && (

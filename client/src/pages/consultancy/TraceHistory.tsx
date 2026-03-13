@@ -28,7 +28,7 @@ export default function TraceHistory() {
     const employeesUrl = filters.consultancyId ? `/api/employees?consultancyId=${filters.consultancyId}` : '/api/employees';
     authFetch(clientsUrl).then(r => r.json()).then(d => setClients(Array.isArray(d) ? d : []));
     authFetch(employeesUrl).then(r => r.json()).then(d => setEmployees(Array.isArray(d) ? d : []));
-    if (isSuperAdmin) authFetch('/api/consultancies').then(r => r.json()).then(d => setConsultancies(d.consultancies || d || []));
+    if (isSuperAdmin) authFetch('/api/consultancies').then(r => r.json()).then((d: any) => setConsultancies(Array.isArray(d?.consultancies) ? d.consultancies : Array.isArray(d) ? d : []));
   }, [filters.consultancyId, isSuperAdmin]);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function TraceHistory() {
     if (filters.dateTo) params.set('dateTo', filters.dateTo);
     params.set('page', String(filters.page));
     params.set('limit', '50');
-    authFetch(`/api/audit?${params}`).then(r => r.json()).then(data => { setLogs(data.logs || []); setTotal(data.total || 0); });
+    authFetch(`/api/audit?${params}`).then(r => r.json()).then((data: any) => { setLogs(Array.isArray(data?.logs) ? data.logs : []); setTotal(Number(data?.total) || 0); });
   }, [filters, isSuperAdmin]);
 
   return (
@@ -56,7 +56,7 @@ export default function TraceHistory() {
             <label className="block text-sm font-medium text-slate-700 mb-1">Consultancy</label>
             <select value={filters.consultancyId} onChange={e => setFilters(f => ({ ...f, consultancyId: e.target.value, page: 1 }))} className="input">
               <option value="">All consultancies</option>
-              {consultancies.map((c: any) => <option key={c._id} value={c._id}>{c.displayName || c.name}</option>)}
+              {(Array.isArray(consultancies) ? consultancies : []).map((c: any) => <option key={c._id} value={c._id}>{c.displayName || c.name}</option>)}
             </select>
           </div>
         )}
@@ -64,14 +64,14 @@ export default function TraceHistory() {
           <label className="block text-sm font-medium text-slate-700 mb-1">Client</label>
           <select value={filters.clientId} onChange={e => setFilters(f => ({ ...f, clientId: e.target.value, page: 1 }))} className="input">
             <option value="">All clients</option>
-            {clients.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}
+            {(Array.isArray(clients) ? clients : []).map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}
           </select>
         </div>
         <div className="min-w-[180px]">
           <label className="block text-sm font-medium text-slate-700 mb-1">Employee Assigned</label>
           <select value={filters.assignedAgentId} onChange={e => setFilters(f => ({ ...f, assignedAgentId: e.target.value, page: 1 }))} className="input">
             <option value="">All</option>
-            {employees.map((e: any) => <option key={e._id} value={e._id}>{e.profile?.firstName} {e.profile?.lastName}</option>)}
+            {(Array.isArray(employees) ? employees : []).map((e: any) => <option key={e._id} value={e._id}>{e.profile?.firstName} {e.profile?.lastName}</option>)}
           </select>
         </div>
         <div className="min-w-[120px]">
@@ -91,7 +91,7 @@ export default function TraceHistory() {
           <label className="block text-sm font-medium text-slate-700 mb-1">Changed By</label>
           <select value={filters.userId} onChange={e => setFilters(f => ({ ...f, userId: e.target.value, page: 1 }))} className="input">
             <option value="">All</option>
-            {employees.map((e: any) => <option key={e._id} value={e._id}>{e.profile?.firstName} {e.profile?.lastName}</option>)}
+            {(Array.isArray(employees) ? employees : []).map((e: any) => <option key={e._id} value={e._id}>{e.profile?.firstName} {e.profile?.lastName}</option>)}
           </select>
         </div>
         <div>
@@ -138,7 +138,7 @@ export default function TraceHistory() {
               </tr>
             </thead>
             <tbody>
-              {logs.map((log: any) => (
+              {(Array.isArray(logs) ? logs : []).map((log: any) => (
                 <tr key={log._id} className="border-b border-slate-100 hover:bg-slate-50/50">
                   <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">{format(new Date(log.changedAt), 'dd MMM yyyy HH:mm')}</td>
                   <td className="px-4 py-3 text-sm">{log.entityType}{log.visaSubclass ? ` (${log.visaSubclass})` : ''}</td>
@@ -151,7 +151,7 @@ export default function TraceHistory() {
             </tbody>
           </table>
         </div>
-        {!logs.length && <EmptyState icon={History} title="No audit logs" message="No activity matches your filters. Try adjusting date range or filters." />}
+        {!(Array.isArray(logs) && logs.length) && <EmptyState icon={History} title="No audit logs" message="No activity matches your filters. Try adjusting date range or filters." />}
       </div>
     </div>
   );

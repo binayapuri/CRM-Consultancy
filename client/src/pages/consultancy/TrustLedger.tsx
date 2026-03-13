@@ -36,7 +36,7 @@ export default function TrustLedger() {
   useEffect(() => { setLoading(true); setAccessDenied(false); fetchData(); }, [consultancyId]);
   useEffect(() => {
     const url = consultancyId ? `/api/clients?consultancyId=${consultancyId}` : '/api/clients';
-    authFetch(url).then(r => r.json()).then(setClients);
+    authFetch(url).then(r => r.json()).then((d: unknown) => setClients(Array.isArray(d) ? d : []));
   }, [consultancyId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,7 +95,9 @@ export default function TrustLedger() {
     }
   };
 
-  const filteredEntries = (data.entries || []).filter((e: any) => {
+  const entriesList = Array.isArray(data?.entries) ? data.entries : [];
+  const clientsList = Array.isArray(clients) ? clients : [];
+  const filteredEntries = entriesList.filter((e: any) => {
     const matchDateFrom = !filterDateFrom || new Date(e.createdAt) >= new Date(filterDateFrom);
     const matchDateTo = !filterDateTo || new Date(e.createdAt) <= new Date(filterDateTo + 'T23:59:59');
     const matchClient = !filterClient || (e.clientId?._id || e.clientId) === filterClient;
@@ -129,7 +131,7 @@ export default function TrustLedger() {
             <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="input text-sm" placeholder="To" />
             <select value={filterClient} onChange={e => setFilterClient(e.target.value)} className="input text-sm w-40">
               <option value="">All clients</option>
-              {clients.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}
+              {clientsList.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}
             </select>
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="input text-sm w-36">
               <option value="">All categories</option>
@@ -162,7 +164,7 @@ export default function TrustLedger() {
             <div><label className="block text-sm font-medium text-slate-700 mb-1">Direction</label><select value={form.direction} onChange={e => setForm(f => ({ ...f, direction: e.target.value as 'CREDIT' | 'DEBIT' }))} className="input"><option value="CREDIT">Credit (Deposit)</option><option value="DEBIT">Debit (Withdrawal)</option></select></div>
             <div><label className="block text-sm font-medium text-slate-700 mb-1">Amount ($) *</label><input type="number" step="0.01" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} className="input" required placeholder="e.g. 500" /></div>
             <div><label className="block text-sm font-medium text-slate-700 mb-1">Category</label><select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="input"><option value="Client Deposit">Client Deposit</option><option value="Fee Transfer">Fee Transfer</option><option value="Refund">Refund</option><option value="Other">Other</option></select></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Client</label><select value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value }))} className="input"><option value="">Select</option>{clients.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}</select></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Client</label><select value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value }))} className="input"><option value="">Select</option>{clientsList.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}</select></div>
             <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Description</label><input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="input" placeholder="e.g. Visa application deposit" /></div>
           </div>
           <div className="flex gap-2 mt-4">

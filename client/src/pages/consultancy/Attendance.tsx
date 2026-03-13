@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { authFetch, safeJson } from '../../store/auth';
 import { format } from 'date-fns';
-import { LogIn, LogOut, Calendar, Users, Clock, Filter } from 'lucide-react';
+import { LogIn, LogOut, Users, Clock } from 'lucide-react';
 import { Skeleton } from '../../components/Skeleton';
 import FilterBar from '../../components/FilterBar';
 import { useAuthStore } from '../../store/auth';
@@ -39,7 +39,7 @@ export default function Attendance() {
   useEffect(() => { if (isAdmin) fetchList(); }, [isAdmin, filterValues.from, filterValues.to, filterValues.userId, consultancyId]);
 
   useEffect(() => {
-    if (isAdmin) authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => safeJson(r)).then((d: any) => setEmployees(Array.isArray(d) ? d : (d?.employees || []))).catch(() => []);
+    if (isAdmin) authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => safeJson(r)).then((d: any) => setEmployees(Array.isArray(d) ? d : Array.isArray(d?.employees) ? d.employees : [])).catch(() => setEmployees([]));
   }, [isAdmin]);
 
   const handleCheckIn = async () => {
@@ -123,7 +123,7 @@ export default function Attendance() {
               fields={[
                 { key: 'from', label: 'From', type: 'date' },
                 { key: 'to', label: 'To', type: 'date' },
-                { key: 'userId', label: 'Employee', type: 'select', options: employees.map((e: any) => ({ value: e._id, label: `${e.profile?.firstName || ''} ${e.profile?.lastName || ''} (${e.email})` })) },
+                { key: 'userId', label: 'Employee', type: 'select', options: (Array.isArray(employees) ? employees : []).map((e: any) => ({ value: e._id, label: `${e.profile?.firstName || ''} ${e.profile?.lastName || ''} (${e.email})` })) },
               ]}
               values={filterValues}
               onChange={setFilterValues}
@@ -147,7 +147,7 @@ export default function Attendance() {
                   </tr>
                 </thead>
                 <tbody>
-                  {list.map((a: any) => (
+                  {(Array.isArray(list) ? list : []).map((a: any) => (
                     <tr key={a._id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-3 px-3">{format(new Date(a.date), 'dd MMM yyyy')}</td>
                       <td className="py-3 px-3">{a.userId?.profile?.firstName} {a.userId?.profile?.lastName} <span className="text-slate-400">({a.userId?.email})</span></td>

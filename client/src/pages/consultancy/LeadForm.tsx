@@ -22,7 +22,8 @@ export default function LeadForm() {
   });
 
   useEffect(() => {
-    authFetch('/api/users/agents').then(r => r.json()).then(setAgents);
+    const empUrl = consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees';
+    authFetch(empUrl).then(r => r.json()).then((d: unknown) => setAgents(Array.isArray(d) ? d : [])).catch(() => setAgents([]));
     if (id) {
       authFetch(`/api/leads/${id}`).then(r => r.json()).then((data) => {
         if (data.error) return;
@@ -99,7 +100,7 @@ export default function LeadForm() {
           <div><label className="block text-sm font-medium text-slate-700 mb-1">Interest</label><input value={form.profile.interest} onChange={e => setForm(f => ({ ...f, profile: { ...f.profile, interest: e.target.value } }))} className="input" placeholder="e.g. Student Visa, PR" /></div>
           <div><label className="block text-sm font-medium text-slate-700 mb-1">Source</label><select value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value }))} className="input"><option value="">Select</option><option value="Website">Website</option><option value="Referral">Referral</option><option value="Walk-in">Walk-in</option><option value="Social">Social</option></select></div>
           <div><label className="block text-sm font-medium text-slate-700 mb-1">Status</label><select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="input"><option value="NEW">New</option><option value="CONTACTED">Contacted</option><option value="QUALIFIED">Qualified</option><option value="CONVERTED">Converted</option><option value="LOST">Lost</option></select></div>
-          <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To</label><select value={form.assignedTo} onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))} className="input"><option value="">Select</option>{agents.map(a => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}</select></div>
+          <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To</label><select value={form.assignedTo} onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))} className="input"><option value="">Select</option>{(Array.isArray(agents) ? agents : []).map(a => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}</select></div>
           <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Notes</label><textarea value={form.profile.notes} onChange={e => setForm(f => ({ ...f, profile: { ...f.profile, notes: e.target.value } }))} className="input" rows={3} /></div>
         </div>
         <div className="flex gap-4 mt-6">

@@ -20,13 +20,13 @@ export default function DailyTasks() {
 
   const fetchTasks = () => {
     const q = consultancyId ? `&consultancyId=${consultancyId}` : '';
-    authFetch(`/api/tasks/daily?date=${date}${q}`).then(r => r.json()).then(data => { setTasks(data); setLoading(false); });
+    authFetch(`/api/tasks/daily?date=${date}${q}`).then(r => r.json()).then((data: unknown) => { setTasks(Array.isArray(data) ? data : []); setLoading(false); });
   };
   useEffect(() => { setLoading(true); fetchTasks(); }, [date, consultancyId]);
   useEffect(() => {
     const url = consultancyId ? `/api/clients?consultancyId=${consultancyId}` : '/api/clients';
-    authFetch(url).then(r => r.json()).then(setClients);
-    authFetch('/api/users/agents').then(r => r.json()).then(setAgents);
+    authFetch(url).then(r => r.json()).then((d: unknown) => setClients(Array.isArray(d) ? d : []));
+    authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).then((d: unknown) => setAgents(Array.isArray(d) ? d : [])).catch(() => setAgents([]));
   }, [consultancyId]);
 
   const completeTask = async (id: string) => {
@@ -127,8 +127,8 @@ export default function DailyTasks() {
           <h3 className="font-semibold text-slate-900 mb-4">New Task</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Title *</label><input value={newTask.title} onChange={e => setNewTask(t => ({ ...t, title: e.target.value }))} className="input" required placeholder="e.g. Request AFP Police Check" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Client</label><select value={newTask.clientId} onChange={e => setNewTask(t => ({ ...t, clientId: e.target.value }))} className="input"><option value="">Select</option>{clients.map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}</select></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To</label><select value={newTask.assignedTo} onChange={e => setNewTask(t => ({ ...t, assignedTo: e.target.value }))} className="input"><option value="">Select</option>{agents.map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}</select></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Client</label><select value={newTask.clientId} onChange={e => setNewTask(t => ({ ...t, clientId: e.target.value }))} className="input"><option value="">Select</option>{(Array.isArray(clients) ? clients : []).map((c: any) => <option key={c._id} value={c._id}>{c.profile?.firstName} {c.profile?.lastName}</option>)}</select></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To</label><select value={newTask.assignedTo} onChange={e => setNewTask(t => ({ ...t, assignedTo: e.target.value }))} className="input"><option value="">Select</option>{(Array.isArray(agents) ? agents : []).map((a: any) => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}</select></div>
             <div><label className="block text-sm font-medium text-slate-700 mb-1">Priority</label><select value={newTask.priority} onChange={e => setNewTask(t => ({ ...t, priority: e.target.value }))} className="input"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="CRITICAL">Critical</option></select></div>
             <div><label className="block text-sm font-medium text-slate-700 mb-1">Due Date</label><input type="date" value={newTask.dueDate} onChange={e => setNewTask(t => ({ ...t, dueDate: e.target.value }))} className="input" /></div>
           </div>
@@ -143,7 +143,7 @@ export default function DailyTasks() {
           <>
             {[1, 2, 3, 4].map(i => <div key={i} className="card flex items-center gap-4"><Skeleton className="w-10 h-10 rounded-lg" /><div className="flex-1 space-y-2"><Skeleton className="h-4 w-48" /><Skeleton className="h-3 w-32" /></div></div>)}
           </>
-        ) : tasks.map((t: any) => (
+        ) : (Array.isArray(tasks) ? tasks : []).map((t: any) => (
           <div key={t._id} className="card">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">

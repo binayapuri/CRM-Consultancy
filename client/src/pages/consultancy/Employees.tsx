@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { authFetch } from '../../store/auth';
 import { useAuthStore } from '../../store/auth';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Pencil, UserX, Search, Filter } from 'lucide-react';
+import { Plus, Pencil, UserX, Search } from 'lucide-react';
 
 export default function Employees() {
   const { user } = useAuthStore();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const consultancyId = searchParams.get('consultancyId');
   const [employees, setEmployees] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -18,7 +18,8 @@ export default function Employees() {
   const canAdd = ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'].includes(user?.role || '');
   const canDelete = ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'].includes(user?.role || '');
 
-  const filteredEmployees = employees.filter((emp: any) => {
+  const employeesList = Array.isArray(employees) ? employees : [];
+  const filteredEmployees = employeesList.filter((emp: any) => {
     const matchSearch = !filterSearch || `${emp.profile?.firstName} ${emp.profile?.lastName} ${emp.email}`.toLowerCase().includes(filterSearch.toLowerCase());
     const matchRole = !filterRole || emp.role === filterRole;
     return matchSearch && matchRole;
@@ -28,12 +29,12 @@ export default function Employees() {
 
   useEffect(() => {
     const url = consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees';
-    authFetch(url).then(r => r.json()).then(setEmployees);
+    authFetch(url).then(r => r.json()).then((d: unknown) => setEmployees(Array.isArray(d) ? d : []));
   }, [consultancyId]);
 
   useEffect(() => {
-    if (editId && employees.length) {
-      const emp = employees.find((e: any) => e._id === editId);
+    if (editId && employeesList.length) {
+      const emp = employeesList.find((e: any) => e._id === editId);
       if (emp) {
         setEditing(emp);
         setForm({ email: emp.email, password: '', role: emp.role, profile: { firstName: emp.profile?.firstName || '', lastName: emp.profile?.lastName || '', phone: emp.profile?.phone || '' } });
@@ -62,7 +63,7 @@ export default function Employees() {
       setEditing(null);
       setForm({ email: '', password: '', role: 'AGENT', profile: { firstName: '', lastName: '', phone: '' } });
       if (editId) setSearchParams(consultancyId ? { consultancyId } : {});
-      authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).then(setEmployees);
+      authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).then((d: unknown) => setEmployees(Array.isArray(d) ? d : []));
     } catch (err: any) {
       alert(err.message);
     }
@@ -72,7 +73,7 @@ export default function Employees() {
     if (!confirm('Deactivate this employee? They will not be able to login.')) return;
     try {
       await authFetch(`/api/employees/${id}`, { method: 'DELETE' });
-      authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).then(setEmployees);
+      authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).then((d: unknown) => setEmployees(Array.isArray(d) ? d : []));
     } catch (err: any) {
       alert(err.message);
     }

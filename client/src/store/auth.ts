@@ -8,13 +8,15 @@ type User = {
   _id?: string;
   email: string;
   role: string;
-  profile?: { firstName?: string; lastName?: string; consultancyId?: string };
+  // Broad profile type used across the app; keep it flexible to avoid TS errors
+  profile?: any;
 };
 
 type AuthState = {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   register: (email: string, password: string, role: string, profile?: object) => Promise<void>;
   logout: () => void;
   fetchUser: () => Promise<void>;
@@ -35,6 +37,13 @@ export const useAuthStore = create<AuthState>()(
         if (!res.ok) throw new Error(data.error || 'Login failed');
         set({ user: data.user, token: data.token });
       },
+      loginWithToken: async (token) => {
+        set({ token });
+        const res = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error('Invalid token');
+        const user = await res.json();
+        set({ user, token });
+      },
       register: async (email, password, role, profile) => {
         const res = await fetch(`${API}/auth/register`, {
           method: 'POST',
@@ -53,6 +62,8 @@ export const useAuthStore = create<AuthState>()(
         if (res.ok) {
           const user = await res.json();
           set({ user });
+        } else if (res.status === 401) {
+          set({ user: null, token: null });
         }
       },
     }),
@@ -60,11 +71,38 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
+/** Returns true if the 401 response indicates the JWT is invalid/expired (cleared session). */
+function isTokenInvalid401(res: Response, body: { error?: string } | null): boolean {
+  // 403 = role-forbidden, never logout. Only 401 with JWT error strings.
+  if (res.status !== 401 || !body?.error) return false;
+  const msg = String(body.error).toLowerCase();
+  return /invalid token|token expired|jwt|signature|malformed|sign in again|no token|authorization/i.test(msg);
+}
+
+const API_BASE =
+  (import.meta.env.VITE_API_URL as string) ||
+  (import.meta.env.DEV ? 'http://localhost:4000' : '');
+
 export function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
   const token = useAuthStore.getState().token;
   const headers: Record<string, string> = { ...(opts.headers as Record<string, string>) };
   if (token) headers.Authorization = `Bearer ${token}`;
-  return fetch(url, { ...opts, headers });
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
+
+  return fetch(fullUrl, { ...opts, headers }).then((res) => {
+    // NEVER force logout on 403 — that is a role/permission deny, not an auth failure
+    if (res.status === 401) {
+      res.clone().json()
+        .then((body: { error?: string } | null) => {
+          if (isTokenInvalid401(res, body)) {
+            useAuthStore.getState().logout();
+            window.location.href = '/login';
+          }
+        })
+        .catch(() => {/* ignore non-json 401 errors gracefully */});
+    }
+    return res;
+  });
 }
 
 /** Safe JSON parse - throws clear error if server returns HTML (e.g. backend not running) */

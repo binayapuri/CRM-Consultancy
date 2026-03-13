@@ -79,15 +79,15 @@ export default function SuperUsers() {
         <div className="card mt-6 max-w-md">
           <h2 className="font-display font-semibold mb-4 flex items-center gap-2"><UserCheck className="w-5 h-5 text-ori-600" /> Create Test Account</h2>
           <form onSubmit={handleCreateTest} className="space-y-4">
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Email *</label><input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="input" required /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Password *</label><input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className="input" required /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Email *</label><input type="email" value={form.email} onChange={e => setForm((f: any) => ({ ...f, email: e.target.value }))} className="input" required /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Password *</label><input type="password" value={form.password} onChange={e => setForm((f: any) => ({ ...f, password: e.target.value }))} className="input" required /></div>
             <div className="grid grid-cols-2 gap-2">
-              <input value={form.profile.firstName} onChange={e => setForm(f => ({ ...f, profile: { ...f.profile, firstName: e.target.value } }))} className="input" placeholder="First Name" />
-              <input value={form.profile.lastName} onChange={e => setForm(f => ({ ...f, profile: { ...f.profile, lastName: e.target.value } }))} className="input" placeholder="Last Name" />
+              <input value={form.profile.firstName} onChange={e => setForm((f: any) => ({ ...f, profile: { ...f.profile, firstName: e.target.value } }))} className="input" placeholder="First Name" />
+              <input value={form.profile.lastName} onChange={e => setForm((f: any) => ({ ...f, profile: { ...f.profile, lastName: e.target.value } }))} className="input" placeholder="Last Name" />
             </div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Role</label><select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className="input"><option value="STUDENT">Student</option><option value="AGENT">Agent</option><option value="MANAGER">Manager</option><option value="CONSULTANCY_ADMIN">Consultancy Admin</option></select></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Role</label><select value={form.role} onChange={e => setForm((f: any) => ({ ...f, role: e.target.value }))} className="input"><option value="STUDENT">Student</option><option value="AGENT">Agent</option><option value="MANAGER">Manager</option><option value="CONSULTANCY_ADMIN">Consultancy Admin</option></select></div>
             {['AGENT', 'MANAGER', 'CONSULTANCY_ADMIN'].includes(form.role) && (
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Consultancy</label><select value={form.consultancyId} onChange={e => setForm(f => ({ ...f, consultancyId: e.target.value }))} className="input"><option value="">First consultancy</option>{consultancies.map((c: any) => <option key={c._id} value={c._id}>{c.displayName || c.name}</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Consultancy</label><select value={form.consultancyId} onChange={e => setForm((f: any) => ({ ...f, consultancyId: e.target.value }))} className="input"><option value="">First consultancy</option>{consultancies.map((c: any) => <option key={c._id} value={c._id}>{c.displayName || c.name}</option>)}</select></div>
             )}
             <div className="flex gap-2"><button type="submit" className="btn-primary">Create</button><button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button></div>
           </form>
@@ -99,14 +99,14 @@ export default function SuperUsers() {
           <h2 className="font-display font-semibold mb-4 flex items-center gap-2"><Pencil className="w-5 h-5 text-ori-600" /> Edit User</h2>
           <form onSubmit={handleUpdate} className="space-y-4">
             <div><label className="block text-sm font-medium text-slate-700 mb-1">Email</label><input type="email" value={editing.email} className="input bg-slate-50" readOnly /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">New Password (leave blank to keep)</label><input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className="input" placeholder="••••••••" /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">New Password (leave blank to keep)</label><input type="password" value={form.password} onChange={e => setForm((f: any) => ({ ...f, password: e.target.value }))} className="input" placeholder="••••••••" /></div>
             <div className="grid grid-cols-2 gap-2">
-              <input value={form.profile.firstName} onChange={e => setForm(f => ({ ...f, profile: { ...f.profile, firstName: e.target.value } }))} className="input" placeholder="First Name" />
-              <input value={form.profile.lastName} onChange={e => setForm(f => ({ ...f, profile: { ...f.profile, lastName: e.target.value } }))} className="input" placeholder="Last Name" />
+              <input value={form.profile.firstName} onChange={e => setForm((f: any) => ({ ...f, profile: { ...f.profile, firstName: e.target.value } }))} className="input" placeholder="First Name" />
+              <input value={form.profile.lastName} onChange={e => setForm((f: any) => ({ ...f, profile: { ...f.profile, lastName: e.target.value } }))} className="input" placeholder="Last Name" />
             </div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Role</label><select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className="input"><option value="STUDENT">Student</option><option value="AGENT">Agent</option><option value="MANAGER">Manager</option><option value="CONSULTANCY_ADMIN">Consultancy Admin</option></select></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Role</label><select value={form.role} onChange={e => setForm((f: any) => ({ ...f, role: e.target.value }))} className="input"><option value="STUDENT">Student</option><option value="AGENT">Agent</option><option value="MANAGER">Manager</option><option value="CONSULTANCY_ADMIN">Consultancy Admin</option></select></div>
             {['AGENT', 'MANAGER', 'CONSULTANCY_ADMIN'].includes(form.role) && (
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Consultancy</label><select value={form.consultancyId} onChange={e => setForm(f => ({ ...f, consultancyId: e.target.value }))} className="input"><option value="">—</option>{consultancies.map((c: any) => <option key={c._id} value={c._id}>{c.displayName || c.name}</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Consultancy</label><select value={form.consultancyId} onChange={e => setForm((f: any) => ({ ...f, consultancyId: e.target.value }))} className="input"><option value="">—</option>{consultancies.map((c: any) => <option key={c._id} value={c._id}>{c.displayName || c.name}</option>)}</select></div>
             )}
             <div className="flex gap-2"><button type="submit" className="btn-primary">Save</button><button type="button" onClick={() => setEditing(null)} className="btn-secondary">Cancel</button></div>
           </form>

@@ -127,9 +127,34 @@ router.post('/', authenticate, async (req, res) => {
     const body = { ...req.body, consultancyId: cid };
     if (!body.notes || !Array.isArray(body.notes)) body.notes = [];
     body.notes.unshift(enrollNote);
+
+    const clientEmail = body.profile?.email;
+    let existingUser = null;
+    if (clientEmail) {
+      existingUser = await User.findOne({ email: clientEmail, role: 'STUDENT' });
+    }
+
+    if (existingUser) {
+      body.status = 'PENDING_ACCESS';
+      body.userId = existingUser._id;
+    }
+
     const client = await Client.create(body);
+
+    if (existingUser) {
+      await Notification.create({
+        userId: existingUser._id,
+        consultancyId: cid,
+        type: 'ACCESS_REQUEST',
+        title: 'Consultancy Access Request',
+        message: 'A consultancy has requested access to your profile. Review in your dashboard.',
+        relatedEntityType: 'Client',
+        relatedEntityId: client._id
+      });
+    }
+
     await logAudit(cid, 'Client', client._id, 'CREATE', req.user._id, {
-      description: `Client ${client.profile?.firstName} ${client.profile?.lastName} created`,
+      description: existingUser ? `Requested access to existing student ${client.profile?.firstName} ${client.profile?.lastName}` : `Client ${client.profile?.firstName} ${client.profile?.lastName} created`,
       metadata: { clientName: `${client.profile?.firstName} ${client.profile?.lastName}`, userName: `${req.user.profile?.firstName} ${req.user.profile?.lastName}` },
       clientId: client._id,
       assignedAgentId: client.assignedAgentId,
@@ -201,6 +226,26 @@ router.delete('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMI
     });
     await Client.findByIdAndDelete(req.params.id);
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/:id/accept-access', authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== 'STUDENT') return res.status(403).json({ error: 'Only students can accept access requests' });
+    
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Not found' });
+    
+    if (client.userId?.toString() !== req.user.id) {
+       return res.status(403).json({ error: 'Not authorized for this client record' });
+    }
+
+    client.status = 'ACTIVE';
+    await client.save();
+
+    res.json({ success: true, client });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -514,6 +559,168 @@ router.get('/:id/applications', authenticate, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// --- NEW CRUD ROUTES FOR STUDENT DATA (CONSULTANCY/ADMIN USE) ---
+
+// Personal / Profile
+router.patch('/:id/profile', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    client.profile = { ...(client.profile || {}), ...req.body };
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.patch('/:id/profile/statement', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    client.initialStatement = req.body.initialStatement;
+    await client.save();
+    res.json({ initialStatement: client.initialStatement });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Immigration & English
+router.patch('/:id/immigration', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    client.profile = { ...(client.profile || {}), ...req.body };
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.patch('/:id/english-test', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    client.englishTest = { ...(client.englishTest || {}), ...req.body };
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Addresses
+router.patch('/:id/addresses/current', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findByIdAndUpdate(req.params.id, { 'profile.address': req.body }, { new: true });
+    res.json(client.profile.address);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/:id/addresses', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.previousAddresses = client.previousAddresses || [];
+    client.previousAddresses.push(req.body);
+    await client.save();
+    res.json(client.previousAddresses);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/:id/addresses/:addrId', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.previousAddresses = (client.previousAddresses || []).filter(a => a._id.toString() !== req.params.addrId);
+    await client.save();
+    res.json(client.previousAddresses);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Education
+router.post('/:id/education', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.education.push(req.body);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/:id/education/:eduId', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.education = client.education.filter(e => e._id.toString() !== req.params.eduId);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Work Experience
+router.post('/:id/experience', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.experience.push(req.body);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/:id/experience/:expId', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.experience = client.experience.filter(e => e._id.toString() !== req.params.expId);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Travel History
+router.post('/:id/travel-history', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.travelHistory.push(req.body);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/:id/travel-history/:travId', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.travelHistory = client.travelHistory.filter(e => e._id.toString() !== req.params.travId);
+    await client.save();
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Family Members
+router.post('/:id/family-members', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.familyMembers.push(req.body);
+    await client.save();
+    res.json(client.familyMembers);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/:id/family-members/:memId', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    client.familyMembers = client.familyMembers.filter(m => m._id.toString() !== req.params.memId);
+    await client.save();
+    res.json(client.familyMembers);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Skills & Health
+router.patch('/:id/skills', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findByIdAndUpdate(req.params.id, { skillsData: req.body }, { new: true });
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.patch('/:id/health', authenticate, async (req, res) => {
+  try {
+    const client = await Client.findByIdAndUpdate(req.params.id, { healthData: req.body }, { new: true });
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 export default router;

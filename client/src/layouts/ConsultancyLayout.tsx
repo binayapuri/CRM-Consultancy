@@ -79,9 +79,9 @@ export default function ConsultancyLayout() {
       <aside className={`${sidebarCollapsed ? 'w-0 -translate-x-full overflow-hidden' : 'w-64 translate-x-0'} bg-slate-900 text-white flex flex-col fixed h-full z-40 transition-all duration-300 ease-in-out`}>
         <div className="p-5 border-b border-slate-700 min-w-[256px]">
           <h1 className="text-xl font-display font-bold text-ori-400 truncate">
-            {consultancy?.displayName || consultancy?.name || 'ORIVISA'}
+            {consultancy?.displayName || consultancy?.name || 'BIGFEW'}
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">Consultancy CRM</p>
+          <p className="text-xs text-slate-400 mt-0.5">BIGFEW Consultancy CRM – Australian Education & Migration</p>
         </div>
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto min-w-[256px]">
           {nav.filter(n => {

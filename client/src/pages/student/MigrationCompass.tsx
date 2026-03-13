@@ -6,7 +6,11 @@ type Message = { role: 'user' | 'assistant'; content: string };
 
 export default function MigrationCompass() {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hi! I\'m the ORIVISA Migration Compass. I provide factual information about Australian visas. Ask me about fees, English requirements, visa types, or OSHC. I cannot give personal advice—for that, consult a registered migration agent.' }
+    {
+      role: 'assistant',
+      content:
+        "Hi! I'm the BIGFEW Migration Compass. I provide factual information about Australian and New Zealand visas. I can explain visa types, fees, English requirements, and general PR pathways. I also use the details in your BIGFEW profile when available, but I cannot give personal migration advice—for that, you should speak with a registered migration agent.",
+    },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,7 +42,10 @@ export default function MigrationCompass() {
   return (
     <div>
       <h1 className="text-2xl font-display font-bold text-slate-900">Migration Compass</h1>
-      <p className="text-slate-500 mt-1">AI-powered factual migration information (Section 276 compliant)</p>
+      <p className="text-slate-500 mt-1">
+        AI-powered factual migration information (Section 276 compliant). Use this to research and prepare, then lodge yourself
+        or with a registered migration agent.
+      </p>
       <div className="card mt-6 max-w-3xl">
         <div className="h-96 overflow-y-auto space-y-4 mb-4">
           {messages.map((m, i) => (

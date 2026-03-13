@@ -52,6 +52,9 @@ const sponsorSchema = new mongoose.Schema({
   miaSignedAt: Date,
   status: { type: String, enum: ['ACTIVE', 'INACTIVE', 'PENDING'], default: 'ACTIVE' },
   notes: String,
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // portal login when invited
+  inviteToken: String,
+  inviteTokenExpires: Date,
 }, { timestamps: true });
 
 sponsorSchema.index({ consultancyId: 1 });

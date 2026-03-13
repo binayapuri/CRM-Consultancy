@@ -1,11 +1,14 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, History, LogOut } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, History, LogOut, GraduationCap, BookOpen, CheckSquare } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 
 const nav = [
   { to: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: 'consultancies', icon: Building2, label: 'Consultancies' },
+  { to: 'students', icon: GraduationCap, label: 'Students' },
   { to: 'users', icon: Users, label: 'Users' },
+  { to: 'verifications', icon: CheckSquare, label: 'Verifications' },
+  { to: 'universities', icon: BookOpen, label: 'Universities' },
   { to: 'trace-history', icon: History, label: 'Trace History' },
 ];
 
@@ -17,8 +20,8 @@ export default function SuperAdminLayout() {
     <div className="min-h-screen flex bg-slate-50">
       <aside className="w-64 bg-slate-900 text-white flex flex-col fixed h-full">
         <div className="p-5 border-b border-slate-700">
-          <h1 className="text-xl font-display font-bold text-amber-400">ORIVISA</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Super Admin</p>
+          <h1 className="text-xl font-display font-bold text-amber-400">BIGFEW</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Super Admin – Platform Owner</p>
         </div>
         <nav className="flex-1 p-3 space-y-0.5">
           {nav.map(({ to, icon: Icon, label }) => (

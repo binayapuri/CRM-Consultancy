@@ -1,16 +1,21 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth';
+import { getDashboardPathForRole } from './lib/authHelpers';
 
 // Layouts
 import ConsultancyLayout from './layouts/ConsultancyLayout';
 import StudentLayout from './layouts/StudentLayout';
 import SuperAdminLayout from './layouts/SuperAdminLayout';
+import PartnerLayout from './layouts/PartnerLayout';
 
 // Auth
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Activate from './pages/auth/Activate';
 import RegisterConsultancy from './pages/auth/RegisterConsultancy';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+import AuthCallback from './pages/auth/AuthCallback';
 
 // Consultancy pages
 import ConsultancyDashboard from './pages/consultancy/Dashboard';
@@ -42,9 +47,18 @@ import StudentDocuments from './pages/student/Documents';
 import PRCalculator from './pages/student/PRCalculator';
 import MigrationCompass from './pages/student/MigrationCompass';
 import ConsultancySearch from './pages/student/ConsultancySearch';
-import VisaRoadmap from './pages/student/VisaRoadmap';
+import OfferLetters from './pages/student/OfferLetters';
+import StudentInsurance from './pages/student/Insurance';
+import VisaGuide from './pages/student/VisaGuide';
+import Journey from './pages/student/Journey';
+import Settings from './pages/student/Settings';
+import CVGenerator from './pages/student/CVGenerator';
 import StudentApplications from './pages/student/Applications';
 import StudentTasks from './pages/student/Tasks';
+import Community from './pages/student/Community';
+import Jobs from './pages/student/Jobs';
+import News from './pages/student/News';
+import Bookings from './pages/student/Bookings';
 
 // Super Admin
 import SuperDashboard from './pages/super/Dashboard';
@@ -53,9 +67,26 @@ import ConsultancyDetail from './pages/super/ConsultancyDetail';
 import ConsultancyForm from './pages/super/ConsultancyForm';
 import SuperUsers from './pages/super/Users';
 import SuperTraceHistory from './pages/super/TraceHistory';
+import Verifications from './pages/super/Verifications';
+import Universities from './pages/super/Universities';
+import AdminStudentManager from './pages/super-admin/StudentManager';
+
+// Partner
+import UniversityApplications from './pages/partner/UniversityApplications';
+import InsuranceDashboard from './pages/partner/InsuranceDashboard';
+import EmployerDashboard from './pages/partner/EmployerDashboard';
+
+// Sponsor
+import SponsorLayout from './layouts/SponsorLayout';
+import SponsorDashboard from './pages/sponsor/Dashboard';
+import SponsorDocuments from './pages/sponsor/Documents';
+import SponsorCompanyInfo from './pages/sponsor/CompanyInfo';
 
 // Landing
 import Landing from './pages/Landing';
+
+// Global UI
+import { ToastContainer, Modal, ConfirmDialog } from './components/ui';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles: string[] }) {
   const { user, token } = useAuthStore();
@@ -64,14 +95,27 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles:
   return <>{children}</>;
 }
 
+function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, token } = useAuthStore();
+  if (token && user) return <Navigate to={getDashboardPathForRole(user.role)} replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ToastContainer />
+      <Modal />
+      <ConfirmDialog />
+      <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/register-consultancy" element={<RegisterConsultancy />} />
-      <Route path="/activate" element={<Activate />} />
+      <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
+      <Route path="/forgot-password" element={<GuestOnlyRoute><ForgotPassword /></GuestOnlyRoute>} />
+      <Route path="/reset-password" element={<GuestOnlyRoute><ResetPassword /></GuestOnlyRoute>} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
+      <Route path="/register-consultancy" element={<GuestOnlyRoute><RegisterConsultancy /></GuestOnlyRoute>} />
+      <Route path="/activate" element={<GuestOnlyRoute><Activate /></GuestOnlyRoute>} />
 
       <Route path="/consultancy" element={<ProtectedRoute roles={['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPER_ADMIN']}><ConsultancyLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -109,8 +153,33 @@ export default function App() {
         <Route path="documents" element={<StudentDocuments />} />
         <Route path="calculator" element={<PRCalculator />} />
         <Route path="compass" element={<MigrationCompass />} />
+        <Route path="community" element={<Community />} />
+        <Route path="jobs" element={<Jobs />} />
+        <Route path="news" element={<News />} />
+        <Route path="bookings" element={<Bookings />} />
+        <Route path="offer-letters" element={<OfferLetters />} />
+        <Route path="insurance" element={<StudentInsurance />} />
         <Route path="consultancies" element={<ConsultancySearch />} />
-        <Route path="roadmap" element={<VisaRoadmap />} />
+        <Route path="visa-guide" element={<VisaGuide />} />
+        <Route path="roadmap" element={<VisaGuide />} />
+        <Route path="journey" element={<Journey />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="cv" element={<CVGenerator />} />
+      </Route>
+
+      <Route path="/sponsor" element={<ProtectedRoute roles={['SPONSOR']}><SponsorLayout /></ProtectedRoute>}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<SponsorDashboard />} />
+        <Route path="documents" element={<SponsorDocuments />} />
+        <Route path="company" element={<SponsorCompanyInfo />} />
+      </Route>
+
+      <Route path="/partner" element={<ProtectedRoute roles={['UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER']}><PartnerLayout /></ProtectedRoute>}>
+        <Route index element={<Navigate to="applications" replace />} />
+        <Route path="dashboard" element={<Navigate to="applications" replace />} />
+        <Route path="applications" element={<UniversityApplications />} />
+        <Route path="insurance" element={<InsuranceDashboard />} />
+        <Route path="jobs" element={<EmployerDashboard />} />
       </Route>
 
       <Route path="/admin" element={<ProtectedRoute roles={['SUPER_ADMIN']}><SuperAdminLayout /></ProtectedRoute>}>
@@ -122,9 +191,13 @@ export default function App() {
         <Route path="consultancies/:id" element={<ConsultancyDetail />} />
         <Route path="users" element={<SuperUsers />} />
         <Route path="trace-history" element={<SuperTraceHistory />} />
+        <Route path="verifications" element={<Verifications />} />
+        <Route path="universities" element={<Universities />} />
+        <Route path="students" element={<AdminStudentManager />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }

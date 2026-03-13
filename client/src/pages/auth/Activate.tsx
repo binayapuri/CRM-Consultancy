@@ -45,8 +45,25 @@ export default function Activate() {
     }
   };
 
-  if (valid === null) return <div className="min-h-screen flex items-center justify-center">Validating...</div>;
-  if (!valid) return <div className="min-h-screen flex items-center justify-center"><div className="card max-w-md text-center"><h1 className="text-xl font-bold text-red-600">Invalid or expired invitation</h1><p className="mt-2 text-slate-500">Please contact your consultancy for a new link.</p></div></div>;
+  if (valid === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-ori-950 p-4">
+        <div className="w-full max-w-md card bg-white/95 backdrop-blur text-center">
+          <p className="text-slate-600">Validating...</p>
+        </div>
+      </div>
+    );
+  }
+  if (!valid) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-ori-950 p-4">
+        <div className="w-full max-w-md card bg-white/95 backdrop-blur text-center">
+          <h1 className="text-xl font-bold text-red-600">Invalid or expired invitation</h1>
+          <p className="mt-2 text-slate-500">Please contact your consultancy for a new link.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-ori-950 p-4">

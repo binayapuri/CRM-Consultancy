@@ -20,7 +20,19 @@ export default function Notifications() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
 
-  const fetchNotifications = () => authFetch('/api/notifications').then(r => r.json()).then(setNotifications);
+  const fetchNotifications = () =>
+    authFetch('/api/notifications')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setNotifications(data);
+        } else if (data && Array.isArray((data as any).items)) {
+          setNotifications((data as any).items);
+        } else {
+          setNotifications([]);
+        }
+      })
+      .catch(() => setNotifications([]));
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000); // Poll every 30s

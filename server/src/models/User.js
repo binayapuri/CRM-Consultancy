@@ -2,9 +2,13 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'STUDENT'], required: true },
+  email: { type: String, sparse: true }, // sparse: allow null for phone-only users
+  password: { type: String }, // null for OAuth/phone-only until they set one
+  phone: { type: String, sparse: true }, // for phone login
+  phoneVerified: { type: Boolean, default: false },
+  googleId: { type: String, sparse: true },
+  role: { type: String, enum: ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'STUDENT', 'SPONSOR', 'UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER'], required: true },
+  sponsorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Sponsor' }, // when role=SPONSOR
   profile: {
     firstName: String,
     lastName: String,
@@ -12,6 +16,9 @@ const userSchema = new mongoose.Schema({
     avatar: String,
     marnNumber: String,
     consultancyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultancy' },
+    universityId: { type: mongoose.Schema.Types.ObjectId, ref: 'University' }, // when role=UNIVERSITY_PARTNER
+    insuranceProviderId: { type: mongoose.Schema.Types.ObjectId, ref: 'InsuranceProvider' }, // when role=INSURANCE_PARTNER
+    employerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employer' }, // when role=EMPLOYER
     preferredEmailProfileId: String, // _id of consultancy emailProfiles item - employee's choice
     passportNumber: String,
     passportExpiry: Date,
@@ -27,16 +34,20 @@ const userSchema = new mongoose.Schema({
   invitationToken: String,
   mustChangePassword: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
-  isTestAccount: { type: Boolean, default: false }, // Super Admin test accounts
+  isTestAccount: { type: Boolean, default: false },
+  passwordResetToken: String,
+  passwordResetExpires: Date,
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
+  if (this.phone && !this.email) this.email = `${this.phone.replace(/\D/g, '')}@orivisa.phone`;
   if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
+  if (this.password) this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
 userSchema.methods.comparePassword = function (candidate) {
+  if (!this.password) return Promise.resolve(false);
   return bcrypt.compare(candidate, this.password);
 };
 

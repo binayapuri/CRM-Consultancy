@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, Mail, Lock, User, Hash } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 
 const API = '/api';
 
