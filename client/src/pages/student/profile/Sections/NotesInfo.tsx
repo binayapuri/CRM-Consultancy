@@ -25,7 +25,7 @@ interface NotesInfoProps {
   onTogglePin: (id: string, isPinned: boolean) => Promise<void>;
 }
 
-const emptyNote = () => ({ title: '', text: '', category: 'GENERAL' as const, isPinned: false });
+const emptyNote = () => ({ title: '', text: '', category: 'GENERAL', isPinned: false });
 
 export const NotesInfo: React.FC<NotesInfoProps> = ({
   notes,
