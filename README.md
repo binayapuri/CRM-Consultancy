@@ -1,4 +1,4 @@
-# ORIVISA - Australian Migration & Education Platform
+# BIGFEW (formerly ORIVISA) - Australian Migration & Education Platform
 
 A full-stack application bridging **students** and **consultancies** in the Australian migration ecosystem. Built with Node.js, Express, MongoDB, and React.
 
@@ -71,4 +71,4 @@ PORT=5000
 ## Data Sovereignty
 
 Designed for Australian deployment. Configure MongoDB and hosting in `ap-southeast-2` (Sydney) for data residency.
-# CRM-Consultancy
+# CRM-Consultancy (monorepo root)
