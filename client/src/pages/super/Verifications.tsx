@@ -42,7 +42,7 @@ export default function Verifications() {
   const allItems = [...data.consultancies, ...data.employers, ...data.insurers].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">Verification Queue</h1>

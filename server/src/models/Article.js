@@ -7,7 +7,8 @@ const articleSchema = new mongoose.Schema({
   summary: String,
   coverImage: String,
   authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Optional, could be admin
-  category: { type: String, enum: ['NEWS', 'VISA_UPDATE', 'GUIDE', 'SUCCESS_STORY'], default: 'NEWS' },
+  categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'NewsCategory' },
+  category: { type: String }, // optional fallback for backward compatibility
   tags: [String],
   isPublished: { type: Boolean, default: false },
   publishedAt: Date,

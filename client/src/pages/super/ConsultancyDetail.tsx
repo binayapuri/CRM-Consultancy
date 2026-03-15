@@ -4,6 +4,7 @@ import { authFetch } from '../../store/auth';
 import { format } from 'date-fns';
 import {
   ArrowLeft,
+  ArrowRight,
   Building2,
   Users,
   FileText,
@@ -56,7 +57,7 @@ export default function ConsultancyDetail() {
     { label: 'Colleges', value: stats.colleges ?? 0, icon: GraduationCap, color: 'bg-indigo-100 text-indigo-600', to: `/consultancy/colleges?consultancyId=${id}` },
     { label: 'OSHC', value: stats.oshc ?? 0, icon: Shield, color: 'bg-teal-100 text-teal-600', to: `/consultancy/oshc?consultancyId=${id}` },
     { label: 'Checked In Today', value: stats.attendanceToday ?? 0, icon: Clock, color: 'bg-slate-100 text-slate-600', to: `/consultancy/attendance?consultancyId=${id}` },
-    { label: 'Trace History', value: '→', icon: History, color: 'bg-slate-100 text-slate-600', to: `/consultancy/trace-history?consultancyId=${id}` },
+    { label: 'Trace History', value: <ArrowRight className="w-6 h-6 text-slate-600" aria-hidden />, icon: History, color: 'bg-slate-100 text-slate-600', to: `/consultancy/trace-history?consultancyId=${id}` },
   ];
 
   return (

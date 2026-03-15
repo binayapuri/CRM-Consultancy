@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node src/launcher.js",
     "start": "node src/index.js",
+    "build": "node -e \"process.exit(0)\"",
     "seed": "node src/seed.js"
   },
   "dependencies": {

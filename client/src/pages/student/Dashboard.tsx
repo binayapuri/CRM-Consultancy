@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore, authFetch } from '../../store/auth';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, Star, Newspaper } from 'lucide-react';
 import { STAGE_ICONS, ACTION_ICONS, QUICK_TOOL_ICONS, Sparkles } from './icons';
 
 // ── Journey stages ──────────────────────────────────────────────────────────
@@ -62,7 +62,20 @@ const quickTools = [
   { to: 'jobs',          label: 'Job Board',     desc: 'Student & 485 visa friendly',    gradient: 'from-amber-500 to-orange-600' },
   { to: 'compass',       label: 'AI Compass',    desc: 'Ask anything about your visa',   gradient: 'from-rose-500 to-pink-600' },
   { to: 'consultancies', label: 'Find Agent',    desc: 'Verified MARN consultancies',    gradient: 'from-violet-500 to-indigo-600' },
+  { to: 'news',          label: 'News',          desc: 'Visa news & immigration updates', gradient: 'from-sky-500 to-blue-600' },
 ];
+
+// ── Latest news (type for dashboard cards) ─────────────────────────────────────
+interface DashboardArticle {
+  _id: string;
+  title: string;
+  slug: string;
+  summary?: string;
+  content?: string;
+  coverImage?: string;
+  publishedAt: string;
+  views: number;
+}
 
 // ── PR Points quick estimate ──────────────────────────────────────────────────
 function estimatePoints(profile: any): number {
@@ -85,12 +98,27 @@ export default function StudentDashboard() {
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<any>(null);
   const [stage, setStage] = useState<string>(() => localStorage.getItem('student_journey_stage') || 'planning');
+  const [newsArticles, setNewsArticles] = useState<DashboardArticle[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
 
   useEffect(() => {
     authFetch('/api/auth/me')
       .then(r => r.json())
       .then(u => { setProfile(u?.profile || null); })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/news')
+      .then(res => res.json())
+      .then(data => {
+        setNewsArticles(Array.isArray(data) ? data : []);
+        setNewsLoading(false);
+      })
+      .catch(() => {
+        setNewsArticles([]);
+        setNewsLoading(false);
+      });
   }, []);
 
   const setAndSaveStage = (s: string) => {
@@ -256,7 +284,56 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* ────────── Tool Cards Grid ────────── */}
+      {/* ────────── Latest news ────────── */}
+      <div>
+        <h2 className="text-xl font-black text-slate-900 mb-4">Latest news</h2>
+        {newsLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-8 h-8 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin" />
+          </div>
+        ) : newsArticles.length === 0 ? (
+          <div className="bg-white rounded-xl p-6 shadow-sm" style={{ border: '1px solid #E8EDFB' }}>
+            <p className="text-sm text-slate-500 font-medium mb-3">No news yet.</p>
+            <Link to="/student/news" className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+              View all news <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {newsArticles.slice(0, 6).map((article) => (
+                <Link
+                  key={article._id}
+                  to={`/student/news/${article.slug}`}
+                  className="bg-white p-6 rounded-xl group transition-all hover:shadow-lg hover:-translate-y-1"
+                  style={{ border: '1px solid #E8EDFB' }}
+                >
+                  {article.coverImage ? (
+                    <div className="w-14 h-14 rounded-lg overflow-hidden mb-4 bg-slate-100 shrink-0">
+                      <img src={article.coverImage} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                    </div>
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg flex items-center justify-center bg-gradient-to-br from-sky-500 to-blue-600 shadow-md mb-4 group-hover:scale-110 transition-transform text-white">
+                      <Newspaper className="w-7 h-7" aria-hidden />
+                    </div>
+                  )}
+                  <h3 className="font-black text-slate-900 text-lg mb-1 group-hover:text-indigo-600 transition-colors line-clamp-2">{article.title}</h3>
+                  <p className="text-sm text-slate-500 font-medium line-clamp-2">{article.summary || article.content || ''}</p>
+                </Link>
+              ))}
+            </div>
+            {(newsArticles.length > 6 || newsArticles.length > 0) && (
+              <div className="mt-4">
+                <Link to="/student/news" className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+                  View all {newsArticles.length > 6 ? `(${newsArticles.length} articles)` : 'news'} <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ────────── Everything you need ────────── */}
       <div>
         <h2 className="text-xl font-black text-slate-900 mb-4">Everything you need</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

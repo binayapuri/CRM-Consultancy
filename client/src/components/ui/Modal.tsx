@@ -27,7 +27,7 @@ export default function Modal() {
     >
       <div
         ref={panelRef}
-        className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl animate-fade-in-up flex flex-col"
+        className={`bg-white rounded-xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-fade-in-up flex flex-col ${modal.size === 'large' ? 'max-w-4xl' : 'max-w-2xl'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">

@@ -58,6 +58,7 @@ import StudentTasks from './pages/student/Tasks';
 import Community from './pages/student/Community';
 import Jobs from './pages/student/Jobs';
 import News from './pages/student/News';
+import NewsDetail from './pages/student/NewsDetail';
 import Bookings from './pages/student/Bookings';
 
 // Super Admin
@@ -69,6 +70,9 @@ import SuperUsers from './pages/super/Users';
 import SuperTraceHistory from './pages/super/TraceHistory';
 import Verifications from './pages/super/Verifications';
 import Universities from './pages/super/Universities';
+import AdminAdvancedSettings from './pages/super/AdminAdvancedSettings';
+import AdminNewsManager from './pages/super/AdminNewsManager';
+import AdminNewsForm from './pages/super/AdminNewsForm';
 import AdminStudentManager from './pages/super-admin/StudentManager';
 
 // Partner
@@ -156,6 +160,7 @@ export default function App() {
         <Route path="community" element={<Community />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="news" element={<News />} />
+        <Route path="news/:slug" element={<NewsDetail />} />
         <Route path="bookings" element={<Bookings />} />
         <Route path="offer-letters" element={<OfferLetters />} />
         <Route path="insurance" element={<StudentInsurance />} />
@@ -194,6 +199,10 @@ export default function App() {
         <Route path="verifications" element={<Verifications />} />
         <Route path="universities" element={<Universities />} />
         <Route path="students" element={<AdminStudentManager />} />
+        <Route path="news" element={<AdminNewsManager />} />
+        <Route path="news/add" element={<AdminNewsForm />} />
+        <Route path="news/:id/edit" element={<AdminNewsForm />} />
+        <Route path="settings" element={<AdminAdvancedSettings />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
