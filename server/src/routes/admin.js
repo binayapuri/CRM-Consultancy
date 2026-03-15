@@ -59,6 +59,18 @@ router.post('/verify/:type/:id', authenticate, requireRole('SUPER_ADMIN'), async
 import User from '../models/User.js';
 import Client from '../models/Client.js';
 import Application from '../models/Application.js';
+import PlatformSettings from '../models/PlatformSettings.js';
+
+const MASK = '••••••••';
+
+function maskSecrets(doc) {
+  if (!doc) return doc;
+  const d = doc.toObject ? doc.toObject() : { ...doc };
+  if (d.smtp?.pass) d.smtp.pass = MASK;
+  if (d.auth?.google?.clientSecret) d.auth.google.clientSecret = MASK;
+  if (d.auth?.apple?.privateKey) d.auth.apple.privateKey = MASK;
+  return d;
+}
 
 // ─── GET all students ───────────────────────────────────────────────────────
 router.get('/students', authenticate, requireRole('SUPER_ADMIN'), async (req, res) => {
@@ -105,6 +117,61 @@ router.get('/stats', authenticate, requireRole('SUPER_ADMIN'), async (req, res) 
       User.countDocuments({ role: 'STUDENT', updatedAt: { $gte: oneWeekAgo } }),
     ]);
     res.json({ totalStudents, totalConsultancies, totalApplications, activeThisWeek });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Platform settings (singleton, lazy init) ────────────────────────────────
+router.get('/settings', authenticate, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    let doc = await PlatformSettings.findOne();
+    if (!doc) {
+      doc = await PlatformSettings.create({});
+    }
+    res.json(maskSecrets(doc));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/settings', authenticate, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    let doc = await PlatformSettings.findOne();
+    if (!doc) {
+      doc = await PlatformSettings.create({});
+    }
+    const body = req.body || {};
+    const update = {};
+
+    if (body.smtp != null) {
+      update.smtp = { ...doc.smtp?.toObject?.() ?? doc.smtp ?? {}, ...body.smtp };
+      if (update.smtp.pass === MASK || update.smtp.pass === '') {
+        update.smtp.pass = doc.smtp?.pass ?? '';
+      }
+    }
+    if (body.auth != null) {
+      update.auth = { ...doc.auth?.toObject?.() ?? doc.auth ?? {}, ...body.auth };
+      if (body.auth.google != null) {
+        update.auth.google = { ...doc.auth?.google?.toObject?.() ?? doc.auth?.google ?? {}, ...body.auth.google };
+        if (update.auth.google.clientSecret === MASK || update.auth.google.clientSecret === '') {
+          update.auth.google.clientSecret = doc.auth?.google?.clientSecret ?? '';
+        }
+      }
+      if (body.auth.apple != null) {
+        update.auth.apple = { ...doc.auth?.apple?.toObject?.() ?? doc.auth?.apple ?? {}, ...body.auth.apple };
+        if (update.auth.apple.privateKey === MASK || update.auth.apple.privateKey === '') {
+          update.auth.apple.privateKey = doc.auth?.apple?.privateKey ?? '';
+        }
+      }
+    }
+    if (body.notifications != null) {
+      update.notifications = { ...doc.notifications?.toObject?.() ?? doc.notifications ?? {}, ...body.notifications };
+    }
+
+    Object.keys(update).forEach(key => doc.set(key, update[key]));
+    await doc.save();
+    res.json(maskSecrets(doc));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
