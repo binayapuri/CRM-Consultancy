@@ -35,7 +35,7 @@ const invoiceSchema = new mongoose.Schema(
 
     status: { type: String, enum: ['DRAFT', 'SENT', 'PAID', 'CANCELLED'], default: 'DRAFT' },
 
-    invoiceNumber: { type: String, required: true, index: true },
+    invoiceNumber: { type: String, required: true, index: true, unique: true },
     issueDate: { type: Date, required: true },
     dueDate: { type: Date },
 
@@ -68,6 +68,8 @@ const invoiceSchema = new mongoose.Schema(
 
 invoiceSchema.index({ userId: 1, createdAt: -1 });
 invoiceSchema.index({ userId: 1, employerId: 1, createdAt: -1 });
+// Strong guarantee: never allow invoice number reuse (global uniqueness).
+invoiceSchema.index({ invoiceNumber: 1 }, { unique: true });
 
 export default mongoose.model('Invoice', invoiceSchema);
 

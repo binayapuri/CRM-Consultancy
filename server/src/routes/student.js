@@ -181,7 +181,11 @@ async function nextInvoiceNumberForUser(userId) {
     { new: true, upsert: true }
   );
   const seq = doc.seq || 1;
-  return `INV-${year}-${String(seq).padStart(4, '0')}`;
+  // AU practice: invoice numbers must be unique per supplier and not reused.
+  // No single mandated format, so we use a stable supplier-specific prefix + yearly sequence:
+  // INV-YYYY-<USERKEY>-0001 (globally unique across students)
+  const userKey = String(userId).slice(-4).toUpperCase();
+  return `INV-${year}-${userKey}-${String(seq).padStart(4, '0')}`;
 }
 
 // Employers CRUD
