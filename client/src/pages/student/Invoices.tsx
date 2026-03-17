@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { authFetch, safeJson } from '../../store/auth';
 import { Building2, FileText, Plus, Send, Download, CheckCircle2, X, Filter, Eye, FileDown, BadgeCheck, Ban, Search, MoreVertical, Pencil, Copy, Trash2, Users } from 'lucide-react';
 
@@ -83,8 +83,10 @@ export default function InvoicesPage() {
   const [viewInv, setViewInv] = useState<Invoice | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [tab, setTab] = useState<'OVERVIEW' | 'INVOICES' | 'EMPLOYERS'>('OVERVIEW');
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
+  const searchTimer = useRef<number | null>(null);
 
   // Employer detail modal
   const [viewEmployer, setViewEmployer] = useState<Employer | null>(null);
@@ -105,6 +107,16 @@ export default function InvoicesPage() {
       throw new Error(msg);
     }
   }
+
+  useEffect(() => {
+    if (searchTimer.current) window.clearTimeout(searchTimer.current);
+    searchTimer.current = window.setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 180);
+    return () => {
+      if (searchTimer.current) window.clearTimeout(searchTimer.current);
+    };
+  }, [query]);
 
   const employerMap = useMemo(() => {
     const m = new Map<string, Employer>();
@@ -144,8 +156,8 @@ export default function InvoicesPage() {
       const to = new Date(filterTo).getTime();
       rows = rows.filter((i) => new Date(i.issueDate).getTime() <= to);
     }
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
+    if (debouncedQuery.trim()) {
+      const q = debouncedQuery.trim().toLowerCase();
       rows = rows.filter((i) => {
         const emp = employerMap.get(i.employerId);
         const hay = [
@@ -163,16 +175,27 @@ export default function InvoicesPage() {
       });
     }
     return rows;
-  }, [invoices, filterStatus, filterEmployerId, filterFrom, filterTo, query, employerMap]);
+  }, [invoices, filterStatus, filterEmployerId, filterFrom, filterTo, debouncedQuery, employerMap]);
 
   const filteredEmployers = useMemo(() => {
-    if (!query.trim()) return employers;
-    const q = query.trim().toLowerCase();
+    if (!debouncedQuery.trim()) return employers;
+    const q = debouncedQuery.trim().toLowerCase();
     return employers.filter((e) => {
       const hay = [e.companyName, e.email, e.abn, e.contactName].filter(Boolean).join(' ').toLowerCase();
       return hay.includes(q);
     });
-  }, [employers, query]);
+  }, [employers, debouncedQuery]);
+
+  const stats = useMemo(() => {
+    const rows = filteredInvoices;
+    const totalInvoices = rows.length;
+    const paid = rows.filter((r) => r.status === 'PAID').reduce((s, r) => s + Number(r.total || 0), 0);
+    const outstanding = rows
+      .filter((r) => r.status === 'SENT' || r.status === 'DRAFT')
+      .reduce((s, r) => s + Number(r.total || 0), 0);
+    const cancelled = rows.filter((r) => r.status === 'CANCELLED').length;
+    return { totalInvoices, paid, outstanding, cancelled };
+  }, [filteredInvoices]);
 
   const exportAll = async () => {
     setError(null);
@@ -273,6 +296,23 @@ export default function InvoicesPage() {
       gstEnabled: false,
       gstRate: 0.1,
       lineItems: [{ description: 'Contractor services', quantity: 0, unit: 'hours', unitPrice: 0 }],
+    }));
+    setShowInvoiceModal(true);
+  };
+
+  const openCreateInvoiceForEmployer = (employerId: string) => {
+    setInvoiceForm((f: any) => ({
+      ...f,
+      employerId,
+      issueDate: new Date().toISOString().slice(0, 10),
+      dueDays: 14,
+      periodFrom: '',
+      periodTo: '',
+      notes: '',
+      gstEnabled: false,
+      gstRate: 0.1,
+      lineItems: [{ description: 'Contractor services', quantity: 0, unit: 'hours', unitPrice: 0 }],
+      _editId: undefined,
     }));
     setShowInvoiceModal(true);
   };
@@ -419,6 +459,23 @@ export default function InvoicesPage() {
     setSendForm({ to, subject, text });
   };
 
+  const openMailClient = () => {
+    if (!sendFor) return;
+    const to = encodeURIComponent(sendForm.to || '');
+    const subject = encodeURIComponent(sendForm.subject || '');
+    const body = encodeURIComponent(sendForm.text || '');
+    window.open(`mailto:${to}?subject=${subject}&body=${body}`, '_blank');
+  };
+
+  const openGmailCompose = () => {
+    if (!sendFor) return;
+    // Note: Gmail compose links cannot attach files. We prefill message only.
+    const to = encodeURIComponent(sendForm.to || '');
+    const subject = encodeURIComponent(sendForm.subject || '');
+    const body = encodeURIComponent(`${sendForm.text || ''}\n\n(Please attach the PDF you downloaded from the Invoice Manager.)`);
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
+  };
+
   const sendInvoice = async () => {
     if (!sendFor) return;
     setSending(true);
@@ -457,17 +514,17 @@ export default function InvoicesPage() {
           <p className="text-slate-500 mt-1">Generate Australian invoices for ABN contracting, download as PDF, and send to employers.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setShowEmployerModal(true)} className="px-4 py-2.5 rounded-xl font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">
-            <Building2 className="w-4 h-4 inline-block mr-2" />
-            Add Employer
+          <button onClick={() => setShowEmployerModal(true)} className="min-h-11 px-4 py-2.5 rounded-xl font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Employer</span>
           </button>
-          <button onClick={exportAll} className="px-4 py-2.5 rounded-xl font-black text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-2">
+          <button onClick={exportAll} className="min-h-11 px-4 py-2.5 rounded-xl font-black text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-2">
             <FileDown className="w-4 h-4" />
-            Export
+            <span className="hidden sm:inline">Export</span>
           </button>
-          <button onClick={openCreateInvoice} className="px-5 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/20">
-            <Plus className="w-4 h-4 inline-block mr-2" />
-            Create Invoice
+          <button onClick={openCreateInvoice} className="min-h-11 px-5 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 inline-flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Create Invoice</span>
           </button>
         </div>
       </div>
@@ -528,6 +585,24 @@ export default function InvoicesPage() {
 
       {tab === 'OVERVIEW' && (
         <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-3 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Invoices</p>
+            <p className="text-2xl font-black text-slate-900 mt-1">{stats.totalInvoices}</p>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Paid</p>
+            <p className="text-2xl font-black text-emerald-700 mt-1">{money(stats.paid)}</p>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Outstanding</p>
+            <p className="text-2xl font-black text-slate-900 mt-1">{money(stats.outstanding)}</p>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Cancelled</p>
+            <p className="text-2xl font-black text-slate-900 mt-1">{stats.cancelled}</p>
+          </div>
+        </div>
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
             <h2 className="font-black text-slate-900">Employers</h2>
@@ -604,7 +679,7 @@ export default function InvoicesPage() {
                 </div>
                 <p className="mt-3 font-black text-slate-900">No invoices found</p>
                 <p className="mt-1 text-sm text-slate-500">Create an invoice, or adjust your filters.</p>
-                <button onClick={openCreateInvoice} className="mt-4 px-5 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700">
+                <button onClick={() => (filterEmployerId !== 'ALL' ? openCreateInvoiceForEmployer(filterEmployerId) : openCreateInvoice())} className="mt-4 px-5 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700">
                   + Create Invoice
                 </button>
               </div>
@@ -647,7 +722,7 @@ export default function InvoicesPage() {
                             <MoreVertical className="w-4 h-4" />
                           </button>
                           {openMenuFor === inv._id && (
-                            <div className="absolute right-0 mt-2 w-56 z-20 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
+                            <div className="absolute mt-2 w-56 z-20 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden left-0 sm:left-auto sm:right-0">
                               <button className="w-full px-4 py-2.5 text-left text-sm font-bold hover:bg-slate-50 inline-flex items-center gap-2" onClick={() => { setViewInv(inv); setOpenMenuFor(null); }}>
                                 <Eye className="w-4 h-4" /> View details
                               </button>
@@ -870,6 +945,13 @@ export default function InvoicesPage() {
                   className="px-4 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700"
                 >
                   View invoices for this employer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setViewEmployer(null); openCreateInvoiceForEmployer(viewEmployer._id); }}
+                  className="px-4 py-2.5 rounded-xl font-black text-slate-700 bg-white border border-slate-200 hover:bg-slate-50"
+                >
+                  Create invoice
                 </button>
                 <button
                   type="button"
@@ -1101,6 +1183,12 @@ export default function InvoicesPage() {
             </div>
             <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0">
               <button onClick={() => setSendFor(null)} className="btn-secondary">Cancel</button>
+              <button onClick={openMailClient} className="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-black hover:bg-slate-50">
+                Open Mail
+              </button>
+              <button onClick={openGmailCompose} className="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-black hover:bg-slate-50">
+                Open Gmail
+              </button>
               <button onClick={sendInvoice} disabled={sending} className="btn-primary inline-flex items-center gap-2">
                 <Send className="w-4 h-4" /> {sending ? 'Sending...' : 'Send Email'}
               </button>
