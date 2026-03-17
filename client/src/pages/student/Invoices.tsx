@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { authFetch, safeJson } from '../../store/auth';
-import { Building2, FileText, Plus, Send, Download, CheckCircle2, X, Filter, Eye, FileDown, BadgeCheck, Ban } from 'lucide-react';
+import { Building2, FileText, Plus, Send, Download, CheckCircle2, X, Filter, Eye, FileDown, BadgeCheck, Ban, Search, MoreVertical, Pencil, Copy, Trash2, Users } from 'lucide-react';
 
 type Employer = {
   _id: string;
@@ -82,6 +82,15 @@ export default function InvoicesPage() {
   // Detail modal
   const [viewInv, setViewInv] = useState<Invoice | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [query, setQuery] = useState('');
+  const [tab, setTab] = useState<'OVERVIEW' | 'INVOICES' | 'EMPLOYERS'>('OVERVIEW');
+  const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
+
+  // Employer detail modal
+  const [viewEmployer, setViewEmployer] = useState<Employer | null>(null);
+  const [editingEmployer, setEditingEmployer] = useState(false);
+  const [employerSaving, setEmployerSaving] = useState(false);
+  const [employerDeleting, setEmployerDeleting] = useState(false);
 
   async function parseOrThrow(res: Response, fallbackMessage: string) {
     // Clone BEFORE consuming body so we can read text if JSON parse fails.
@@ -135,8 +144,35 @@ export default function InvoicesPage() {
       const to = new Date(filterTo).getTime();
       rows = rows.filter((i) => new Date(i.issueDate).getTime() <= to);
     }
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      rows = rows.filter((i) => {
+        const emp = employerMap.get(i.employerId);
+        const hay = [
+          i.invoiceNumber,
+          i.status,
+          emp?.companyName,
+          i.customer?.name,
+          i.customer?.email,
+          i.supplier?.name,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return hay.includes(q);
+      });
+    }
     return rows;
-  }, [invoices, filterStatus, filterEmployerId, filterFrom, filterTo]);
+  }, [invoices, filterStatus, filterEmployerId, filterFrom, filterTo, query, employerMap]);
+
+  const filteredEmployers = useMemo(() => {
+    if (!query.trim()) return employers;
+    const q = query.trim().toLowerCase();
+    return employers.filter((e) => {
+      const hay = [e.companyName, e.email, e.abn, e.contactName].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }, [employers, query]);
 
   const exportAll = async () => {
     setError(null);
@@ -180,6 +216,42 @@ export default function InvoicesPage() {
     } finally {
       setUpdatingStatus(false);
     }
+  };
+
+  const duplicateInvoice = async (inv: Invoice) => {
+    setError(null);
+    try {
+      const res = await authFetch(`/api/student/invoices/${inv._id}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dueDays: 14 }),
+      });
+      await parseOrThrow(res, 'Failed to duplicate invoice');
+      await refresh();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setOpenMenuFor(null);
+    }
+  };
+
+  const openEditDraft = (inv: Invoice) => {
+    const issue = inv.issueDate ? new Date(inv.issueDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const dueDays = inv.dueDate ? Math.max(1, Math.round((new Date(inv.dueDate).getTime() - new Date(inv.issueDate).getTime()) / 86400000)) : 14;
+    setInvoiceForm({
+      employerId: inv.employerId,
+      issueDate: issue,
+      dueDays,
+      periodFrom: inv.period?.from ? new Date(inv.period.from).toISOString().slice(0, 10) : '',
+      periodTo: inv.period?.to ? new Date(inv.period.to).toISOString().slice(0, 10) : '',
+      gstEnabled: !!inv.gstEnabled,
+      gstRate: typeof inv.gstRate === 'number' ? inv.gstRate : 0.1,
+      notes: inv.notes || '',
+      lineItems: (inv.lineItems || []).map((li) => ({ ...li })),
+      _editId: inv._id,
+    });
+    setShowInvoiceModal(true);
+    setOpenMenuFor(null);
   };
 
   const totals = useMemo(() => {
@@ -254,18 +326,61 @@ export default function InvoicesPage() {
           unitPrice: Number(li.unitPrice || 0),
         })),
       };
-      const res = await authFetch('/api/student/invoices', {
-        method: 'POST',
+      const isEdit = !!invoiceForm._editId;
+      const res = await authFetch(isEdit ? `/api/student/invoices/${invoiceForm._editId}` : '/api/student/invoices', {
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      await parseOrThrow(res, 'Failed to create invoice');
+      await parseOrThrow(res, isEdit ? 'Failed to update invoice' : 'Failed to create invoice');
       setShowInvoiceModal(false);
       await refresh();
     } catch (e: any) {
       setError(e.message);
     } finally {
       setSavingInvoice(false);
+    }
+  };
+
+  const openEmployerDetail = (e: Employer) => {
+    setViewEmployer(e);
+    setEditingEmployer(false);
+  };
+
+  const saveEmployerEdits = async () => {
+    if (!viewEmployer) return;
+    setEmployerSaving(true);
+    setError(null);
+    try {
+      const res = await authFetch(`/api/student/employers/${viewEmployer._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(viewEmployer),
+      });
+      await parseOrThrow(res, 'Failed to update employer');
+      setEditingEmployer(false);
+      await refresh();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setEmployerSaving(false);
+    }
+  };
+
+  const deleteEmployer = async () => {
+    if (!viewEmployer) return;
+    if (!confirm('Delete this employer? (Invoices linked to this employer will prevent deletion)')) return;
+    setEmployerDeleting(true);
+    setError(null);
+    try {
+      const res = await authFetch(`/api/student/employers/${viewEmployer._id}`, { method: 'DELETE' });
+      await parseOrThrow(res, 'Failed to delete employer');
+      setViewEmployer(null);
+      await refresh();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setEmployerDeleting(false);
     }
   };
 
@@ -357,6 +472,34 @@ export default function InvoicesPage() {
         </div>
       </div>
 
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {(['OVERVIEW', 'INVOICES', 'EMPLOYERS'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`px-4 py-2.5 rounded-xl text-sm font-black border transition ${
+                tab === t ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {t === 'OVERVIEW' ? 'Overview' : t === 'INVOICES' ? 'Invoices' : 'Employers'}
+            </button>
+          ))}
+        </div>
+        <div className="w-full lg:w-[420px]">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search invoices, employers, numbers, emails…"
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="min-w-0">
@@ -383,14 +526,15 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      {tab === 'OVERVIEW' && (
+        <div className="grid lg:grid-cols-3 gap-6">
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
             <h2 className="font-black text-slate-900">Employers</h2>
             <p className="text-xs text-slate-500 mt-1">Companies you invoice</p>
           </div>
           <div className="p-3 space-y-2">
-            {employers.length === 0 ? (
+            {filteredEmployers.length === 0 ? (
               <div className="p-8 text-center">
                 <div className="mx-auto w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
                   <Building2 className="w-6 h-6 text-emerald-700" />
@@ -402,12 +546,17 @@ export default function InvoicesPage() {
                 </button>
               </div>
             ) : (
-              employers.map((e) => (
-                <div key={e._id} className="p-3 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/20 transition">
+              filteredEmployers.map((e) => (
+                <button
+                  type="button"
+                  key={e._id}
+                  onClick={() => openEmployerDetail(e)}
+                  className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/20 transition"
+                >
                   <p className="font-bold text-slate-900">{e.companyName}</p>
                   <p className="text-xs text-slate-500">{e.email || 'No email'}</p>
                   {e.abn && <p className="text-[10px] font-bold text-slate-400 mt-1">ABN: {e.abn}</p>}
-                </div>
+                </button>
               ))
             )}
           </div>
@@ -488,6 +637,38 @@ export default function InvoicesPage() {
                         <button onClick={() => openSend(inv)} className="px-3 py-2 rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 text-sm font-black inline-flex items-center gap-2">
                           <Send className="w-4 h-4" /> Send
                         </button>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setOpenMenuFor((cur) => (cur === inv._id ? null : inv._id))}
+                            className="px-3 py-2 rounded-xl text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 text-sm font-black inline-flex items-center gap-2"
+                            title="More actions"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                          {openMenuFor === inv._id && (
+                            <div className="absolute right-0 mt-2 w-56 z-20 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
+                              <button className="w-full px-4 py-2.5 text-left text-sm font-bold hover:bg-slate-50 inline-flex items-center gap-2" onClick={() => { setViewInv(inv); setOpenMenuFor(null); }}>
+                                <Eye className="w-4 h-4" /> View details
+                              </button>
+                              <button className="w-full px-4 py-2.5 text-left text-sm font-bold hover:bg-slate-50 inline-flex items-center gap-2" onClick={() => downloadPdf(inv).finally(() => setOpenMenuFor(null))}>
+                                <Download className="w-4 h-4" /> Download PDF
+                              </button>
+                              <button className="w-full px-4 py-2.5 text-left text-sm font-bold hover:bg-slate-50 inline-flex items-center gap-2" onClick={() => duplicateInvoice(inv)}>
+                                <Copy className="w-4 h-4" /> Duplicate as draft
+                              </button>
+                              {inv.status === 'DRAFT' && (
+                                <button className="w-full px-4 py-2.5 text-left text-sm font-bold hover:bg-slate-50 inline-flex items-center gap-2" onClick={() => openEditDraft(inv)}>
+                                  <Pencil className="w-4 h-4" /> Edit draft
+                                </button>
+                              )}
+                              <div className="h-px bg-slate-200" />
+                              <button className="w-full px-4 py-2.5 text-left text-sm font-bold hover:bg-slate-50 inline-flex items-center gap-2 text-slate-700" onClick={() => patchInvoiceStatus(inv, 'CANCELLED').finally(() => setOpenMenuFor(null))}>
+                                <Ban className="w-4 h-4" /> Cancel invoice
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -497,6 +678,80 @@ export default function InvoicesPage() {
           </div>
         </div>
       </div>
+      )}
+
+      {tab === 'INVOICES' && (
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div>
+              <h2 className="font-black text-slate-900">All invoices</h2>
+              <p className="text-xs text-slate-500 mt-1">Search, filter, view, export, and manage statuses</p>
+            </div>
+            <span className="text-xs font-bold text-slate-500">{filteredInvoices.length} shown</span>
+          </div>
+          <div className="p-5">
+            {/* Reuse the same list section by showing Overview list */}
+            <div className="space-y-2">
+              {filteredInvoices.map((inv) => {
+                const emp = employerMap.get(inv.employerId);
+                return (
+                  <button
+                    key={inv._id}
+                    type="button"
+                    onClick={() => setViewInv(inv)}
+                    className="w-full text-left p-4 rounded-2xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/10 transition"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-black text-slate-900 truncate">{inv.invoiceNumber} · {emp?.companyName || inv.customer?.name || 'Employer'}</p>
+                        <p className="text-xs text-slate-500 mt-1">Issue {fmtDate(inv.issueDate)} · Total {money(inv.total)}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${
+                        inv.status === 'PAID' ? 'bg-emerald-100 text-emerald-700'
+                        : inv.status === 'SENT' ? 'bg-sky-100 text-sky-700'
+                        : inv.status === 'CANCELLED' ? 'bg-slate-200 text-slate-600'
+                        : 'bg-amber-100 text-amber-700'
+                      }`}>{inv.status}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'EMPLOYERS' && (
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div>
+              <h2 className="font-black text-slate-900">All employers</h2>
+              <p className="text-xs text-slate-500 mt-1">Click an employer to manage and view invoices</p>
+            </div>
+            <span className="text-xs font-bold text-slate-500">{filteredEmployers.length} shown</span>
+          </div>
+          <div className="p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filteredEmployers.map((e) => (
+              <button
+                key={e._id}
+                type="button"
+                onClick={() => openEmployerDetail(e)}
+                className="text-left p-4 rounded-2xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/10 transition"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-emerald-700" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black text-slate-900 truncate">{e.companyName}</p>
+                    <p className="text-xs text-slate-500 truncate">{e.email || 'No email'}</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Invoice detail modal */}
       {viewInv && (
@@ -591,6 +846,68 @@ export default function InvoicesPage() {
                   <Ban className="w-4 h-4" /> Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Employer detail modal */}
+      {viewEmployer && (
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
+          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-black text-slate-900 truncate">{viewEmployer.companyName}</p>
+                <p className="text-xs text-slate-500 mt-1">{viewEmployer.email || 'No email'}{viewEmployer.abn ? ` · ABN ${viewEmployer.abn}` : ''}</p>
+              </div>
+              <button onClick={() => setViewEmployer(null)} className="p-2 rounded-xl hover:bg-slate-100"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setFilterEmployerId(viewEmployer._id); setTab('INVOICES'); setViewEmployer(null); }}
+                  className="px-4 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700"
+                >
+                  View invoices for this employer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEditingEmployer((v) => !v); }}
+                  className="px-4 py-2.5 rounded-xl font-black text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-2"
+                >
+                  <Pencil className="w-4 h-4" /> {editingEmployer ? 'Stop editing' : 'Edit'}
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteEmployer}
+                  disabled={employerDeleting}
+                  className="px-4 py-2.5 rounded-xl font-black text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 inline-flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" /> {employerDeleting ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Contact Name
+                  <input disabled={!editingEmployer} className="mt-1 w-full input disabled:bg-slate-50" value={viewEmployer.contactName || ''} onChange={(e) => setViewEmployer((cur) => cur ? ({ ...cur, contactName: e.target.value }) : cur)} />
+                </label>
+                <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Email
+                  <input disabled={!editingEmployer} className="mt-1 w-full input disabled:bg-slate-50" value={viewEmployer.email || ''} onChange={(e) => setViewEmployer((cur) => cur ? ({ ...cur, email: e.target.value }) : cur)} />
+                </label>
+                <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Phone
+                  <input disabled={!editingEmployer} className="mt-1 w-full input disabled:bg-slate-50" value={viewEmployer.phone || ''} onChange={(e) => setViewEmployer((cur) => cur ? ({ ...cur, phone: e.target.value }) : cur)} />
+                </label>
+                <label className="text-xs font-black text-slate-500 uppercase tracking-wider">ABN
+                  <input disabled={!editingEmployer} className="mt-1 w-full input disabled:bg-slate-50" value={viewEmployer.abn || ''} onChange={(e) => setViewEmployer((cur) => cur ? ({ ...cur, abn: e.target.value }) : cur)} />
+                </label>
+              </div>
+            </div>
+            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0">
+              <button onClick={() => setViewEmployer(null)} className="btn-secondary">Close</button>
+              <button onClick={saveEmployerEdits} disabled={!editingEmployer || employerSaving} className="btn-primary inline-flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" /> {employerSaving ? 'Saving…' : 'Save changes'}
+              </button>
             </div>
           </div>
         </div>

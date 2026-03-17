@@ -237,8 +237,15 @@ router.patch('/employers/:id', async (req, res) => {
 
 router.delete('/employers/:id', async (req, res) => {
   try {
-    const deleted = await StudentEmployer.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
-    if (!deleted) return res.status(404).json({ error: 'Employer not found' });
+    const employer = await StudentEmployer.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!employer) return res.status(404).json({ error: 'Employer not found' });
+    const invoiceCount = await Invoice.countDocuments({ userId: req.user._id, employerId: employer._id });
+    if (invoiceCount > 0) {
+      return res.status(400).json({
+        error: `You have ${invoiceCount} invoice(s) linked to this employer. Delete/cancel invoices first, or keep the employer for history.`,
+      });
+    }
+    await employer.deleteOne();
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -401,6 +408,42 @@ router.post('/invoices', async (req, res) => {
       gstAmount,
       total,
       notes: body.notes || '',
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/invoices/:id/duplicate', async (req, res) => {
+  try {
+    const inv = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!inv) return res.status(404).json({ error: 'Invoice not found' });
+
+    const dueDays = req.body?.dueDays != null ? Number(req.body.dueDays) : 14;
+    const issueDate = new Date();
+    const dueDate = new Date(issueDate);
+    dueDate.setDate(dueDate.getDate() + (Number.isFinite(dueDays) ? dueDays : 14));
+
+    const invoiceNumber = await nextInvoiceNumberForUser(req.user._id);
+    const created = await Invoice.create({
+      userId: req.user._id,
+      employerId: inv.employerId,
+      status: 'DRAFT',
+      invoiceNumber,
+      issueDate,
+      dueDate,
+      period: inv.period || {},
+      supplier: inv.supplier || {},
+      customer: inv.customer || {},
+      currency: inv.currency || 'AUD',
+      gstEnabled: !!inv.gstEnabled,
+      gstRate: typeof inv.gstRate === 'number' ? inv.gstRate : 0.1,
+      lineItems: Array.isArray(inv.lineItems) ? inv.lineItems : [],
+      subtotal: inv.subtotal || 0,
+      gstAmount: inv.gstAmount || 0,
+      total: inv.total || 0,
+      notes: inv.notes || '',
     });
     res.status(201).json(created);
   } catch (err) {
