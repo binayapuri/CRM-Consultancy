@@ -147,6 +147,26 @@ const clientSchema = new mongoose.Schema({
     address: { street: String, suburb: String, city: String, state: String, postcode: String, country: String },
     photoUrl: String,
     signatureUrl: String,
+    invoiceSettings: {
+      smtp: {
+        enabled: { type: Boolean, default: false },
+        host: { type: String, default: '' },
+        port: { type: Number, default: 587 },
+        secure: { type: Boolean, default: false },
+        user: { type: String, default: '' },
+        passEnc: { type: String, default: '' }, // encrypted
+        from: { type: String, default: '' },
+      },
+      payment: {
+        bankName: { type: String, default: '' },
+        bsb: { type: String, default: '' },
+        accountNumber: { type: String, default: '' },
+        accountName: { type: String, default: '' },
+        payIdType: { type: String, enum: ['EMAIL', 'PHONE', ''], default: '' },
+        payId: { type: String, default: '' },
+        reference: { type: String, default: '' },
+      },
+    },
   },
   education: [educationSchema],
   experience: [experienceSchema],

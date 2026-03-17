@@ -16,7 +16,7 @@ import StudentEmployer from '../models/StudentEmployer.js';
 import Invoice from '../models/Invoice.js';
 import InvoiceCounter from '../models/InvoiceCounter.js';
 import { renderInvoicePdfBuffer } from '../utils/invoicePdf.js';
-import { sendMail } from '../utils/mailer.js';
+import { encryptStudentSecret, sendStudentMail } from '../utils/mailer.js';
 import archiver from 'archiver';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -367,6 +367,7 @@ router.post('/invoices', async (req, res) => {
       phone: String(body.supplier?.phone || client?.profile?.phone || '').trim(),
       address: body.supplier?.address || client?.profile?.address || {},
     };
+    const payment = client?.profile?.invoiceSettings?.payment || {};
 
     const customer = {
       name: employer.companyName,
@@ -400,6 +401,15 @@ router.post('/invoices', async (req, res) => {
       period: body.period || {},
       supplier,
       customer,
+      payment: {
+        bankName: payment.bankName || '',
+        bsb: payment.bsb || '',
+        accountNumber: payment.accountNumber || '',
+        accountName: payment.accountName || '',
+        payIdType: payment.payIdType || '',
+        payId: payment.payId || '',
+        reference: payment.reference || '',
+      },
       currency: 'AUD',
       gstEnabled,
       gstRate,
@@ -436,6 +446,7 @@ router.post('/invoices/:id/duplicate', async (req, res) => {
       period: inv.period || {},
       supplier: inv.supplier || {},
       customer: inv.customer || {},
+      payment: inv.payment || {},
       currency: inv.currency || 'AUD',
       gstEnabled: !!inv.gstEnabled,
       gstRate: typeof inv.gstRate === 'number' ? inv.gstRate : 0.1,
@@ -538,7 +549,7 @@ router.post('/invoices/:id/send', async (req, res) => {
     const text = String(req.body?.text || `Hi,\n\nPlease find attached invoice ${inv.invoiceNumber}.\n\nRegards,\n${inv.supplier?.name || ''}`).trim();
 
     const pdf = await renderInvoicePdfBuffer(inv);
-    await sendMail({
+    await sendStudentMail(req.user._id, {
       to,
       subject,
       text,
@@ -552,6 +563,94 @@ router.post('/invoices/:id/send', async (req, res) => {
   } catch (err) {
     const status = err.statusCode || 500;
     res.status(status).json({ error: err.message });
+  }
+});
+
+// Student invoice settings (SMTP + payment details)
+router.get('/invoice-settings', async (req, res) => {
+  try {
+    const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
+    const smtp = client?.profile?.invoiceSettings?.smtp || {};
+    const payment = client?.profile?.invoiceSettings?.payment || {};
+    // Never return password (encrypted or decrypted)
+    res.json({
+      smtp: {
+        enabled: !!smtp.enabled,
+        host: smtp.host || '',
+        port: smtp.port || 587,
+        secure: !!smtp.secure,
+        user: smtp.user || '',
+        from: smtp.from || '',
+        hasPassword: !!smtp.passEnc,
+      },
+      payment: {
+        bankName: payment.bankName || '',
+        bsb: payment.bsb || '',
+        accountNumber: payment.accountNumber || '',
+        accountName: payment.accountName || '',
+        payIdType: payment.payIdType || '',
+        payId: payment.payId || '',
+        reference: payment.reference || '',
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/invoice-settings', async (req, res) => {
+  try {
+    const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
+    const smtpIn = req.body?.smtp || {};
+    const paymentIn = req.body?.payment || {};
+
+    const update = {};
+    if (smtpIn) {
+      if (smtpIn.enabled !== undefined) update['profile.invoiceSettings.smtp.enabled'] = !!smtpIn.enabled;
+      if (smtpIn.host !== undefined) update['profile.invoiceSettings.smtp.host'] = String(smtpIn.host || '');
+      if (smtpIn.port !== undefined) update['profile.invoiceSettings.smtp.port'] = Number(smtpIn.port || 587);
+      if (smtpIn.secure !== undefined) update['profile.invoiceSettings.smtp.secure'] = !!smtpIn.secure;
+      if (smtpIn.user !== undefined) update['profile.invoiceSettings.smtp.user'] = String(smtpIn.user || '');
+      if (smtpIn.from !== undefined) update['profile.invoiceSettings.smtp.from'] = String(smtpIn.from || '');
+      if (smtpIn.password) update['profile.invoiceSettings.smtp.passEnc'] = encryptStudentSecret(String(smtpIn.password));
+    }
+
+    if (paymentIn) {
+      const p = 'profile.invoiceSettings.payment';
+      if (paymentIn.bankName !== undefined) update[`${p}.bankName`] = String(paymentIn.bankName || '');
+      if (paymentIn.bsb !== undefined) update[`${p}.bsb`] = String(paymentIn.bsb || '');
+      if (paymentIn.accountNumber !== undefined) update[`${p}.accountNumber`] = String(paymentIn.accountNumber || '');
+      if (paymentIn.accountName !== undefined) update[`${p}.accountName`] = String(paymentIn.accountName || '');
+      if (paymentIn.payIdType !== undefined) update[`${p}.payIdType`] = String(paymentIn.payIdType || '');
+      if (paymentIn.payId !== undefined) update[`${p}.payId`] = String(paymentIn.payId || '');
+      if (paymentIn.reference !== undefined) update[`${p}.reference`] = String(paymentIn.reference || '');
+    }
+
+    const updated = await Client.findByIdAndUpdate(client._id, { $set: update }, { new: true });
+    const smtp = updated?.profile?.invoiceSettings?.smtp || {};
+    const payment = updated?.profile?.invoiceSettings?.payment || {};
+    res.json({
+      smtp: {
+        enabled: !!smtp.enabled,
+        host: smtp.host || '',
+        port: smtp.port || 587,
+        secure: !!smtp.secure,
+        user: smtp.user || '',
+        from: smtp.from || '',
+        hasPassword: !!smtp.passEnc,
+      },
+      payment: {
+        bankName: payment.bankName || '',
+        bsb: payment.bsb || '',
+        accountNumber: payment.accountNumber || '',
+        accountName: payment.accountName || '',
+        payIdType: payment.payIdType || '',
+        payId: payment.payId || '',
+        reference: payment.reference || '',
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

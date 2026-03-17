@@ -1,13 +1,14 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore, authFetch } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
-import { KeyRound, User, Camera, Shield, Trash2, Eye, EyeOff, CheckCircle2, AlertTriangle, LogOut, Settings as SettingsIcon } from 'lucide-react';
+import { KeyRound, User, Camera, Shield, Trash2, Eye, EyeOff, CheckCircle2, AlertTriangle, LogOut, Settings as SettingsIcon, Mail, CreditCard } from 'lucide-react';
 import { StudentSectionTabs } from '../../components/StudentSectionTabs';
 
 const TABS = [
   { id: 'security', label: 'Security', icon: KeyRound },
   { id: 'account', label: 'Account', icon: User },
   { id: 'avatar', label: 'Avatar', icon: Camera },
+  { id: 'invoices', label: 'Invoices', icon: Mail },
   { id: 'privacy', label: 'Privacy', icon: Shield },
   { id: 'danger', label: 'Danger Zone', icon: Trash2 },
 ];
@@ -37,6 +38,64 @@ export default function Settings() {
   const [phone, setPhone] = useState(user?.profile?.phone || '');
   const [accLoading, setAccLoading] = useState(false);
   const [accMsg, setAccMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Invoice settings (student SMTP + payment)
+  const [invLoading, setInvLoading] = useState(false);
+  const [invMsg, setInvMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [smtpEnabled, setSmtpEnabled] = useState(false);
+  const [smtpHost, setSmtpHost] = useState('');
+  const [smtpPort, setSmtpPort] = useState(587);
+  const [smtpSecure, setSmtpSecure] = useState(false);
+  const [smtpUser, setSmtpUser] = useState('');
+  const [smtpFrom, setSmtpFrom] = useState('');
+  const [smtpPassword, setSmtpPassword] = useState('');
+  const [smtpHasPassword, setSmtpHasPassword] = useState(false);
+
+  const [bankName, setBankName] = useState('');
+  const [bsb, setBsb] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [payIdType, setPayIdType] = useState<'EMAIL' | 'PHONE' | ''>('');
+  const [payId, setPayId] = useState('');
+  const [reference, setReference] = useState('');
+
+  useEffect(() => {
+    if (tab !== 'invoices') return;
+    let cancelled = false;
+    (async () => {
+      setInvLoading(true);
+      setInvMsg(null);
+      try {
+        const res = await authFetch('/api/student/invoice-settings');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || 'Failed to load invoice settings');
+        if (cancelled) return;
+        setSmtpEnabled(!!data?.smtp?.enabled);
+        setSmtpHost(data?.smtp?.host || '');
+        setSmtpPort(Number(data?.smtp?.port || 587));
+        setSmtpSecure(!!data?.smtp?.secure);
+        setSmtpUser(data?.smtp?.user || '');
+        setSmtpFrom(data?.smtp?.from || '');
+        setSmtpHasPassword(!!data?.smtp?.hasPassword);
+        setSmtpPassword('');
+
+        setBankName(data?.payment?.bankName || '');
+        setBsb(data?.payment?.bsb || '');
+        setAccountNumber(data?.payment?.accountNumber || '');
+        setAccountName(data?.payment?.accountName || '');
+        setPayIdType(data?.payment?.payIdType || '');
+        setPayId(data?.payment?.payId || '');
+        setReference(data?.payment?.reference || '');
+      } catch (e: any) {
+        if (!cancelled) setInvMsg({ type: 'error', text: e.message });
+      } finally {
+        if (!cancelled) setInvLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab]);
 
   const inp = 'w-full px-4 py-3 rounded-xl text-sm font-medium text-slate-800 outline-none transition-all focus:ring-2 focus:ring-indigo-500/40 bg-slate-50 border border-slate-200';
 
@@ -119,6 +178,47 @@ export default function Settings() {
         {msg.text}
       </div>
     );
+  };
+
+  const saveInvoiceSettings = async () => {
+    setInvLoading(true);
+    setInvMsg(null);
+    try {
+      const res = await authFetch('/api/student/invoice-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          smtp: {
+            enabled: smtpEnabled,
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpSecure,
+            user: smtpUser,
+            from: smtpFrom,
+            password: smtpPassword || undefined,
+          },
+          payment: {
+            bankName,
+            bsb,
+            accountNumber,
+            accountName,
+            payIdType,
+            payId,
+            reference,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to save');
+      setSmtpHasPassword(!!data?.smtp?.hasPassword);
+      setSmtpPassword('');
+      showToast('Invoice settings saved!', 'success');
+      setInvMsg({ type: 'success', text: 'Saved successfully.' });
+    } catch (e: any) {
+      setInvMsg({ type: 'error', text: e.message });
+    } finally {
+      setInvLoading(false);
+    }
   };
 
   return (
@@ -247,6 +347,96 @@ export default function Settings() {
             </button>
           )}
           <Alert msg={avatarMsg} />
+        </div>
+      )}
+
+      {/* Invoices Tab */}
+      {tab === 'invoices' && (
+        <div className="bg-white rounded-xl p-6 space-y-6" style={{ border: '1px solid #E8EDFB' }}>
+          <div>
+            <h2 className="font-black text-slate-900 text-xl flex items-center gap-2"><Mail className="w-5 h-5 text-indigo-600" /> Invoice settings</h2>
+            <p className="text-sm text-slate-500 font-medium mt-2">
+              Configure your own SMTP (private) for sending invoices, and add payment details to show on your PDFs.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 p-5">
+            <h3 className="font-black text-slate-900 flex items-center gap-2"><Mail className="w-4 h-4 text-emerald-600" /> SMTP (Send from your email)</h3>
+            <div className="mt-4 flex items-center gap-2">
+              <input type="checkbox" checked={smtpEnabled} onChange={(e) => setSmtpEnabled(e.target.checked)} />
+              <span className="text-sm font-bold text-slate-700">Enable my SMTP for invoice emails</span>
+            </div>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">SMTP Host</label>
+                <input value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} className={inp} placeholder="smtp.gmail.com" />
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Port</label>
+                <input type="number" value={smtpPort} onChange={(e) => setSmtpPort(Number(e.target.value))} className={inp} placeholder="587" />
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Username</label>
+                <input value={smtpUser} onChange={(e) => setSmtpUser(e.target.value)} className={inp} placeholder="your@email.com" />
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">From (optional)</label>
+                <input value={smtpFrom} onChange={(e) => setSmtpFrom(e.target.value)} className={inp} placeholder="Your Name <your@email.com>" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Password / App password</label>
+                <input value={smtpPassword} onChange={(e) => setSmtpPassword(e.target.value)} className={inp} placeholder={smtpHasPassword ? 'Saved (enter to replace)' : 'Enter app password'} />
+                <p className="text-xs text-slate-400 mt-1">We recommend using a Gmail/App password. Your password is stored encrypted.</p>
+              </div>
+              <div className="md:col-span-2 flex items-center gap-2">
+                <input type="checkbox" checked={smtpSecure} onChange={(e) => setSmtpSecure(e.target.checked)} />
+                <span className="text-sm font-bold text-slate-700">Use secure connection (SSL/TLS)</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 p-5">
+            <h3 className="font-black text-slate-900 flex items-center gap-2"><CreditCard className="w-4 h-4 text-emerald-600" /> Payment details (shown on invoice)</h3>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Bank name</label>
+                <input value={bankName} onChange={(e) => setBankName(e.target.value)} className={inp} placeholder="Commonwealth Bank" />
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Account name</label>
+                <input value={accountName} onChange={(e) => setAccountName(e.target.value)} className={inp} placeholder="Your legal name" />
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">BSB</label>
+                <input value={bsb} onChange={(e) => setBsb(e.target.value)} className={inp} placeholder="062-948" />
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Account number</label>
+                <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className={inp} placeholder="12345678" />
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">PayID type</label>
+                <select value={payIdType} onChange={(e) => setPayIdType(e.target.value as any)} className={inp}>
+                  <option value="">None</option>
+                  <option value="EMAIL">Email</option>
+                  <option value="PHONE">Phone</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">PayID</label>
+                <input value={payId} onChange={(e) => setPayId(e.target.value)} className={inp} placeholder="you@email.com or +61..." />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Payment reference (optional)</label>
+                <input value={reference} onChange={(e) => setReference(e.target.value)} className={inp} placeholder="e.g., Invoice number as reference" />
+              </div>
+            </div>
+          </div>
+
+          <button onClick={saveInvoiceSettings} disabled={invLoading} className="px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+            {invLoading ? 'Saving...' : 'Save Invoice Settings'}
+          </button>
+          <Alert msg={invMsg} />
         </div>
       )}
 

@@ -47,6 +47,16 @@ const invoiceSchema = new mongoose.Schema(
     supplier: { type: partySnapshotSchema, default: () => ({}) },
     customer: { type: partySnapshotSchema, default: () => ({}) },
 
+    payment: {
+      bankName: { type: String, default: '' },
+      bsb: { type: String, default: '' },
+      accountNumber: { type: String, default: '' },
+      accountName: { type: String, default: '' },
+      payIdType: { type: String, default: '' }, // EMAIL|PHONE
+      payId: { type: String, default: '' },
+      reference: { type: String, default: '' },
+    },
+
     currency: { type: String, default: 'AUD' },
     gstEnabled: { type: Boolean, default: false },
     gstRate: { type: Number, default: 0.1 }, // 10%

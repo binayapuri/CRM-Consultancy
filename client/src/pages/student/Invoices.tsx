@@ -64,6 +64,7 @@ export default function InvoicesPage() {
     periodTo: '',
     gstEnabled: false,
     gstRate: 0.1,
+    billingMode: 'HOURLY', // HOURLY|FIXED
     notes: '',
     lineItems: [{ description: 'Contractor services', quantity: 0, unit: 'hours', unitPrice: 0 }],
   });
@@ -269,8 +270,12 @@ export default function InvoicesPage() {
       periodTo: inv.period?.to ? new Date(inv.period.to).toISOString().slice(0, 10) : '',
       gstEnabled: !!inv.gstEnabled,
       gstRate: typeof inv.gstRate === 'number' ? inv.gstRate : 0.1,
+      billingMode: (inv.lineItems || []).some((li: any) => li.unit === 'fixed') ? 'FIXED' : 'HOURLY',
       notes: inv.notes || '',
-      lineItems: (inv.lineItems || []).map((li) => ({ ...li })),
+      lineItems: (inv.lineItems || []).map((li: any) => ({
+        ...li,
+        amount: li.amount ?? (Number(li.quantity || 0) * Number(li.unitPrice || 0)),
+      })),
       _editId: inv._id,
     });
     setShowInvoiceModal(true);
@@ -279,7 +284,10 @@ export default function InvoicesPage() {
 
   const totals = useMemo(() => {
     const items = Array.isArray(invoiceForm.lineItems) ? invoiceForm.lineItems : [];
-    const subtotal = items.reduce((s: number, li: any) => s + (Number(li.quantity || 0) * Number(li.unitPrice || 0)), 0);
+    const subtotal = items.reduce((s: number, li: any) => {
+      if (invoiceForm.billingMode === 'FIXED') return s + Number(li.amount || 0);
+      return s + (Number(li.quantity || 0) * Number(li.unitPrice || 0));
+    }, 0);
     const gstAmount = invoiceForm.gstEnabled ? subtotal * Number(invoiceForm.gstRate || 0.1) : 0;
     return { subtotal, gstAmount, total: subtotal + gstAmount };
   }, [invoiceForm.lineItems, invoiceForm.gstEnabled, invoiceForm.gstRate]);
@@ -295,7 +303,8 @@ export default function InvoicesPage() {
       notes: '',
       gstEnabled: false,
       gstRate: 0.1,
-      lineItems: [{ description: 'Contractor services', quantity: 0, unit: 'hours', unitPrice: 0 }],
+      billingMode: 'HOURLY',
+      lineItems: [{ description: 'Contractor services', quantity: 0, unit: 'hours', unitPrice: 0, amount: 0 }],
     }));
     setShowInvoiceModal(true);
   };
@@ -311,7 +320,8 @@ export default function InvoicesPage() {
       notes: '',
       gstEnabled: false,
       gstRate: 0.1,
-      lineItems: [{ description: 'Contractor services', quantity: 0, unit: 'hours', unitPrice: 0 }],
+      billingMode: 'HOURLY',
+      lineItems: [{ description: 'Contractor services', quantity: 0, unit: 'hours', unitPrice: 0, amount: 0 }],
       _editId: undefined,
     }));
     setShowInvoiceModal(true);
@@ -359,12 +369,12 @@ export default function InvoicesPage() {
         gstRate: Number(invoiceForm.gstRate || 0.1),
         period: invoiceForm.periodFrom || invoiceForm.periodTo ? { from: invoiceForm.periodFrom || null, to: invoiceForm.periodTo || null } : undefined,
         notes: invoiceForm.notes || '',
-        lineItems: (invoiceForm.lineItems || []).map((li: any) => ({
-          description: li.description,
-          quantity: Number(li.quantity || 0),
-          unit: li.unit || 'hours',
-          unitPrice: Number(li.unitPrice || 0),
-        })),
+        lineItems: (invoiceForm.lineItems || []).map((li: any) => {
+          if (invoiceForm.billingMode === 'FIXED') {
+            return { description: li.description, quantity: 1, unit: 'fixed', unitPrice: Number(li.amount || 0) };
+          }
+          return { description: li.description, quantity: Number(li.quantity || 0), unit: 'hours', unitPrice: Number(li.unitPrice || 0) };
+        }),
       };
       const isEdit = !!invoiceForm._editId;
       const res = await authFetch(isEdit ? `/api/student/invoices/${invoiceForm._editId}` : '/api/student/invoices', {
@@ -526,6 +536,24 @@ export default function InvoicesPage() {
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Create Invoice</span>
           </button>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-3">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Invoices</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{stats.totalInvoices}</p>
+          <p className="text-xs text-slate-500 mt-1">Across current filters/search</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-4">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Outstanding</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{money(stats.outstanding)}</p>
+          <p className="text-xs text-slate-500 mt-1">Draft + sent invoices</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-4">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Paid</p>
+          <p className="text-2xl font-black text-emerald-700 mt-1">{money(stats.paid)}</p>
+          <p className="text-xs text-slate-500 mt-1">Marked as paid</p>
         </div>
       </div>
 
@@ -1085,6 +1113,14 @@ export default function InvoicesPage() {
                   <input type="checkbox" checked={!!invoiceForm.gstEnabled} onChange={e => setInvoiceForm((f: any) => ({ ...f, gstEnabled: e.target.checked }))} />
                   GST registered (Tax Invoice)
                 </label>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={invoiceForm.billingMode === 'HOURLY'}
+                    onChange={(e) => setInvoiceForm((f: any) => ({ ...f, billingMode: e.target.checked ? 'HOURLY' : 'FIXED' }))}
+                  />
+                  Hourly billing
+                </label>
               </div>
 
               <div className="rounded-xl border border-slate-200 overflow-hidden">
@@ -1092,7 +1128,15 @@ export default function InvoicesPage() {
                   <p className="font-black text-slate-900 text-sm">Line items</p>
                   <button
                     type="button"
-                    onClick={() => setInvoiceForm((f: any) => ({ ...f, lineItems: [...(f.lineItems || []), { description: 'Contractor services', quantity: 0, unit: 'hours', unitPrice: 0 }] }))}
+                    onClick={() => setInvoiceForm((f: any) => ({
+                      ...f,
+                      lineItems: [
+                        ...(f.lineItems || []),
+                        f.billingMode === 'FIXED'
+                          ? { description: 'Service', amount: 0 }
+                          : { description: 'Contractor services', quantity: 0, unitPrice: 0 },
+                      ],
+                    }))}
                     className="text-sm font-black text-emerald-700 hover:text-emerald-800"
                   >
                     + Add another
@@ -1108,23 +1152,40 @@ export default function InvoicesPage() {
                           return { ...f, lineItems: arr };
                         })} />
                       </label>
-                      <label className="sm:col-span-2 text-[10px] font-black text-slate-500 uppercase tracking-wider">Qty
-                        <input type="number" className="mt-1 w-full input" value={li.quantity} onChange={e => setInvoiceForm((f: any) => {
-                          const arr = [...(f.lineItems || [])];
-                          arr[idx] = { ...arr[idx], quantity: Number(e.target.value) };
-                          return { ...f, lineItems: arr };
-                        })} />
-                      </label>
-                      <label className="sm:col-span-2 text-[10px] font-black text-slate-500 uppercase tracking-wider">Unit Price
-                        <input type="number" className="mt-1 w-full input" value={li.unitPrice} onChange={e => setInvoiceForm((f: any) => {
-                          const arr = [...(f.lineItems || [])];
-                          arr[idx] = { ...arr[idx], unitPrice: Number(e.target.value) };
-                          return { ...f, lineItems: arr };
-                        })} />
-                      </label>
-                      <div className="sm:col-span-2 text-sm font-black text-slate-900 text-right">
-                        {money(Number(li.quantity || 0) * Number(li.unitPrice || 0))}
-                      </div>
+                      {invoiceForm.billingMode === 'FIXED' ? (
+                        <>
+                          <label className="sm:col-span-4 text-[10px] font-black text-slate-500 uppercase tracking-wider">Amount (AUD)
+                            <input type="number" className="mt-1 w-full input" value={li.amount} onChange={e => setInvoiceForm((f: any) => {
+                              const arr = [...(f.lineItems || [])];
+                              arr[idx] = { ...arr[idx], amount: Number(e.target.value) };
+                              return { ...f, lineItems: arr };
+                            })} />
+                          </label>
+                          <div className="sm:col-span-2 text-sm font-black text-slate-900 text-right">
+                            {money(Number(li.amount || 0))}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <label className="sm:col-span-2 text-[10px] font-black text-slate-500 uppercase tracking-wider">Hours
+                            <input type="number" className="mt-1 w-full input" value={li.quantity} onChange={e => setInvoiceForm((f: any) => {
+                              const arr = [...(f.lineItems || [])];
+                              arr[idx] = { ...arr[idx], quantity: Number(e.target.value) };
+                              return { ...f, lineItems: arr };
+                            })} />
+                          </label>
+                          <label className="sm:col-span-2 text-[10px] font-black text-slate-500 uppercase tracking-wider">Rate / hour
+                            <input type="number" className="mt-1 w-full input" value={li.unitPrice} onChange={e => setInvoiceForm((f: any) => {
+                              const arr = [...(f.lineItems || [])];
+                              arr[idx] = { ...arr[idx], unitPrice: Number(e.target.value) };
+                              return { ...f, lineItems: arr };
+                            })} />
+                          </label>
+                          <div className="sm:col-span-2 text-sm font-black text-slate-900 text-right">
+                            {money(Number(li.quantity || 0) * Number(li.unitPrice || 0))}
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
