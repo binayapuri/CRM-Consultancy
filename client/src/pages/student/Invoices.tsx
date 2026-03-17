@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { authFetch, safeJson } from '../../store/auth';
-import { Building2, FileText, Plus, Send, Download, CheckCircle2, X } from 'lucide-react';
+import { Building2, FileText, Plus, Send, Download, CheckCircle2, X, Filter, Eye, FileDown, BadgeCheck, Ban } from 'lucide-react';
 
 type Employer = {
   _id: string;
@@ -73,6 +73,30 @@ export default function InvoicesPage() {
   const [sendForm, setSendForm] = useState({ to: '', subject: '', text: '' });
   const [sending, setSending] = useState(false);
 
+  // Filters
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [filterEmployerId, setFilterEmployerId] = useState<string>('ALL');
+  const [filterFrom, setFilterFrom] = useState<string>('');
+  const [filterTo, setFilterTo] = useState<string>('');
+
+  // Detail modal
+  const [viewInv, setViewInv] = useState<Invoice | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  async function parseOrThrow(res: Response, fallbackMessage: string) {
+    // Clone BEFORE consuming body so we can read text if JSON parse fails.
+    const clone = res.clone();
+    try {
+      const data = await safeJson<any>(res);
+      if (!res.ok) throw new Error(data?.error || fallbackMessage);
+      return data;
+    } catch (e: any) {
+      const text = await clone.text().catch(() => '');
+      const msg = text || e?.message || fallbackMessage;
+      throw new Error(msg);
+    }
+  }
+
   const employerMap = useMemo(() => {
     const m = new Map<string, Employer>();
     employers.forEach((e) => m.set(e._id, e));
@@ -84,14 +108,8 @@ export default function InvoicesPage() {
     setLoading(true);
     try {
       const [eRes, iRes] = await Promise.all([authFetch('/api/student/employers'), authFetch('/api/student/invoices')]);
-      const eJson = await safeJson<any>(eRes).catch(async (err) => {
-        const msg = (await eRes.clone().text().catch(() => '')) || err?.message;
-        throw new Error(msg || 'Failed to load employers');
-      });
-      const iJson = await safeJson<any>(iRes).catch(async (err) => {
-        const msg = (await iRes.clone().text().catch(() => '')) || err?.message;
-        throw new Error(msg || 'Failed to load invoices');
-      });
+      const eJson = await parseOrThrow(eRes, 'Failed to load employers');
+      const iJson = await parseOrThrow(iRes, 'Failed to load invoices');
       setEmployers(Array.isArray(eJson) ? eJson : []);
       setInvoices(Array.isArray(iJson) ? iJson : []);
     } catch (e: any) {
@@ -104,6 +122,65 @@ export default function InvoicesPage() {
   useEffect(() => {
     refresh();
   }, []);
+
+  const filteredInvoices = useMemo(() => {
+    let rows = invoices.slice();
+    if (filterStatus !== 'ALL') rows = rows.filter((i) => i.status === filterStatus);
+    if (filterEmployerId !== 'ALL') rows = rows.filter((i) => i.employerId === filterEmployerId);
+    if (filterFrom) {
+      const from = new Date(filterFrom).getTime();
+      rows = rows.filter((i) => new Date(i.issueDate).getTime() >= from);
+    }
+    if (filterTo) {
+      const to = new Date(filterTo).getTime();
+      rows = rows.filter((i) => new Date(i.issueDate).getTime() <= to);
+    }
+    return rows;
+  }, [invoices, filterStatus, filterEmployerId, filterFrom, filterTo]);
+
+  const exportAll = async () => {
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (filterStatus !== 'ALL') params.set('status', filterStatus);
+      if (filterEmployerId !== 'ALL') params.set('employerId', filterEmployerId);
+      if (filterFrom) params.set('from', filterFrom);
+      if (filterTo) params.set('to', filterTo);
+      const res = await authFetch(`/api/student/invoices/export?${params.toString()}`);
+      if (!res.ok) throw new Error((await res.text().catch(() => '')) || 'Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoices-export-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+
+  const patchInvoiceStatus = async (inv: Invoice, status: Invoice['status']) => {
+    setUpdatingStatus(true);
+    setError(null);
+    try {
+      const res = await authFetch(`/api/student/invoices/${inv._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      const data = await safeJson<any>(res).catch(async () => ({ error: await res.text().catch(() => 'Failed') }));
+      if (!res.ok) throw new Error(data?.error || 'Update failed');
+      setViewInv(data);
+      await refresh();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const totals = useMemo(() => {
     const items = Array.isArray(invoiceForm.lineItems) ? invoiceForm.lineItems : [];
@@ -141,11 +218,7 @@ export default function InvoicesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(employerForm),
       });
-      const data = await safeJson<any>(res).catch(async (err) => {
-        const msg = (await res.clone().text().catch(() => '')) || err?.message;
-        throw new Error(msg || 'Failed to save employer');
-      });
-      if (!res.ok) throw new Error(data?.error || 'Failed to save employer');
+      await parseOrThrow(res, 'Failed to save employer');
       setShowEmployerModal(false);
       setEmployerForm({ companyName: '', email: '', abn: '', contactName: '', phone: '', address: { street: '', city: '', state: '', postcode: '', country: 'Australia' } });
       await refresh();
@@ -186,11 +259,7 @@ export default function InvoicesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await safeJson<any>(res).catch(async (err) => {
-        const msg = (await res.clone().text().catch(() => '')) || err?.message;
-        throw new Error(msg || 'Failed to create invoice');
-      });
-      if (!res.ok) throw new Error(data?.error || 'Failed to create invoice');
+      await parseOrThrow(res, 'Failed to create invoice');
       setShowInvoiceModal(false);
       await refresh();
     } catch (e: any) {
@@ -245,11 +314,7 @@ export default function InvoicesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sendForm),
       });
-      const data = await safeJson<any>(res).catch(async (err) => {
-        const msg = (await res.clone().text().catch(() => '')) || err?.message;
-        throw new Error(msg || 'Failed to send invoice');
-      });
-      if (!res.ok) throw new Error(data?.error || 'Failed to send invoice');
+      await parseOrThrow(res, 'Failed to send invoice');
       setSendFor(null);
       await refresh();
     } catch (e: any) {
@@ -281,10 +346,34 @@ export default function InvoicesPage() {
             <Building2 className="w-4 h-4 inline-block mr-2" />
             Add Employer
           </button>
+          <button onClick={exportAll} className="px-4 py-2.5 rounded-xl font-black text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-2">
+            <FileDown className="w-4 h-4" />
+            Export
+          </button>
           <button onClick={openCreateInvoice} className="px-5 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/20">
             <Plus className="w-4 h-4 inline-block mr-2" />
             Create Invoice
           </button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-black text-slate-900">Australian invoice checklist</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Use your <span className="font-bold">ABN</span> on every invoice. Toggle <span className="font-bold">GST</span> only if you’re GST-registered. Typical payment terms: <span className="font-bold">7/14/30</span> days.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => { setFilterStatus('ALL'); setFilterEmployerId('ALL'); setFilterFrom(''); setFilterTo(''); }}
+              className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-sm font-black hover:bg-slate-100"
+            >
+              Clear filters
+            </button>
+          </div>
         </div>
       </div>
 
@@ -302,7 +391,16 @@ export default function InvoicesPage() {
           </div>
           <div className="p-3 space-y-2">
             {employers.length === 0 ? (
-              <div className="p-6 text-center text-slate-500 text-sm">Add an employer to start invoicing.</div>
+              <div className="p-8 text-center">
+                <div className="mx-auto w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-emerald-700" />
+                </div>
+                <p className="mt-3 font-black text-slate-900">Add your first employer</p>
+                <p className="mt-1 text-sm text-slate-500">Save employer details once and reuse for future invoices.</p>
+                <button onClick={() => setShowEmployerModal(true)} className="mt-4 px-4 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700">
+                  + Add Employer
+                </button>
+              </div>
             ) : (
               employers.map((e) => (
                 <div key={e._id} className="p-3 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/20 transition">
@@ -321,16 +419,51 @@ export default function InvoicesPage() {
               <h2 className="font-black text-slate-900">Invoices</h2>
               <p className="text-xs text-slate-500 mt-1">Draft, send, and track payments</p>
             </div>
-            <span className="text-xs font-bold text-slate-500">{invoices.length} total</span>
+            <span className="text-xs font-bold text-slate-500">{filteredInvoices.length} shown</span>
+          </div>
+          <div className="px-5 py-3 border-b border-slate-200 bg-white">
+            <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-wider">
+                <Filter className="w-4 h-4" /> Filters
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Status
+                  <select className="mt-1 w-full input" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                    {['ALL', 'DRAFT', 'SENT', 'PAID', 'CANCELLED'].map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Employer
+                  <select className="mt-1 w-full input" value={filterEmployerId} onChange={(e) => setFilterEmployerId(e.target.value)}>
+                    <option value="ALL">All</option>
+                    {employers.map((e) => <option key={e._id} value={e._id}>{e.companyName}</option>)}
+                  </select>
+                </label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">From
+                  <input type="date" className="mt-1 w-full input" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} />
+                </label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">To
+                  <input type="date" className="mt-1 w-full input" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} />
+                </label>
+              </div>
+            </div>
           </div>
           <div className="p-3 space-y-2">
-            {invoices.length === 0 ? (
-              <div className="p-10 text-center text-slate-500 text-sm">No invoices yet. Create your first invoice.</div>
+            {filteredInvoices.length === 0 ? (
+              <div className="p-10 text-center">
+                <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-slate-700" />
+                </div>
+                <p className="mt-3 font-black text-slate-900">No invoices found</p>
+                <p className="mt-1 text-sm text-slate-500">Create an invoice, or adjust your filters.</p>
+                <button onClick={openCreateInvoice} className="mt-4 px-5 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700">
+                  + Create Invoice
+                </button>
+              </div>
             ) : (
-              invoices.map((inv) => {
+              filteredInvoices.map((inv) => {
                 const emp = employerMap.get(inv.employerId);
                 return (
-                  <div key={inv._id} className="p-4 rounded-2xl border border-slate-100 hover:border-slate-200 transition">
+                  <div key={inv._id} className="p-4 rounded-2xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/10 transition">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-black text-slate-900 truncate">{inv.invoiceNumber} · {emp?.companyName || inv.customer?.name || 'Employer'}</p>
@@ -346,6 +479,9 @@ export default function InvoicesPage() {
                           : 'bg-amber-100 text-amber-700'
                         }`}>{inv.status}</span>
                         <span className="px-2 py-1 rounded-full text-[10px] font-black bg-slate-100 text-slate-700">{money(inv.total)}</span>
+                        <button onClick={() => setViewInv(inv)} className="px-3 py-2 rounded-xl text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 text-sm font-black inline-flex items-center gap-2">
+                          <Eye className="w-4 h-4" /> View
+                        </button>
                         <button onClick={() => downloadPdf(inv)} className="px-3 py-2 rounded-xl text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 text-sm font-bold inline-flex items-center gap-2">
                           <Download className="w-4 h-4" /> PDF
                         </button>
@@ -362,15 +498,113 @@ export default function InvoicesPage() {
         </div>
       </div>
 
+      {/* Invoice detail modal */}
+      {viewInv && (
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
+          <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-black text-slate-900 truncate">{viewInv.invoiceNumber}</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {viewInv.customer?.name || employerMap.get(viewInv.employerId)?.companyName || 'Employer'} · Issue {fmtDate(viewInv.issueDate)}{viewInv.dueDate ? ` · Due ${fmtDate(viewInv.dueDate)}` : ''}
+                </p>
+              </div>
+              <button onClick={() => setViewInv(null)} className="p-2 rounded-xl hover:bg-slate-100"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-4">
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${
+                  viewInv.status === 'PAID' ? 'bg-emerald-100 text-emerald-700'
+                  : viewInv.status === 'SENT' ? 'bg-sky-100 text-sky-700'
+                  : viewInv.status === 'CANCELLED' ? 'bg-slate-200 text-slate-600'
+                  : 'bg-amber-100 text-amber-700'
+                }`}>{viewInv.status}</span>
+                <span className="px-2 py-1 rounded-full text-[10px] font-black bg-slate-100 text-slate-700">{money(viewInv.total)}</span>
+                <span className="px-2 py-1 rounded-full text-[10px] font-black bg-white border border-slate-200 text-slate-700">
+                  {viewInv.gstEnabled ? 'Tax Invoice (GST)' : 'Invoice (No GST)'}
+                </span>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Supplier</p>
+                  <p className="font-black text-slate-900 mt-1">{viewInv.supplier?.name || '—'}</p>
+                  {viewInv.supplier?.abn && <p className="text-xs text-slate-500 mt-1">ABN: {viewInv.supplier?.abn}</p>}
+                </div>
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Customer</p>
+                  <p className="font-black text-slate-900 mt-1">{viewInv.customer?.name || employerMap.get(viewInv.employerId)?.companyName || '—'}</p>
+                  {viewInv.customer?.email && <p className="text-xs text-slate-500 mt-1">{viewInv.customer?.email}</p>}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 overflow-hidden">
+                <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <p className="font-black text-slate-900 text-sm">Line items</p>
+                </div>
+                <div className="p-4 space-y-2">
+                  {(viewInv.lineItems || []).map((li: any, idx: number) => (
+                    <div key={idx} className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 truncate">{li.description}</p>
+                        <p className="text-xs text-slate-500">{li.quantity} {li.unit || 'hours'} × {money(li.unitPrice)}</p>
+                      </div>
+                      <div className="font-black text-slate-900">{money(Number(li.quantity || 0) * Number(li.unitPrice || 0))}</div>
+                    </div>
+                  ))}
+                  <div className="pt-3 border-t border-slate-200 flex justify-end gap-6 text-sm font-black">
+                    <div className="text-right">
+                      <p className="text-slate-500">Subtotal</p>
+                      <p className="text-slate-900">{money(viewInv.subtotal)}</p>
+                    </div>
+                    {viewInv.gstEnabled && (
+                      <div className="text-right">
+                        <p className="text-slate-500">GST</p>
+                        <p className="text-slate-900">{money(viewInv.gstAmount)}</p>
+                      </div>
+                    )}
+                    <div className="text-right">
+                      <p className="text-slate-500">Total</p>
+                      <p className="text-emerald-700">{money(viewInv.total)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="px-5 py-4 border-t border-slate-200 flex flex-wrap justify-between gap-2 bg-white sticky bottom-0">
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => downloadPdf(viewInv)} className="btn-secondary inline-flex items-center gap-2">
+                  <Download className="w-4 h-4" /> PDF
+                </button>
+                <button onClick={() => openSend(viewInv)} className="btn-primary inline-flex items-center gap-2">
+                  <Send className="w-4 h-4" /> Send
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button disabled={updatingStatus || viewInv.status === 'SENT' || viewInv.status === 'PAID' || viewInv.status === 'CANCELLED'} onClick={() => patchInvoiceStatus(viewInv, 'SENT')} className="px-4 py-2.5 rounded-lg bg-sky-600 text-white font-black hover:bg-sky-700 disabled:opacity-50 inline-flex items-center gap-2">
+                  <BadgeCheck className="w-4 h-4" /> Mark Sent
+                </button>
+                <button disabled={updatingStatus || viewInv.status !== 'SENT'} onClick={() => patchInvoiceStatus(viewInv, 'PAID')} className="px-4 py-2.5 rounded-lg bg-emerald-600 text-white font-black hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> Mark Paid
+                </button>
+                <button disabled={updatingStatus || viewInv.status === 'CANCELLED'} onClick={() => patchInvoiceStatus(viewInv, 'CANCELLED')} className="px-4 py-2.5 rounded-lg bg-slate-700 text-white font-black hover:bg-slate-800 disabled:opacity-50 inline-flex items-center gap-2">
+                  <Ban className="w-4 h-4" /> Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Employer modal */}
       {showEmployerModal && (
         <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
-          <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
             <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
               <p className="font-black text-slate-900">Add Employer</p>
               <button onClick={() => setShowEmployerModal(false)} className="p-2 rounded-xl hover:bg-slate-100"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto">
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Company Name
                 <input className="mt-1 w-full input" value={employerForm.companyName} onChange={e => setEmployerForm((f: any) => ({ ...f, companyName: e.target.value }))} />
               </label>
@@ -402,7 +636,7 @@ export default function InvoicesPage() {
                 <input className="mt-1 w-full input" value={employerForm.address.country} onChange={e => setEmployerForm((f: any) => ({ ...f, address: { ...f.address, country: e.target.value } }))} />
               </label>
             </div>
-            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
+            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0">
               <button onClick={() => setShowEmployerModal(false)} className="btn-secondary">Cancel</button>
               <button onClick={saveEmployer} disabled={savingEmployer} className="btn-primary inline-flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" /> {savingEmployer ? 'Saving...' : 'Save Employer'}
@@ -415,12 +649,12 @@ export default function InvoicesPage() {
       {/* Invoice modal */}
       {showInvoiceModal && (
         <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
-          <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
             <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
               <p className="font-black text-slate-900">Create Invoice</p>
               <button onClick={() => setShowInvoiceModal(false)} className="p-2 rounded-xl hover:bg-slate-100"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Employer
                   <select className="mt-1 w-full input" value={invoiceForm.employerId} onChange={e => setInvoiceForm((f: any) => ({ ...f, employerId: e.target.value }))}>
@@ -518,7 +752,7 @@ export default function InvoicesPage() {
                 </div>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
+            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0">
               <button onClick={() => setShowInvoiceModal(false)} className="btn-secondary">Cancel</button>
               <button onClick={saveInvoice} disabled={savingInvoice} className="btn-primary inline-flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" /> {savingInvoice ? 'Saving...' : 'Save Draft'}
@@ -531,12 +765,12 @@ export default function InvoicesPage() {
       {/* Send modal */}
       {sendFor && (
         <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
-          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
             <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
               <p className="font-black text-slate-900">Send Invoice {sendFor.invoiceNumber}</p>
               <button onClick={() => setSendFor(null)} className="p-2 rounded-xl hover:bg-slate-100"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-5 space-y-3">
+            <div className="p-5 space-y-3 overflow-y-auto">
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">To
                 <input className="mt-1 w-full input" value={sendForm.to} onChange={e => setSendForm(f => ({ ...f, to: e.target.value }))} />
               </label>
@@ -548,7 +782,7 @@ export default function InvoicesPage() {
               </label>
               <p className="text-xs text-slate-500">This uses your platform SMTP settings (Super Admin → Settings). The PDF will be attached automatically.</p>
             </div>
-            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
+            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0">
               <button onClick={() => setSendFor(null)} className="btn-secondary">Cancel</button>
               <button onClick={sendInvoice} disabled={sending} className="btn-primary inline-flex items-center gap-2">
                 <Send className="w-4 h-4" /> {sending ? 'Sending...' : 'Send Email'}

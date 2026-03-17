@@ -17,6 +17,7 @@ import Invoice from '../models/Invoice.js';
 import InvoiceCounter from '../models/InvoiceCounter.js';
 import { renderInvoicePdfBuffer } from '../utils/invoicePdf.js';
 import { sendMail } from '../utils/mailer.js';
+import archiver from 'archiver';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '../../uploads');
@@ -262,6 +263,82 @@ router.get('/invoices', async (req, res) => {
   }
 });
 
+router.get('/invoices/export', async (req, res) => {
+  try {
+    const q = { userId: req.user._id };
+    if (req.query.status) q.status = String(req.query.status);
+    if (req.query.employerId) q.employerId = String(req.query.employerId);
+    if (req.query.from || req.query.to) {
+      // Export filters are based on issueDate for user expectation
+      q.issueDate = {};
+      if (req.query.from) q.issueDate.$gte = new Date(String(req.query.from));
+      if (req.query.to) q.issueDate.$lte = new Date(String(req.query.to));
+    }
+
+    const rows = await Invoice.find(q).sort({ issueDate: -1 });
+
+    const today = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="invoices-export-${today}.zip"`);
+
+    const zip = archiver('zip', { zlib: { level: 9 } });
+    zip.on('error', (err) => {
+      try {
+        res.status(500).end();
+      } catch {}
+      throw err;
+    });
+    zip.pipe(res);
+
+    // Summary CSV
+    const csvHeader = [
+      'invoiceNumber',
+      'status',
+      'issueDate',
+      'dueDate',
+      'employerName',
+      'employerEmail',
+      'supplierName',
+      'gstEnabled',
+      'subtotal',
+      'gstAmount',
+      'total',
+    ];
+    const esc = (v) => {
+      const s = v == null ? '' : String(v);
+      if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
+    const csvLines = [csvHeader.join(',')];
+    rows.forEach((inv) => {
+      csvLines.push([
+        inv.invoiceNumber,
+        inv.status,
+        inv.issueDate ? new Date(inv.issueDate).toISOString().slice(0, 10) : '',
+        inv.dueDate ? new Date(inv.dueDate).toISOString().slice(0, 10) : '',
+        inv.customer?.name || '',
+        inv.customer?.email || '',
+        inv.supplier?.name || '',
+        inv.gstEnabled ? 'yes' : 'no',
+        inv.subtotal ?? 0,
+        inv.gstAmount ?? 0,
+        inv.total ?? 0,
+      ].map(esc).join(','));
+    });
+    zip.append(csvLines.join('\n'), { name: 'summary.csv' });
+
+    // PDFs
+    for (const inv of rows) {
+      const pdf = await renderInvoicePdfBuffer(inv);
+      zip.append(pdf, { name: `invoices/${inv.invoiceNumber}.pdf` });
+    }
+
+    await zip.finalize();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/invoices', async (req, res) => {
   try {
     const body = req.body || {};
@@ -342,6 +419,23 @@ router.patch('/invoices/:id', async (req, res) => {
     allowed.forEach((k) => {
       if (body[k] !== undefined) inv[k] = body[k];
     });
+
+    // Validate safe status transitions
+    if (body.status) {
+      const next = String(body.status);
+      const cur = String(inv.status);
+      const allowedTransitions = new Set([
+        'DRAFT->SENT',
+        'SENT->PAID',
+        'DRAFT->CANCELLED',
+        'SENT->CANCELLED',
+        'PAID->CANCELLED',
+      ]);
+      if (next !== cur && !allowedTransitions.has(`${cur}->${next}`)) {
+        return res.status(400).json({ error: `Invalid status transition: ${cur} → ${next}` });
+      }
+      inv.status = next;
+    }
 
     if (body.issueDate) inv.issueDate = new Date(body.issueDate);
     if (body.dueDate) inv.dueDate = new Date(body.dueDate);
