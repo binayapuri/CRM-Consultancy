@@ -60,6 +60,7 @@ import Jobs from './pages/student/Jobs';
 import News from './pages/student/News';
 import NewsDetail from './pages/student/NewsDetail';
 import Bookings from './pages/student/Bookings';
+import InvoicesPage from './pages/student/Invoices';
 
 // Super Admin
 import SuperDashboard from './pages/super/Dashboard';
@@ -155,6 +156,7 @@ export default function App() {
         <Route path="applications" element={<StudentApplications />} />
         <Route path="tasks" element={<StudentTasks />} />
         <Route path="documents" element={<StudentDocuments />} />
+        <Route path="invoices" element={<InvoicesPage />} />
         <Route path="calculator" element={<PRCalculator />} />
         <Route path="compass" element={<MigrationCompass />} />
         <Route path="community" element={<Community />} />

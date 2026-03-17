@@ -12,6 +12,11 @@ import { authenticate, requireRole } from '../middleware/auth.js';
 import User from '../models/User.js';
 import Client from '../models/Client.js';
 import Document from '../models/Document.js';
+import StudentEmployer from '../models/StudentEmployer.js';
+import Invoice from '../models/Invoice.js';
+import InvoiceCounter from '../models/InvoiceCounter.js';
+import { renderInvoicePdfBuffer } from '../utils/invoicePdf.js';
+import { sendMail } from '../utils/mailer.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '../../uploads');
@@ -109,7 +114,24 @@ router.patch('/profile', async (req, res) => {
     const baseProfile = { ...(user?.profile || {}), email: user?.email || user?.profile?.email || '' };
     const client = await getOrCreateStudentClient(req.user._id, baseProfile);
     const clientUpdate = {};
-    const pFields = ['firstName', 'lastName', 'phone', 'dob', 'gender', 'nationality', 'countryOfBirth', 'maritalStatus', 'passportNumber', 'passportExpiry', 'passportCountry', 'address'];
+    const pFields = [
+      'firstName',
+      'lastName',
+      'phone',
+      'dob',
+      'gender',
+      'nationality',
+      'countryOfBirth',
+      'maritalStatus',
+      'passportNumber',
+      'passportExpiry',
+      'passportCountry',
+      'address',
+      // invoicing basics
+      'businessName',
+      'abn',
+      'gstRegistered',
+    ];
     pFields.forEach(f => {
       if (req.body[f] !== undefined) {
         if (f === 'dob' || f === 'passportExpiry') clientUpdate[`profile.${f}`] = req.body[f] ? new Date(req.body[f]) : null;
@@ -123,6 +145,272 @@ router.patch('/profile', async (req, res) => {
     res.json({ user, client: updatedClient });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invoice Manager (student scoped)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function computeInvoiceTotals({ lineItems, gstEnabled, gstRate }) {
+  const items = Array.isArray(lineItems) ? lineItems : [];
+  const normalized = items.map((li) => {
+    const quantity = Number(li.quantity ?? 0) || 0;
+    const unitPrice = Number(li.unitPrice ?? 0) || 0;
+    const amount = Math.round(quantity * unitPrice * 100) / 100;
+    return {
+      description: String(li.description || ''),
+      quantity,
+      unit: String(li.unit || 'hours'),
+      unitPrice,
+      amount,
+    };
+  });
+  const subtotal = Math.round(normalized.reduce((s, li) => s + (Number(li.amount) || 0), 0) * 100) / 100;
+  const gstR = typeof gstRate === 'number' ? gstRate : 0.1;
+  const gstAmount = gstEnabled ? Math.round(subtotal * gstR * 100) / 100 : 0;
+  const total = Math.round((subtotal + gstAmount) * 100) / 100;
+  return { normalized, subtotal, gstAmount, total, gstRate: gstR };
+}
+
+async function nextInvoiceNumberForUser(userId) {
+  const year = new Date().getFullYear();
+  const doc = await InvoiceCounter.findOneAndUpdate(
+    { userId, year },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+  const seq = doc.seq || 1;
+  return `INV-${year}-${String(seq).padStart(4, '0')}`;
+}
+
+// Employers CRUD
+router.get('/employers', async (req, res) => {
+  try {
+    const rows = await StudentEmployer.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/employers', async (req, res) => {
+  try {
+    const body = req.body || {};
+    if (!body.companyName || !String(body.companyName).trim()) {
+      return res.status(400).json({ error: 'Company name is required' });
+    }
+    const created = await StudentEmployer.create({
+      userId: req.user._id,
+      companyName: String(body.companyName).trim(),
+      abn: body.abn || '',
+      contactName: body.contactName || '',
+      email: body.email || '',
+      phone: body.phone || '',
+      address: body.address || {},
+      isActive: body.isActive !== false,
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/employers/:id', async (req, res) => {
+  try {
+    const updated = await StudentEmployer.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { $set: req.body || {} },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Employer not found' });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/employers/:id', async (req, res) => {
+  try {
+    const deleted = await StudentEmployer.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+    if (!deleted) return res.status(404).json({ error: 'Employer not found' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Invoices CRUD
+router.get('/invoices', async (req, res) => {
+  try {
+    const q = { userId: req.user._id };
+    if (req.query.status) q.status = String(req.query.status);
+    if (req.query.employerId) q.employerId = String(req.query.employerId);
+    if (req.query.from || req.query.to) {
+      q.createdAt = {};
+      if (req.query.from) q.createdAt.$gte = new Date(String(req.query.from));
+      if (req.query.to) q.createdAt.$lte = new Date(String(req.query.to));
+    }
+    const rows = await Invoice.find(q).sort({ createdAt: -1 });
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/invoices', async (req, res) => {
+  try {
+    const body = req.body || {};
+    if (!body.employerId) return res.status(400).json({ error: 'Employer is required' });
+
+    const employer = await StudentEmployer.findOne({ _id: body.employerId, userId: req.user._id });
+    if (!employer) return res.status(404).json({ error: 'Employer not found' });
+
+    const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
+    const supplierName =
+      String(body.supplier?.name || '').trim()
+      || String(client?.profile?.businessName || '').trim()
+      || `${client?.profile?.firstName || ''} ${client?.profile?.lastName || ''}`.trim();
+
+    const supplier = {
+      name: supplierName,
+      abn: String(body.supplier?.abn || client?.profile?.abn || '').trim(),
+      email: String(body.supplier?.email || client?.profile?.email || req.user.email || '').trim(),
+      phone: String(body.supplier?.phone || client?.profile?.phone || '').trim(),
+      address: body.supplier?.address || client?.profile?.address || {},
+    };
+
+    const customer = {
+      name: employer.companyName,
+      abn: employer.abn || '',
+      email: employer.email || '',
+      phone: employer.phone || '',
+      address: employer.address || {},
+    };
+
+    const issueDate = body.issueDate ? new Date(body.issueDate) : new Date();
+    const dueDate = body.dueDate ? new Date(body.dueDate) : null;
+    const gstEnabled = !!body.gstEnabled;
+    const gstRate = body.gstRate != null ? Number(body.gstRate) : 0.1;
+
+    const { normalized, subtotal, gstAmount, total } = computeInvoiceTotals({
+      lineItems: body.lineItems,
+      gstEnabled,
+      gstRate,
+    });
+    if (!normalized.length) return res.status(400).json({ error: 'At least one line item is required' });
+
+    const invoiceNumber = await nextInvoiceNumberForUser(req.user._id);
+
+    const created = await Invoice.create({
+      userId: req.user._id,
+      employerId: employer._id,
+      status: 'DRAFT',
+      invoiceNumber,
+      issueDate,
+      dueDate,
+      period: body.period || {},
+      supplier,
+      customer,
+      currency: 'AUD',
+      gstEnabled,
+      gstRate,
+      lineItems: normalized,
+      subtotal,
+      gstAmount,
+      total,
+      notes: body.notes || '',
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/invoices/:id', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const inv = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!inv) return res.status(404).json({ error: 'Invoice not found' });
+
+    // Restrict what can be patched
+    const allowed = ['status', 'dueDate', 'issueDate', 'notes', 'period', 'gstEnabled', 'gstRate', 'lineItems'];
+    allowed.forEach((k) => {
+      if (body[k] !== undefined) inv[k] = body[k];
+    });
+
+    if (body.issueDate) inv.issueDate = new Date(body.issueDate);
+    if (body.dueDate) inv.dueDate = new Date(body.dueDate);
+
+    if (body.lineItems) {
+      const { normalized, subtotal, gstAmount, total, gstRate } = computeInvoiceTotals({
+        lineItems: body.lineItems,
+        gstEnabled: inv.gstEnabled,
+        gstRate: inv.gstRate,
+      });
+      inv.lineItems = normalized;
+      inv.subtotal = subtotal;
+      inv.gstAmount = gstAmount;
+      inv.total = total;
+      inv.gstRate = gstRate;
+    }
+
+    await inv.save();
+    res.json(inv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/invoices/:id', async (req, res) => {
+  try {
+    const inv = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!inv) return res.status(404).json({ error: 'Invoice not found' });
+    inv.status = 'CANCELLED';
+    await inv.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/invoices/:id/pdf', async (req, res) => {
+  try {
+    const inv = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!inv) return res.status(404).json({ error: 'Invoice not found' });
+    const buf = await renderInvoicePdfBuffer(inv);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${inv.invoiceNumber}.pdf"`);
+    res.send(buf);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/invoices/:id/send', async (req, res) => {
+  try {
+    const inv = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!inv) return res.status(404).json({ error: 'Invoice not found' });
+    const to = String(req.body?.to || inv.customer?.email || '').trim();
+    if (!to) return res.status(400).json({ error: 'Employer email is required' });
+    const subject = String(req.body?.subject || `Invoice ${inv.invoiceNumber} from ${inv.supplier?.name || 'BIGFEW'}`).trim();
+    const text = String(req.body?.text || `Hi,\n\nPlease find attached invoice ${inv.invoiceNumber}.\n\nRegards,\n${inv.supplier?.name || ''}`).trim();
+
+    const pdf = await renderInvoicePdfBuffer(inv);
+    await sendMail({
+      to,
+      subject,
+      text,
+      attachments: [{ filename: `${inv.invoiceNumber}.pdf`, content: pdf, contentType: 'application/pdf' }],
+    });
+
+    inv.status = 'SENT';
+    inv.emailLog = { to, subject, sentAt: new Date() };
+    await inv.save();
+    res.json({ success: true });
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({ error: err.message });
   }
 });
 

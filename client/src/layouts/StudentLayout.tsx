@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, ChevronRight, Settings, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import AIChatWidget from '../components/AIChatWidget';
 import Notifications from '../components/Notifications';
@@ -25,6 +25,7 @@ const navSections = [
       { to: 'calculator', icon: Calculator, label: 'PR Points' },
       { to: 'documents', icon: FileText, label: 'Document Vault' },
       { to: 'compass', icon: Compass, label: 'AI Compass' },
+      { to: 'invoices', icon: Receipt, label: 'Invoices' },
     ],
   },
   {
