@@ -58,6 +58,8 @@ import CVGenerator from './pages/student/CVGenerator';
 import StudentApplications from './pages/student/Applications';
 import StudentTasks from './pages/student/Tasks';
 import Community from './pages/student/Community';
+import CommunityPostDetail from './pages/student/CommunityPostDetail';
+import Messages from './pages/student/Messages';
 import Jobs from './pages/student/Jobs';
 import News from './pages/student/News';
 import NewsDetail from './pages/student/NewsDetail';
@@ -81,6 +83,7 @@ import AdminStudentManager from './pages/super-admin/StudentManager';
 
 // Partner
 import UniversityApplications from './pages/partner/UniversityApplications';
+import UniversityProfile from './pages/partner/UniversityProfile';
 import InsuranceDashboard from './pages/partner/InsuranceDashboard';
 import EmployerDashboard from './pages/partner/EmployerDashboard';
 
@@ -113,6 +116,8 @@ function PartnerHomeRedirect() {
       ? '/partner/jobs'
       : role === 'INSURANCE_PARTNER'
       ? '/partner/insurance'
+      : role === 'UNIVERSITY_PARTNER'
+      ? '/partner/profile'
       : '/partner/applications';
   return <Navigate to={to} replace />;
 }
@@ -181,6 +186,8 @@ export default function App() {
         <Route path="calculator" element={<PRCalculator />} />
         <Route path="compass" element={<MigrationCompass />} />
         <Route path="community" element={<Community />} />
+        <Route path="community/:id" element={<CommunityPostDetail />} />
+        <Route path="messages" element={<Messages />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="news" element={<News />} />
         <Route path="news/:slug" element={<NewsDetail />} />
@@ -205,6 +212,7 @@ export default function App() {
       <Route path="/partner" element={<ProtectedRoute roles={['UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER', 'RECRUITER']}><PartnerLayout /></ProtectedRoute>}>
         <Route index element={<PartnerHomeRedirect />} />
         <Route path="dashboard" element={<PartnerHomeRedirect />} />
+        <Route path="profile" element={<UniversityProfile />} />
         <Route path="applications" element={<UniversityApplications />} />
         <Route path="insurance" element={<InsuranceDashboard />} />
         <Route path="jobs" element={<EmployerDashboard />} />

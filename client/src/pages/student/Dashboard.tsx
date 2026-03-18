@@ -134,10 +134,10 @@ export default function StudentDashboard() {
   const stageIndex = JOURNEY_STAGES.findIndex(s => s.id === stage);
 
   return (
-    <div className="space-y-8 animate-fade-in-up">
+    <div className="w-full min-w-0 max-w-full space-y-6 sm:space-y-8 animate-fade-in-up">
       {/* ────────── Hero Banner ────────── */}
       <div
-        className="relative overflow-hidden rounded-xl p-8 md:p-12"
+        className="relative overflow-hidden rounded-xl p-6 sm:p-8 md:p-12"
         style={{ background: 'linear-gradient(135deg, #0F0E2E 0%, #1a1560 50%, #0d2847 100%)' }}
       >
         {/* Glow orbs */}

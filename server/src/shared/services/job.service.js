@@ -1,9 +1,26 @@
-import Job from '../../shared/models/Job.js';
-import JobApplication from '../../shared/models/JobApplication.js';
-import RecruiterEmployerProfile from '../../shared/models/RecruiterEmployerProfile.js';
-import Notification from '../../shared/models/Notification.js';
+import Job from '../models/Job.js';
+import JobApplication from '../models/JobApplication.js';
+import RecruiterEmployerProfile from '../models/RecruiterEmployerProfile.js';
+import SavedJob from '../models/SavedJob.js';
+import JobAlert from '../models/JobAlert.js';
+import Notification from '../models/Notification.js';
 
 export class JobService {
+  /** Public jobs listing - no auth required */
+  static async getPublicJobs(query = {}) {
+    const q = { isActive: true, moderationState: { $ne: 'REMOVED' } };
+    const limit = Math.min(parseInt(query.limit, 10) || 50, 100);
+    const skip = Math.max(0, parseInt(query.skip, 10) || 0);
+    if (query.search) {
+      const rx = new RegExp(String(query.search).trim(), 'i');
+      q.$or = [{ title: rx }, { company: rx }, { location: rx }, { tags: rx }];
+    }
+    if (query.location) q.location = new RegExp(String(query.location), 'i');
+    if (query.type) q.type = String(query.type);
+    if (query.visaSponsorship === 'true') q.visaSponsorshipAvailable = true;
+    return Job.find(q).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+  }
+
   static async getActiveJobs(user, query = {}) {
     const q = { isActive: true, moderationState: { $ne: 'REMOVED' } };
     if (query.search) {
@@ -39,7 +56,8 @@ export class JobService {
     for (let job of jobs) {
       const apps = await JobApplication.find({ jobId: job._id })
         .populate('studentId', 'profile.firstName profile.lastName email')
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean();
       job.applications = apps;
     }
     return jobs;
@@ -97,6 +115,25 @@ export class JobService {
     const job = await Job.findById(id);
     if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
     return job;
+  }
+
+  static async updateJob(jobId, user, data) {
+    const job = await Job.findById(jobId);
+    if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
+    const canEdit = user.role === 'SUPER_ADMIN' || String(job.postedBy) === String(user._id);
+    if (!canEdit) throw Object.assign(new Error('Not allowed to edit this job'), { status: 403 });
+    const allowed = ['title', 'company', 'location', 'type', 'description', 'salaryRange', 'requirements', 'visaSponsorshipAvailable', 'partTimeAllowed', 'workRights', 'tags', 'isActive'];
+    const update = {};
+    allowed.forEach(k => { if (data[k] !== undefined) update[k] = data[k]; });
+    return Job.findByIdAndUpdate(jobId, update, { new: true });
+  }
+
+  static async closeJob(jobId, user) {
+    const job = await Job.findById(jobId);
+    if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
+    const canEdit = user.role === 'SUPER_ADMIN' || String(job.postedBy) === String(user._id);
+    if (!canEdit) throw Object.assign(new Error('Not allowed'), { status: 403 });
+    return Job.findByIdAndUpdate(jobId, { isActive: false }, { new: true });
   }
 
   static async createJob(data, postedBy) {
@@ -175,6 +212,50 @@ export class JobService {
     }
     row.isActive = false;
     await row.save();
+    return { success: true };
+  }
+
+  static async getSavedJobs(userId) {
+    const saved = await SavedJob.find({ userId }).populate('jobId').sort({ createdAt: -1 });
+    return saved.filter(s => s.jobId).map(s => s.jobId);
+  }
+
+  static async saveJob(userId, jobId) {
+    const job = await Job.findById(jobId);
+    if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
+    const existing = await SavedJob.findOne({ userId, jobId });
+    if (existing) return existing;
+    return SavedJob.create({ userId, jobId });
+  }
+
+  static async unsaveJob(userId, jobId) {
+    await SavedJob.deleteOne({ userId, jobId });
+    return { success: true };
+  }
+
+  static async getJobAlerts(userId) {
+    return JobAlert.find({ userId }).sort({ createdAt: -1 });
+  }
+
+  static async createJobAlert(userId, data) {
+    const User = (await import('../models/User.js')).default;
+    const email = data.email || (await User.findById(userId).select('email').lean())?.email;
+    if (!email) throw Object.assign(new Error('Email is required for job alerts'), { status: 400 });
+    return JobAlert.create({
+      userId,
+      keywords: data.keywords || '',
+      location: data.location || '',
+      jobType: data.jobType || undefined,
+      visaSponsorship: data.visaSponsorship === true,
+      email,
+      isActive: true,
+    });
+  }
+
+  static async deleteJobAlert(userId, id) {
+    const alert = await JobAlert.findOne({ _id: id, userId });
+    if (!alert) throw Object.assign(new Error('Alert not found'), { status: 404 });
+    await JobAlert.deleteOne({ _id: id });
     return { success: true };
   }
 }

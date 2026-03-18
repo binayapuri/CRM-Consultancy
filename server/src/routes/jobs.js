@@ -8,6 +8,9 @@ import * as schemas from '../shared/schemas/job.schema.js';
 
 const router = express.Router();
 
+// Public jobs - no auth (for landing, public /jobs page)
+router.get('/public', asyncHandler(JobController.getPublicJobs));
+
 // Get active jobs, sorted by ANZSCO match if student
 router.get('/', authenticate, asyncHandler(JobController.getActiveJobs));
 
@@ -26,11 +29,27 @@ router.patch('/applications/:id/status', authenticate, requireRole('EMPLOYER', '
 // Student: Get my applications
 router.get('/my-applications', authenticate, requireRole('STUDENT'), asyncHandler(JobController.getMyApplications));
 
+// Student: Saved jobs
+router.get('/saved', authenticate, requireRole('STUDENT'), asyncHandler(JobController.getSavedJobs));
+router.post('/:id/save', authenticate, requireRole('STUDENT'), asyncHandler(JobController.saveJob));
+router.delete('/:id/save', authenticate, requireRole('STUDENT'), asyncHandler(JobController.unsaveJob));
+
+// Student: Job alerts
+router.get('/alerts', authenticate, requireRole('STUDENT'), asyncHandler(JobController.getJobAlerts));
+router.post('/alerts', authenticate, requireRole('STUDENT'), asyncHandler(JobController.createJobAlert));
+router.delete('/alerts/:id', authenticate, requireRole('STUDENT'), asyncHandler(JobController.deleteJobAlert));
+
 // Student: Apply to a job
 router.post('/:id/apply', authenticate, requireRole('STUDENT'), validate(schemas.applyJobSchema), asyncHandler(JobController.applyToJob));
 
 // Get single job
 router.get('/:id', authenticate, asyncHandler(JobController.getJobById));
+
+// Close job (must be before :id to match /:id/close)
+router.patch('/:id/close', authenticate, authorize('SUPER_ADMIN', 'EMPLOYER', 'RECRUITER'), asyncHandler(JobController.closeJob));
+
+// Update job (Employer/Recruiter/Admin)
+router.patch('/:id', authenticate, authorize('SUPER_ADMIN', 'EMPLOYER', 'RECRUITER'), validate(schemas.updateJobSchema), asyncHandler(JobController.updateJob));
 
 // Create job (Admin/Agent/Employer)
 router.post('/', authenticate, authorize('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'), validate(schemas.createJobSchema), asyncHandler(JobController.createJob));

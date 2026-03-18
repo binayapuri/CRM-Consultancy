@@ -138,20 +138,20 @@ export default function StudentProfile() {
   );
 
   return (
-    <div className="w-full pb-20 animate-in fade-in duration-500">
+    <div className="w-full min-w-0 max-w-full pb-20 animate-in fade-in duration-500">
       {errorBanner && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-800">
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 sm:px-5 py-4 text-sm font-bold text-red-800">
           {errorBanner}
         </div>
       )}
 
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 mb-2 flex items-center gap-2">
           <User className="w-3.5 h-3.5" /> Student Portal
         </div>
-        <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight mb-2">My Profile</h1>
-        <p className="text-slate-500 text-sm font-medium max-w-none">
+        <h1 className="text-2xl sm:text-3xl font-display font-black text-slate-900 tracking-tight mb-2">My Profile</h1>
+        <p className="text-slate-500 text-sm font-medium max-w-none break-words">
           Manage your migration journey details. This is your <span className="text-indigo-600 font-bold">"source of truth"</span>—everything here helps your agent and AI Compass work for you.
         </p>
       </div>

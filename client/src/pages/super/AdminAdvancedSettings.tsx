@@ -471,11 +471,12 @@ export default function AdminAdvancedSettings() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Port</label>
-                <input type="number" value={smtp.port} onChange={e => updateSmtp({ port: Number(e.target.value) || 587 })} className="input w-full" />
+                <input type="number" value={smtp.port} onChange={e => updateSmtp({ port: Number(e.target.value) || 587 })} className="input w-full" placeholder="587" />
+                <p className="text-xs text-slate-500 mt-1">587 = STARTTLS (secure unchecked). 465 = implicit TLS (secure checked).</p>
               </div>
               <div className="md:col-span-2 flex items-center gap-3">
                 <input type="checkbox" checked={smtp.secure} onChange={e => updateSmtp({ secure: e.target.checked })} className="w-5 h-5 rounded border-slate-300 text-ori-600" />
-                <span className="text-sm font-medium text-slate-700">Use TLS (secure)</span>
+                <span className="text-sm font-medium text-slate-700">Use implicit TLS (required for port 465 only)</span>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">User</label>

@@ -42,7 +42,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   const isListSection = editForm == null;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 mb-6">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden min-w-0 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 mb-6">
       {/* Header */}
       <div className="px-6 py-4 flex items-center justify-between border-b border-slate-50 bg-slate-50/50">
         <div className="flex items-center gap-3">

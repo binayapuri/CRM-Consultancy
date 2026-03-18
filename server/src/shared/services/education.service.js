@@ -67,6 +67,12 @@ export class EducationService {
     return University.find(filter).sort('name');
   }
 
+  static async getUniversityById(id) {
+    const uni = await University.findById(id);
+    if (!uni) throw Object.assign(new Error('University not found'), { status: 404 });
+    return uni;
+  }
+
   static async createUniversity(data) {
     return University.create(data);
   }
@@ -84,6 +90,10 @@ export class EducationService {
     return Course.find(filter).sort('name');
   }
 
+  static async getCourseById(courseId) {
+    return Course.findById(courseId);
+  }
+
   static async createCourse(universityId, data) {
     return Course.create({ ...data, universityId });
   }
@@ -92,5 +102,21 @@ export class EducationService {
     const course = await Course.findByIdAndUpdate(courseId, data, { new: true });
     if (!course) throw Object.assign(new Error('Not found'), { status: 404 });
     return course;
+  }
+
+  static async getUniversityForPartner(user) {
+    const universityId = user?.profile?.universityId;
+    if (!universityId) throw Object.assign(new Error('No university assigned'), { status: 404 });
+    const uni = await University.findById(universityId);
+    if (!uni) throw Object.assign(new Error('University not found'), { status: 404 });
+    return uni;
+  }
+
+  static async updateUniversityForPartner(user, data) {
+    const universityId = user?.profile?.universityId;
+    if (!universityId) throw Object.assign(new Error('No university assigned'), { status: 404 });
+    const uni = await University.findByIdAndUpdate(universityId, data, { new: true });
+    if (!uni) throw Object.assign(new Error('University not found'), { status: 404 });
+    return uni;
   }
 }

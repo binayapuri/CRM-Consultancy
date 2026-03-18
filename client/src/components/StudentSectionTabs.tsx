@@ -23,7 +23,7 @@ export function StudentSectionTabs({ tabs, activeId, onChange }: StudentSectionT
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
-          className={`flex items-center gap-2.5 px-6 py-3.5 rounded-lg font-black text-xs tracking-wide transition-all shrink-0 uppercase border
+          className={`flex items-center gap-2.5 px-4 sm:px-6 py-3.5 min-h-[44px] rounded-lg font-black text-xs tracking-wide transition-all shrink-0 uppercase border
             ${activeId === t.id
               ? 'bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-600/20 scale-[1.02]'
               : 'bg-white text-slate-400 border-slate-200 hover:border-indigo-200 hover:text-indigo-400'}`}

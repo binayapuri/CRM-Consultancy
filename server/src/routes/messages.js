@@ -8,6 +8,8 @@ import * as schemas from '../shared/schemas/collaboration.schema.js';
 
 const router = express.Router();
 
+router.get('/conversations', authenticate, asyncHandler(CollaborationController.getConversations));
+
 router.get('/', authenticate, asyncHandler(CollaborationController.getMessages));
 
 router.post('/', authenticate, validate(schemas.sendMessageSchema), asyncHandler(CollaborationController.sendMessage));

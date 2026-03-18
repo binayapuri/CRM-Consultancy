@@ -221,7 +221,7 @@ export default function Kanban() {
     <div className="w-full min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-slate-900">Kanban Board</h1>
+          <h1 className="text-xl sm:text-2xl font-display font-bold text-slate-900">Kanban Board</h1>
           <p className="text-slate-500 mt-1">Tasks first, then applications – Jira-style workflow</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

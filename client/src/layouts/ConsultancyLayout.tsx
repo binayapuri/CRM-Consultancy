@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, Kanban, Users, FileText, Target, Calendar, GraduationCap, Shield, Wallet, User, LogOut, UsersRound, History, Settings, PanelLeftClose, PanelLeft, Building2, Clock, University } from 'lucide-react';
+import { LayoutDashboard, Kanban, Users, FileText, Target, Calendar, GraduationCap, Shield, Wallet, User, LogOut, UsersRound, History, Settings, PanelLeftClose, PanelLeft, Building2, Clock } from 'lucide-react';
 import Notifications from '../components/Notifications';
 import TeamMessages from '../components/TeamMessages';
 import { useAuthStore } from '../store/auth';
@@ -22,7 +22,6 @@ const nav = [
   { to: 'oshc', icon: Shield, label: 'OSHC', perm: 'oshc' },
   { to: 'trust', icon: Wallet, label: 'Trust Ledger', adminOnly: true, perm: 'trustLedger' },
   { to: 'sponsors', icon: Building2, label: 'Sponsors', perm: 'sponsors' },
-  { to: 'university-requests', icon: University, label: 'University Requests', adminOnly: true, perm: null },
   { to: 'profile', icon: User, label: 'Profile', perm: null },
   { to: 'settings', icon: Settings, label: 'Settings', adminOnly: true, perm: 'settings' },
 ];
@@ -77,7 +76,11 @@ export default function ConsultancyLayout() {
 
   return (
     <div className="min-h-screen flex bg-slate-50">
-      <aside className={`${sidebarCollapsed ? 'w-0 -translate-x-full overflow-hidden' : 'w-64 translate-x-0'} bg-slate-900 text-white flex flex-col fixed h-full z-40 transition-all duration-300 ease-in-out`}>
+      {/* Mobile backdrop */}
+      {!sidebarCollapsed && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarCollapsed(true)} aria-hidden />
+      )}
+      <aside className={`${sidebarCollapsed ? 'w-0 -translate-x-full overflow-hidden' : 'w-64 translate-x-0'} bg-slate-900 text-white flex flex-col fixed h-full z-50 lg:z-40 transition-all duration-300 ease-in-out min-w-0`}>
         <div className="p-5 border-b border-slate-700 min-w-[256px]">
           <h1 className="text-xl font-display font-bold text-ori-400 truncate">
             {consultancy?.displayName || consultancy?.name || 'BIGFEW'}
@@ -115,12 +118,13 @@ export default function ConsultancyLayout() {
         </div>
       </aside>
 
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'ml-0' : 'ml-64'}`}>
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ml-0 ${!sidebarCollapsed ? 'lg:ml-64' : ''}`}>
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition"
+            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
             title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+            aria-label={sidebarCollapsed ? 'Open menu' : 'Close menu'}
           >
             {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
           </button>

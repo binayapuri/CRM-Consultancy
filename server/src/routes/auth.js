@@ -1,4 +1,5 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
@@ -11,6 +12,14 @@ import { asyncHandler } from '../shared/utils/asyncHandler.js';
 
 import { AuthController } from '../shared/controllers/auth.controller.js';
 import * as schemas from '../shared/schemas/auth.schema.js';
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '../../uploads');
@@ -31,9 +40,9 @@ router.post('/forgot-password', validate(schemas.forgotPasswordSchema), asyncHan
 router.post('/reset-password', validate(schemas.resetPasswordSchema), asyncHandler(AuthController.resetPassword));
 router.post('/change-password', authenticate, validate(schemas.changePasswordSchema), asyncHandler(AuthController.changePassword));
 
-// --- Auth Flow ---
-router.post('/register', validate(schemas.registerSchema), asyncHandler(AuthController.register));
-router.post('/login', validate(schemas.loginSchema), asyncHandler(AuthController.login));
+// --- Auth Flow (rate limited) ---
+router.post('/register', authLimiter, validate(schemas.registerSchema), asyncHandler(AuthController.register));
+router.post('/login', authLimiter, validate(schemas.loginSchema), asyncHandler(AuthController.login));
 router.get('/me', authenticate, asyncHandler(AuthController.getMe));
 router.patch('/me', authenticate, validate(schemas.updateMeSchema), asyncHandler(AuthController.updateMe));
 router.post('/me/avatar', authenticate, upload.single('file'), asyncHandler(AuthController.updateAvatar));

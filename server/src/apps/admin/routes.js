@@ -24,6 +24,11 @@ router.post('/verify/:type/:id',
 router.get('/students', 
   asyncHandler(AdminController.getStudents)
 );
+
+// --- EMPLOYERS --- //
+router.get('/employers', 
+  asyncHandler(AdminController.getEmployers)
+);
 router.patch('/students/:id', 
   validate(updateStudentSchema), 
   asyncHandler(AdminController.updateStudent)

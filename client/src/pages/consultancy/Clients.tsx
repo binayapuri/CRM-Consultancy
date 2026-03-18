@@ -91,14 +91,14 @@ export default function Clients() {
   });
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
+    <div className="w-full min-w-0 max-w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-slate-900">Clients</h1>
+          <h1 className="text-xl sm:text-2xl font-display font-bold text-slate-900">Clients</h1>
           <p className="text-slate-500 mt-1">Manage your client profiles</p>
         </div>
-        <div className="flex gap-3">
-          <button onClick={() => setShowRequestAccess(true)} className="btn-secondary flex items-center gap-2 border-ori-200 text-ori-700 hover:bg-ori-50">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <button onClick={() => setShowRequestAccess(true)} className="btn-secondary flex items-center gap-2 border-ori-200 text-ori-700 hover:bg-ori-50 text-sm">
             <Mail className="w-4 h-4" /> Request Access
           </button>
           <Link to={consultancyId ? `enroll?consultancyId=${consultancyId}` : 'enroll'} className="btn-primary flex items-center gap-2">
@@ -107,7 +107,7 @@ export default function Clients() {
         </div>
       </div>
       <div className="mt-6 flex flex-wrap gap-4">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input placeholder="Search by name, email, visa..." value={q} onChange={e => setQ(e.target.value)} className="input pl-10" />
         </div>
@@ -125,11 +125,11 @@ export default function Clients() {
           </div>
         )}
       </div>
-      <div className="card mt-6 overflow-hidden">
+      <div className="card mt-6 overflow-x-auto overflow-y-visible">
         {loading ? (
           <div className="p-6"><TableSkeleton rows={8} /></div>
         ) : (
-        <table className="w-full">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Name</th>

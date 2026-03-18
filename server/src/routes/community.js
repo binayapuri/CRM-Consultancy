@@ -23,4 +23,7 @@ router.post('/posts/:id/comments', authenticate, validate(schemas.createCommentS
 // Upvote post
 router.post('/posts/:id/upvote', authenticate, asyncHandler(CollaborationController.upvotePost));
 
+// Send message to post author (for students, Gumtree-style)
+router.post('/posts/:id/message', authenticate, asyncHandler(CollaborationController.sendMessageToPostAuthor));
+
 export default router;

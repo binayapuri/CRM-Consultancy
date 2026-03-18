@@ -44,6 +44,7 @@ import insuranceRoutes from './routes/insurance.js';
 import communityRoutes from './routes/community.js';
 import newsRoutes from './routes/news.js';
 import jobsRoutes from './routes/jobs.js';
+import employersRoutes from './routes/employers.js';
 import appointmentsRoutes from './routes/appointments.js';
 import reviewsRoutes from './routes/reviews.js';
 import studentRoutes, { getPointsHandler, savePointsHandler } from './apps/student/routes.js';
@@ -128,6 +129,7 @@ app.use('/api/insurance', insuranceRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/jobs', jobsRoutes);
+app.use('/api/employers', employersRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/reviews', reviewsRoutes);
 

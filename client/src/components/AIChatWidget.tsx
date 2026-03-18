@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, Minimize2, Maximize2, Loader2 } from 'lucide-react';
+import { useAuthStore } from '../store/auth';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -35,15 +36,18 @@ export default function AIChatWidget() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/ai/compass', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ message: userMessage })
-      });
+      const token = useAuthStore.getState().token;
+      const res = await fetch(
+        (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:4000' : '')) + '/api/ai/compass',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ message: userMessage })
+        }
+      );
 
       const data = await res.json();
       
