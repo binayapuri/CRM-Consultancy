@@ -14,6 +14,7 @@ import Register from './pages/auth/Register';
 import Activate from './pages/auth/Activate';
 import RegisterConsultancy from './pages/auth/RegisterConsultancy';
 import RegisterUniversity from './pages/auth/RegisterUniversity';
+import RegisterEmployer from './pages/auth/RegisterEmployer';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import AuthCallback from './pages/auth/AuthCallback';
@@ -74,7 +75,10 @@ import ConsultancyForm from './pages/super/ConsultancyForm';
 import SuperUsers from './pages/super/Users';
 import SuperTraceHistory from './pages/super/TraceHistory';
 import Verifications from './pages/super/Verifications';
+import SuperEmployers from './pages/super/Employers';
 import Universities from './pages/super/Universities';
+import UniversityDetail from './pages/super/UniversityDetail';
+import UniversityEdit from './pages/super/UniversityEdit';
 import UniversityRequestsAdmin from './pages/super/UniversityRequests';
 import AdminAdvancedSettings from './pages/super/AdminAdvancedSettings';
 import AdminNewsManager from './pages/super/AdminNewsManager';
@@ -97,6 +101,7 @@ import SponsorCompanyInfo from './pages/sponsor/CompanyInfo';
 import Landing from './pages/Landing';
 import PublicNews from './pages/public/PublicNews';
 import PublicNewsDetail from './pages/public/PublicNewsDetail';
+import PublicJobs from './pages/public/PublicJobs';
 
 // Global UI
 import { ToastContainer, Modal, ConfirmDialog } from './components/ui';
@@ -138,6 +143,7 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/news" element={<PublicNews />} />
       <Route path="/news/:slug" element={<PublicNewsDetail />} />
+      <Route path="/jobs" element={<PublicJobs />} />
       <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
       <Route path="/forgot-password" element={<GuestOnlyRoute><ForgotPassword /></GuestOnlyRoute>} />
       <Route path="/reset-password" element={<GuestOnlyRoute><ResetPassword /></GuestOnlyRoute>} />
@@ -145,6 +151,7 @@ export default function App() {
       <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
       <Route path="/register-consultancy" element={<GuestOnlyRoute><RegisterConsultancy /></GuestOnlyRoute>} />
       <Route path="/register-university" element={<GuestOnlyRoute><RegisterUniversity /></GuestOnlyRoute>} />
+      <Route path="/register-employer" element={<GuestOnlyRoute><RegisterEmployer /></GuestOnlyRoute>} />
       <Route path="/activate" element={<GuestOnlyRoute><Activate /></GuestOnlyRoute>} />
 
       <Route path="/consultancy" element={<ProtectedRoute roles={['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPER_ADMIN']}><ConsultancyLayout /></ProtectedRoute>}>
@@ -228,7 +235,10 @@ export default function App() {
         <Route path="users" element={<SuperUsers />} />
         <Route path="trace-history" element={<SuperTraceHistory />} />
         <Route path="verifications" element={<Verifications />} />
+        <Route path="employers" element={<SuperEmployers />} />
         <Route path="universities" element={<Universities />} />
+        <Route path="universities/:id" element={<UniversityDetail />} />
+        <Route path="universities/:id/edit" element={<UniversityEdit />} />
         <Route path="university-requests" element={<UniversityRequestsAdmin />} />
         <Route path="students" element={<AdminStudentManager />} />
         <Route path="news" element={<AdminNewsManager />} />

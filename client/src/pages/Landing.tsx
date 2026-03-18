@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { GraduationCap, Building2, Calculator, Compass, Shield, Users, Send, ArrowRight } from 'lucide-react';
+import { GraduationCap, Building2, Calculator, Compass, Shield, Users, Send, ArrowRight, Briefcase, BookOpen } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import { getDashboardPathForRole } from '../lib/authHelpers';
 
@@ -85,6 +85,7 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#about" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Our Vision</a>
             <a href="#pathways" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Pathways</a>
+            <Link to="/jobs" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Jobs</Link>
             <a href="#news" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">News</a>
             <a href="#enquiry" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Contact</a>
           </div>
@@ -140,7 +141,7 @@ export default function Landing() {
               Students self-manage their documents and PR pathways using AI, while consultancies power their business with our state-of-the-art CRM.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-5 pt-4">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 pt-4">
               <Link to="/register" className="group relative flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-bold text-lg overflow-hidden transition-transform hover:scale-105 shadow-[0_0_40px_rgba(16,185,129,0.3)]">
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
                 <GraduationCap className="w-6 h-6 relative z-10" />
@@ -149,6 +150,14 @@ export default function Landing() {
               <Link to="/login" className="group flex items-center justify-center gap-3 px-8 py-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md text-white font-bold text-lg hover:bg-white/10 hover:border-white/20 transition-all">
                 <Building2 className="w-6 h-6 text-slate-300 group-hover:text-white transition-colors" />
                 <span>Consultancy Login</span>
+              </Link>
+              <Link to="/register-university" className="group flex items-center justify-center gap-3 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md text-white font-bold hover:bg-white/10 hover:border-white/20 transition-all">
+                <BookOpen className="w-5 h-5 text-slate-300 group-hover:text-white transition-colors" />
+                <span>University Partner</span>
+              </Link>
+              <Link to="/register-employer" className="group flex items-center justify-center gap-3 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md text-white font-bold hover:bg-white/10 hover:border-white/20 transition-all">
+                <Briefcase className="w-5 h-5 text-slate-300 group-hover:text-white transition-colors" />
+                <span>Employer / Recruiter</span>
               </Link>
             </div>
           </div>
@@ -335,6 +344,19 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Latest Jobs */}
+      <section id="jobs" className="py-20 relative z-10 px-6 lg:px-12 bg-white/5 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-4xl font-display font-black text-white">Latest Jobs</h2>
+            <Link to="/jobs" className="text-emerald-400 font-bold hover:text-emerald-300 transition-colors flex items-center gap-2">
+              View All Jobs <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <JobsSection />
+        </div>
+      </section>
+
       {/* Latest News */}
       <section id="news" className="py-20 relative z-10 px-6 lg:px-12 bg-white/5 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
@@ -363,6 +385,44 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function JobsSection() {
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/jobs/public?limit=6')
+      .then(r => r.json())
+      .then(data => {
+        setJobs(Array.isArray(data) ? data.slice(0, 6) : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="text-center text-slate-400 py-10">Loading jobs...</div>;
+  if (!jobs.length) return <div className="text-center text-slate-400 py-10">No jobs posted yet. Check back soon.</div>;
+
+  const formatType = (t: string) => (t || '').replace('_', ' ');
+  return (
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {jobs.map(job => (
+        <Link key={job._id} to="/jobs" className="group block rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:bg-white/10 hover:border-emerald-500/30 transition-all">
+          <div className="p-6">
+            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3 block">{formatType(job.type)}</span>
+            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-emerald-300 transition-colors">{job.title}</h3>
+            <p className="text-slate-400 text-sm mb-2">{job.company}</p>
+            <p className="text-slate-500 text-sm line-clamp-2 mb-4">{job.location}</p>
+            <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/10">
+              <span className="text-xs text-slate-500">{job.salaryRange || 'Competitive'}</span>
+              <span className="text-xs font-bold text-emerald-400">View →</span>
+            </div>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }
