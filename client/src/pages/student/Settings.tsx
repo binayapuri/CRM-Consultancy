@@ -8,7 +8,8 @@ const TABS = [
   { id: 'security', label: 'Security', icon: KeyRound },
   { id: 'account', label: 'Account', icon: User },
   { id: 'avatar', label: 'Avatar', icon: Camera },
-  { id: 'invoices', label: 'Invoices', icon: Mail },
+  { id: 'email', label: 'Email (SMTP)', icon: Mail },
+  { id: 'invoices', label: 'Invoices (Payment)', icon: CreditCard },
   { id: 'privacy', label: 'Privacy', icon: Shield },
   { id: 'danger', label: 'Danger Zone', icon: Trash2 },
 ];
@@ -60,7 +61,7 @@ export default function Settings() {
   const [reference, setReference] = useState('');
 
   useEffect(() => {
-    if (tab !== 'invoices') return;
+    if (tab !== 'invoices' && tab !== 'email') return;
     let cancelled = false;
     (async () => {
       setInvLoading(true);
@@ -350,13 +351,13 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Invoices Tab */}
-      {tab === 'invoices' && (
+      {/* Email (SMTP) Tab */}
+      {tab === 'email' && (
         <div className="bg-white rounded-xl p-6 space-y-6" style={{ border: '1px solid #E8EDFB' }}>
           <div>
-            <h2 className="font-black text-slate-900 text-xl flex items-center gap-2"><Mail className="w-5 h-5 text-indigo-600" /> Invoice settings</h2>
+            <h2 className="font-black text-slate-900 text-xl flex items-center gap-2"><Mail className="w-5 h-5 text-indigo-600" /> Email sending (SMTP)</h2>
             <p className="text-sm text-slate-500 font-medium mt-2">
-              Configure your own SMTP (private) for sending invoices, and add payment details to show on your PDFs.
+              Configure your own SMTP (private) for sending invoices and other future emails from BIGFEW (for example, reminders or statements).
             </p>
           </div>
 
@@ -395,8 +396,25 @@ export default function Settings() {
             </div>
           </div>
 
+          <button onClick={saveInvoiceSettings} disabled={invLoading} className="px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+            {invLoading ? 'Saving...' : 'Save Invoice Settings'}
+          </button>
+          <Alert msg={invMsg} />
+        </div>
+      )}
+
+      {/* Invoices / Payment Tab */}
+      {tab === 'invoices' && (
+        <div className="bg-white rounded-xl p-6 space-y-6" style={{ border: '1px solid #E8EDFB' }}>
+          <div>
+            <h2 className="font-black text-slate-900 text-xl flex items-center gap-2"><CreditCard className="w-5 h-5 text-indigo-600" /> Invoice payment details</h2>
+            <p className="text-sm text-slate-500 font-medium mt-2">
+              These bank details appear in the <strong>Payment Information</strong> box on your invoice PDFs and in the student Invoice Manager.
+            </p>
+          </div>
+
           <div className="rounded-xl border border-slate-200 p-5">
-            <h3 className="font-black text-slate-900 flex items-center gap-2"><CreditCard className="w-4 h-4 text-emerald-600" /> Payment details (shown on invoice)</h3>
+            <h3 className="font-black text-slate-900 flex items-center gap-2"><CreditCard className="w-4 h-4 text-emerald-600" /> Bank details (for getting paid)</h3>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Bank name</label>

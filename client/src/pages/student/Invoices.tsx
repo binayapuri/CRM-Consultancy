@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authFetch, safeJson } from '../../store/auth';
 import { Building2, FileText, Plus, Send, Download, CheckCircle2, X, Filter, Eye, FileDown, BadgeCheck, Ban, Search, MoreVertical, Pencil, Copy, Trash2, Users } from 'lucide-react';
 
@@ -43,6 +44,7 @@ function fmtDate(d?: string) {
 }
 
 export default function InvoicesPage() {
+  const navigate = useNavigate();
   const [employers, setEmployers] = useState<Employer[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +87,7 @@ export default function InvoicesPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [tab, setTab] = useState<'OVERVIEW' | 'INVOICES' | 'EMPLOYERS'>('OVERVIEW');
+  const [tab, setTab] = useState<'OVERVIEW' | 'INVOICES' | 'EMPLOYERS' | 'BANK'>('OVERVIEW');
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
   const searchTimer = useRef<number | null>(null);
 
@@ -94,6 +96,19 @@ export default function InvoicesPage() {
   const [editingEmployer, setEditingEmployer] = useState(false);
   const [employerSaving, setEmployerSaving] = useState(false);
   const [employerDeleting, setEmployerDeleting] = useState(false);
+
+  // Bank details (inline settings tab)
+  const [bankForm, setBankForm] = useState<any>({
+    bankName: '',
+    accountName: '',
+    bsb: '',
+    accountNumber: '',
+    payIdType: '',
+    payId: '',
+    reference: '',
+  });
+  const [bankLoading, setBankLoading] = useState(false);
+  const [bankMsg, setBankMsg] = useState<string | null>(null);
 
   async function parseOrThrow(res: Response, fallbackMessage: string) {
     // Clone BEFORE consuming body so we can read text if JSON parse fails.
@@ -144,6 +159,39 @@ export default function InvoicesPage() {
   useEffect(() => {
     refresh();
   }, []);
+
+  // Lazy-load bank details when the Bank tab is opened
+  useEffect(() => {
+    if (tab !== 'BANK') return;
+    let cancelled = false;
+    (async () => {
+      setBankLoading(true);
+      setBankMsg(null);
+      try {
+        const res = await authFetch('/api/student/invoice-settings');
+        const data = await safeJson<any>(res);
+        if (!res.ok) throw new Error(data?.error || 'Failed to load bank details');
+        if (cancelled) return;
+        const p = data?.payment || {};
+        setBankForm({
+          bankName: p.bankName || '',
+          accountName: p.accountName || '',
+          bsb: p.bsb || '',
+          accountNumber: p.accountNumber || '',
+          payIdType: p.payIdType || '',
+          payId: p.payId || '',
+          reference: p.reference || '',
+        });
+      } catch (e: any) {
+        if (!cancelled) setBankMsg(e?.message || 'Failed to load bank details');
+      } finally {
+        if (!cancelled) setBankLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab]);
 
   const filteredInvoices = useMemo(() => {
     let rows = invoices.slice();
@@ -198,6 +246,11 @@ export default function InvoicesPage() {
     return { totalInvoices, paid, outstanding, cancelled };
   }, [filteredInvoices]);
 
+  const currentPaymentSnapshot = useMemo(() => {
+    const anyInv = filteredInvoices.find((i) => i && (i as any).payment);
+    return (anyInv as any)?.payment as any | undefined;
+  }, [filteredInvoices]);
+
   const exportAll = async () => {
     setError(null);
     try {
@@ -219,6 +272,35 @@ export default function InvoicesPage() {
       URL.revokeObjectURL(url);
     } catch (e: any) {
       setError(e.message);
+    }
+  };
+
+  const saveBankDetails = async () => {
+    setBankLoading(true);
+    setBankMsg(null);
+    try {
+      const res = await authFetch('/api/student/invoice-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment: bankForm }),
+      });
+      const data = await safeJson<any>(res);
+      if (!res.ok) throw new Error(data?.error || 'Failed to save bank details');
+      const p = data?.payment || {};
+      setBankForm({
+        bankName: p.bankName || '',
+        accountName: p.accountName || '',
+        bsb: p.bsb || '',
+        accountNumber: p.accountNumber || '',
+        payIdType: p.payIdType || '',
+        payId: p.payId || '',
+        reference: p.reference || '',
+      });
+      setBankMsg('Bank details saved successfully.');
+    } catch (e: any) {
+      setBankMsg(e?.message || 'Failed to save bank details');
+    } finally {
+      setBankLoading(false);
     }
   };
 
@@ -554,12 +636,17 @@ export default function InvoicesPage() {
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Paid</p>
           <p className="text-2xl font-black text-emerald-700 mt-1">{money(stats.paid)}</p>
           <p className="text-xs text-slate-500 mt-1">Marked as paid</p>
+          {currentPaymentSnapshot?.accountName && (
+            <p className="text-[11px] text-slate-500 mt-2">
+              Paid to <span className="font-bold">{currentPaymentSnapshot.accountName}</span>
+            </p>
+          )}
         </div>
       </div>
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
-          {(['OVERVIEW', 'INVOICES', 'EMPLOYERS'] as const).map((t) => (
+          {(['OVERVIEW', 'INVOICES', 'EMPLOYERS', 'BANK'] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -568,7 +655,13 @@ export default function InvoicesPage() {
                 tab === t ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
               }`}
             >
-              {t === 'OVERVIEW' ? 'Overview' : t === 'INVOICES' ? 'Invoices' : 'Employers'}
+              {t === 'OVERVIEW'
+                ? 'Overview'
+                : t === 'INVOICES'
+                ? 'Invoices'
+                : t === 'EMPLOYERS'
+                ? 'Employers'
+                : 'Bank details'}
             </button>
           ))}
         </div>
@@ -582,6 +675,24 @@ export default function InvoicesPage() {
               className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
             />
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 sm:px-5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-black text-sky-900 uppercase tracking-wider">Invoice settings</p>
+          <p className="text-xs sm:text-sm text-sky-900 mt-1">
+            Set your <span className="font-semibold">bank details</span> and <span className="font-semibold">SMTP email</span> once so every invoice shows correct payment info and can be sent directly from here.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/student/settings?tab=invoices')}
+            className="px-4 py-2.5 rounded-xl bg-sky-600 text-white text-xs sm:text-sm font-black hover:bg-sky-700"
+          >
+            Open invoice settings
+          </button>
         </div>
       </div>
 
@@ -856,6 +967,104 @@ export default function InvoicesPage() {
         </div>
       )}
 
+      {tab === 'BANK' && (
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+            <h2 className="font-black text-slate-900">Your bank details</h2>
+            <p className="text-xs text-slate-500 mt-1">
+              These details appear in the <span className="font-bold">Payment Information</span> box on every new invoice PDF.
+              Configure SMTP in <span className="font-bold">Settings → Invoices</span> if you want to email invoices directly.
+            </p>
+          </div>
+          <div className="p-5 space-y-4">
+            {bankMsg && (
+              <div className="rounded-xl border px-4 py-3 text-xs sm:text-sm font-bold
+                {bankMsg.includes('successfully') ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-rose-200 bg-rose-50 text-rose-800'}">
+                {bankMsg}
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                Bank name
+                <input
+                  className="mt-1 w-full input"
+                  value={bankForm.bankName}
+                  onChange={(e) => setBankForm((f: any) => ({ ...f, bankName: e.target.value }))}
+                  placeholder="Commonwealth Bank"
+                />
+              </label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                Account name
+                <input
+                  className="mt-1 w-full input"
+                  value={bankForm.accountName}
+                  onChange={(e) => setBankForm((f: any) => ({ ...f, accountName: e.target.value }))}
+                  placeholder="Your legal name"
+                />
+              </label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                BSB
+                <input
+                  className="mt-1 w-full input"
+                  value={bankForm.bsb}
+                  onChange={(e) => setBankForm((f: any) => ({ ...f, bsb: e.target.value }))}
+                  placeholder="062-948"
+                />
+              </label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                Account number
+                <input
+                  className="mt-1 w-full input"
+                  value={bankForm.accountNumber}
+                  onChange={(e) => setBankForm((f: any) => ({ ...f, accountNumber: e.target.value }))}
+                  placeholder="12345678"
+                />
+              </label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                PayID type
+                <select
+                  className="mt-1 w-full input"
+                  value={bankForm.payIdType}
+                  onChange={(e) => setBankForm((f: any) => ({ ...f, payIdType: e.target.value }))}
+                >
+                  <option value="">None</option>
+                  <option value="EMAIL">Email</option>
+                  <option value="PHONE">Phone</option>
+                </select>
+              </label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                PayID
+                <input
+                  className="mt-1 w-full input"
+                  value={bankForm.payId}
+                  onChange={(e) => setBankForm((f: any) => ({ ...f, payId: e.target.value }))}
+                  placeholder="you@email.com or +61..."
+                />
+              </label>
+              <label className="md:col-span-2 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                Payment reference (optional)
+                <input
+                  className="mt-1 w-full input"
+                  value={bankForm.reference}
+                  onChange={(e) => setBankForm((f: any) => ({ ...f, reference: e.target.value }))}
+                  placeholder="e.g., Use invoice number as reference"
+                />
+              </label>
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={saveBankDetails}
+                disabled={bankLoading}
+                className="px-5 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {bankLoading ? 'Saving…' : 'Save bank details'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Invoice detail modal */}
       {viewInv && (
         <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
@@ -927,6 +1136,36 @@ export default function InvoicesPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Payment information</p>
+                { (viewInv as any).payment ? (
+                  <div className="mt-2 text-sm text-slate-700 space-y-1">
+                    {(viewInv as any).payment.bankName && (
+                      <p><span className="font-semibold">Bank:</span> {(viewInv as any).payment.bankName}</p>
+                    )}
+                    {(viewInv as any).payment.accountName && (
+                      <p><span className="font-semibold">Account name:</span> {(viewInv as any).payment.accountName}</p>
+                    )}
+                    {(viewInv as any).payment.bsb && (
+                      <p><span className="font-semibold">BSB:</span> {(viewInv as any).payment.bsb}</p>
+                    )}
+                    {(viewInv as any).payment.accountNumber && (
+                      <p><span className="font-semibold">Account:</span> {(viewInv as any).payment.accountNumber}</p>
+                    )}
+                    {(viewInv as any).payment.payId && (
+                      <p><span className="font-semibold">PayID ({(viewInv as any).payment.payIdType || '—'}):</span> {(viewInv as any).payment.payId}</p>
+                    )}
+                    {(viewInv as any).payment.reference && (
+                      <p><span className="font-semibold">Reference hint:</span> {(viewInv as any).payment.reference}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-500">
+                    No bank details snapshot on this invoice. Add them in <span className="font-bold">Settings → Invoices</span> for future invoices.
+                  </p>
+                )}
               </div>
             </div>
             <div className="px-5 py-4 border-t border-slate-200 flex flex-wrap justify-between gap-2 bg-white sticky bottom-0">
