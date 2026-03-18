@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, History, LogOut, GraduationCap, BookOpen, CheckSquare, Settings, Newspaper } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, History, LogOut, GraduationCap, BookOpen, CheckSquare, Settings, Newspaper, University } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 
 const nav = [
@@ -9,6 +9,7 @@ const nav = [
   { to: 'users', icon: Users, label: 'Users' },
   { to: 'verifications', icon: CheckSquare, label: 'Verifications' },
   { to: 'universities', icon: BookOpen, label: 'Universities' },
+  { to: 'university-requests', icon: University, label: 'University Requests' },
   { to: 'trace-history', icon: History, label: 'Trace History' },
   { to: 'news', icon: Newspaper, label: 'News' },
   { to: 'settings', icon: Settings, label: 'Settings' },

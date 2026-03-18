@@ -49,6 +49,10 @@ const FEATURE_MAP = {
   sendDocuments: { path: 'sendDocuments', actions: [true] },
   sendAdvice: { path: 'sendAdvice', actions: [true] },
   sponsors: { path: 'sponsors', actions: ['view', 'create', 'edit', 'delete'] },
+  universityRequests: { path: 'universityRequests', actions: ['view', 'review', 'approve'] },
+  universities: { path: 'universities', actions: ['view', 'create', 'edit', 'delete'] },
+  jobs: { path: 'jobs', actions: ['view', 'create', 'edit', 'moderate'] },
+  social: { path: 'social', actions: ['view', 'create', 'moderate'] },
 };
 
 /** Check if user has permission for feature:action. SUPER_ADMIN always allowed. */

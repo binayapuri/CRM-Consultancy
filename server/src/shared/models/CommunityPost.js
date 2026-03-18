@@ -5,8 +5,11 @@ const communityPostSchema = new mongoose.Schema({
   title: { type: String, required: true },
   content: { type: String, required: true },
   tags: [String], // e.g. 'visa', 'university', 'accommodation'
+  category: { type: String, enum: ['ROOM_RENT', 'JOB_HELP', 'COMMUNITY_SUPPORT', 'STUDY_HELP', 'GENERAL'], default: 'GENERAL' },
   location: String, // e.g. 'Sydney', 'Melbourne'
   university: String, // e.g. 'UNSW', 'Monash'
+  contactPreference: { type: String, enum: ['IN_APP_MESSAGE', 'EMAIL', 'PHONE'], default: 'IN_APP_MESSAGE' },
+  moderationFlags: [String],
   upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   views: { type: Number, default: 0 },
   isPinned: { type: Boolean, default: false },

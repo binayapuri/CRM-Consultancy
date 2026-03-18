@@ -15,6 +15,8 @@ export default function PartnerLayout() {
         return [{ path: '/partner/insurance', label: 'Policies', icon: ShieldPlus }];
       case 'EMPLOYER':
         return [{ path: '/partner/jobs', label: 'Job Postings', icon: Briefcase }];
+      case 'RECRUITER':
+        return [{ path: '/partner/jobs', label: 'Recruiter Jobs', icon: Briefcase }];
       case 'SUPER_ADMIN':
         return [
           { path: '/partner/applications', label: 'Offer Letters', icon: FileText },

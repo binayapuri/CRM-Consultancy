@@ -114,9 +114,16 @@ export class AuthService {
   }
 
   static async login(email, password) {
-    const user = await User.findOne({ email, isActive: true });
+    const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password))) {
       throw Object.assign(new Error('Invalid credentials'), { status: 401 });
+    }
+    if (!user.isActive) {
+      const pendingRoles = new Set(['UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER', 'RECRUITER']);
+      const msg = pendingRoles.has(user.role)
+        ? 'Your partner account is pending verification. Please wait for consultancy/super-admin approval.'
+        : 'Your account is inactive. Contact support.';
+      throw Object.assign(new Error(msg), { status: 403 });
     }
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
     return { user: { id: user._id, _id: user._id, email: user.email, role: user.role, profile: user.profile }, token };

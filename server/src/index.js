@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import passport from 'passport';
+import { configurePassport } from './config/passport.js';
 import { authenticate } from './shared/middleware/auth.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
@@ -34,6 +35,7 @@ import attendanceRoutes from './routes/attendance.js';
 import adminRoutes from './apps/admin/routes.js';
 import adminNewsRoutes from './apps/admin/news.js';
 import universitiesRoutes from './routes/universities.js';
+import universityRequestsRoutes from './routes/university-requests.js';
 import offerLettersRoutes from './routes/offer-letters.js';
 import visaTimelineRoutes from './routes/visa-timeline.js';
 import documentTemplatesRoutes from './routes/document-templates.js';
@@ -47,6 +49,7 @@ import reviewsRoutes from './routes/reviews.js';
 import studentRoutes, { getPointsHandler, savePointsHandler } from './apps/student/routes.js';
 
 dotenv.config();
+configurePassport();
 
 // Student-only role check (must run after authenticate)
 const studentOnly = (req, res, next) => {
@@ -116,6 +119,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/news', adminNewsRoutes);
 app.use('/api/universities', universitiesRoutes);
+app.use('/api/university-requests', universityRequestsRoutes);
 app.use('/api/offer-letters', offerLettersRoutes);
 app.use('/api/visa-timeline', visaTimelineRoutes);
 app.use('/api/document-templates', documentTemplatesRoutes);

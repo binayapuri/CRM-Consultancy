@@ -14,6 +14,14 @@ const jobSchema = new mongoose.Schema({
   visaSponsorshipAvailable: { type: Boolean, default: false },
   partTimeAllowed: { type: Boolean, default: false }, // Critical for student visas
   postedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // e.g. Super Admin or verified employer
+  recruiterEmployerProfileId: { type: mongoose.Schema.Types.ObjectId, ref: 'RecruiterEmployerProfile' },
+  postedByRole: { type: String, enum: ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'], default: 'EMPLOYER' },
+  salaryMin: Number,
+  salaryMax: Number,
+  workRights: [String], // e.g. ['STUDENT_VISA_24_HOURS', 'FULL_WORK_RIGHTS']
+  experienceLevel: { type: String, enum: ['ENTRY', 'MID', 'SENIOR', 'LEAD'] },
+  moderationState: { type: String, enum: ['ACTIVE', 'FLAGGED', 'REMOVED'], default: 'ACTIVE' },
+  views: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   tags: [String] // e.g., 'hospitality', 'IT', 'warehouse'
 }, { timestamps: true });

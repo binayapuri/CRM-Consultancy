@@ -13,12 +13,21 @@ export const applyJobSchema = z.object({
 export const createJobSchema = z.object({
   body: z.object({
     title: z.string().min(1),
+    company: z.string().optional(),
     description: z.string().min(1),
-    location: z.string().optional(),
+    location: z.string().min(1),
     type: z.string().optional(),
     anzscoCode: z.string().optional(),
-    salary: z.string().optional(),
-    expiryDate: z.string().optional()
+    salaryRange: z.string().optional(),
+    salaryMin: z.number().optional(),
+    salaryMax: z.number().optional(),
+    expiryDate: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    visaSponsorshipAvailable: z.boolean().optional(),
+    partTimeAllowed: z.boolean().optional(),
+    workRights: z.array(z.string()).optional(),
+    experienceLevel: z.string().optional(),
+    recruiterEmployerProfileId: z.string().optional()
   })
 });
 

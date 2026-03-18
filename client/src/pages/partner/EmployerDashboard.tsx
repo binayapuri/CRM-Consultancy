@@ -1,20 +1,49 @@
 import { useState, useEffect } from 'react';
-import { authFetch } from '../../store/auth';
-import { XCircle, Briefcase, Users } from 'lucide-react';
+import { authFetch, useAuthStore } from '../../store/auth';
+import { XCircle, Briefcase, Users, Plus, Building2 } from 'lucide-react';
 
 export default function EmployerDashboard() {
-  const [jobs, setJobs] = useState([]);
+  const { user } = useAuthStore();
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [employers, setEmployers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showJobForm, setShowJobForm] = useState(false);
+  const [showEmployerForm, setShowEmployerForm] = useState(false);
+  const [jobForm, setJobForm] = useState({
+    title: '',
+    company: '',
+    location: '',
+    type: 'FULL_TIME',
+    description: '',
+    salaryRange: '',
+    visaSponsorshipAvailable: false,
+    partTimeAllowed: true,
+    recruiterEmployerProfileId: '',
+    workRights: 'STUDENT_VISA_24_HOURS',
+  });
+  const [employerForm, setEmployerForm] = useState({
+    companyName: '',
+    abn: '',
+    contactName: '',
+    contactEmail: '',
+    contactPhone: '',
+  });
 
-  // For the sake of this component, let's assume the SuperAdmin or Employer fetches all jobs they posted
-  // and all applications for those jobs. 
-  // We'll add a new endpoint or just fetch jobs and loop.
-  // Wait, I need a backend endpoint for this! Let's mock the UI first and then I'll add the endpoint.
-  
   const fetchDashboardData = async () => {
+    setError('');
     try {
-      const res = await authFetch('/api/jobs/employer/dashboard');
-      if (res.ok) setJobs(await res.json());
+      const [jobsRes, employersRes] = await Promise.all([
+        authFetch('/api/jobs/employer/dashboard'),
+        user?.role === 'RECRUITER' ? authFetch('/api/jobs/recruiter/employers') : Promise.resolve(null),
+      ]);
+      if (jobsRes.ok) {
+        setJobs(await jobsRes.json());
+      } else {
+        const d = await jobsRes.json().catch(() => ({}));
+        setError(d?.error || 'Failed to load job dashboard');
+      }
+      if (employersRes && employersRes.ok) setEmployers(await employersRes.json());
     } finally {
       setLoading(false);
     }
@@ -22,14 +51,76 @@ export default function EmployerDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [user?.role]);
+
+  const postJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const payload: any = {
+        title: jobForm.title,
+        location: jobForm.location,
+        type: jobForm.type,
+        description: jobForm.description,
+        salaryRange: jobForm.salaryRange,
+        visaSponsorshipAvailable: jobForm.visaSponsorshipAvailable,
+        partTimeAllowed: jobForm.partTimeAllowed,
+        workRights: [jobForm.workRights],
+      };
+      if (user?.role === 'RECRUITER') payload.recruiterEmployerProfileId = jobForm.recruiterEmployerProfileId;
+      else payload.company = jobForm.company;
+
+      const res = await authFetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Failed to post job');
+      setShowJobForm(false);
+      setJobForm({
+        title: '',
+        company: '',
+        location: '',
+        type: 'FULL_TIME',
+        description: '',
+        salaryRange: '',
+        visaSponsorshipAvailable: false,
+        partTimeAllowed: true,
+        recruiterEmployerProfileId: '',
+        workRights: 'STUDENT_VISA_24_HOURS',
+      });
+      fetchDashboardData();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to post job');
+    }
+  };
+
+  const addRecruiterEmployer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const res = await authFetch('/api/jobs/recruiter/employers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(employerForm),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Failed to add employer profile');
+      setShowEmployerForm(false);
+      setEmployerForm({ companyName: '', abn: '', contactName: '', contactEmail: '', contactPhone: '' });
+      fetchDashboardData();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to add employer profile');
+    }
+  };
 
   const updateStatus = async (appId: string, status: string) => {
     try {
       await authFetch(`/api/jobs/applications/${appId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status }),
       });
       fetchDashboardData();
     } catch (err) {
@@ -41,22 +132,70 @@ export default function EmployerDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto animate-fade-in-up">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">Employer Dashboard</h1>
-          <p className="text-slate-500 mt-1">Manage your active listings and review student applications.</p>
+          <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">{user?.role === 'RECRUITER' ? 'Recruiter Dashboard' : 'Employer Dashboard'}</h1>
+          <p className="text-slate-500 mt-1">Manage listings, candidate pipeline, and job lifecycle.</p>
         </div>
-        <button className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-sm shadow-emerald-500/20 hover:bg-emerald-700 transition">
-          Post New Job
-        </button>
+        <div className="flex items-center gap-2">
+          {user?.role === 'RECRUITER' && (
+            <button onClick={() => setShowEmployerForm((v) => !v)} className="border border-slate-200 bg-white text-slate-700 px-4 py-2.5 rounded-xl font-bold hover:bg-slate-50 transition inline-flex items-center gap-2">
+              <Building2 className="w-4 h-4" /> Employer profile
+            </button>
+          )}
+          <button onClick={() => setShowJobForm((v) => !v)} className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-sm shadow-emerald-500/20 hover:bg-emerald-700 transition inline-flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Post New Job
+          </button>
+        </div>
       </div>
+
+      {error && <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</div>}
+
+      {showEmployerForm && user?.role === 'RECRUITER' && (
+        <form onSubmit={addRecruiterEmployer} className="bg-white border border-slate-200 rounded-2xl p-5 mb-5 grid md:grid-cols-2 gap-3">
+          <input className="input" placeholder="Company name" value={employerForm.companyName} onChange={(e) => setEmployerForm((f) => ({ ...f, companyName: e.target.value }))} required />
+          <input className="input" placeholder="ABN" value={employerForm.abn} onChange={(e) => setEmployerForm((f) => ({ ...f, abn: e.target.value }))} />
+          <input className="input" placeholder="Contact person" value={employerForm.contactName} onChange={(e) => setEmployerForm((f) => ({ ...f, contactName: e.target.value }))} />
+          <input className="input" placeholder="Contact email" value={employerForm.contactEmail} onChange={(e) => setEmployerForm((f) => ({ ...f, contactEmail: e.target.value }))} />
+          <input className="input md:col-span-2" placeholder="Contact phone" value={employerForm.contactPhone} onChange={(e) => setEmployerForm((f) => ({ ...f, contactPhone: e.target.value }))} />
+          <div className="md:col-span-2 flex justify-end"><button className="btn-primary px-5 py-2.5">Save employer profile</button></div>
+        </form>
+      )}
+
+      {showJobForm && (
+        <form onSubmit={postJob} className="bg-white border border-slate-200 rounded-2xl p-5 mb-6 grid md:grid-cols-2 gap-3">
+          <input className="input" placeholder="Job title" value={jobForm.title} onChange={(e) => setJobForm((f) => ({ ...f, title: e.target.value }))} required />
+          {user?.role === 'RECRUITER' ? (
+            <select className="input" value={jobForm.recruiterEmployerProfileId} onChange={(e) => setJobForm((f) => ({ ...f, recruiterEmployerProfileId: e.target.value }))} required>
+              <option value="">Select employer profile</option>
+              {employers.map((e: any) => <option key={e._id} value={e._id}>{e.companyName}</option>)}
+            </select>
+          ) : (
+            <input className="input" placeholder="Company" value={jobForm.company} onChange={(e) => setJobForm((f) => ({ ...f, company: e.target.value }))} required />
+          )}
+          <input className="input" placeholder="Location (e.g. Sydney, NSW)" value={jobForm.location} onChange={(e) => setJobForm((f) => ({ ...f, location: e.target.value }))} required />
+          <select className="input" value={jobForm.type} onChange={(e) => setJobForm((f) => ({ ...f, type: e.target.value }))}>
+            {['FULL_TIME', 'PART_TIME', 'CASUAL', 'CONTRACT', 'INTERNSHIP'].map((x) => <option key={x}>{x}</option>)}
+          </select>
+          <input className="input" placeholder="Salary range" value={jobForm.salaryRange} onChange={(e) => setJobForm((f) => ({ ...f, salaryRange: e.target.value }))} />
+          <select className="input" value={jobForm.workRights} onChange={(e) => setJobForm((f) => ({ ...f, workRights: e.target.value }))}>
+            <option value="STUDENT_VISA_24_HOURS">Student visa (24h/wk)</option>
+            <option value="FULL_WORK_RIGHTS">Full work rights</option>
+            <option value="ANY_VALID_WORK_RIGHTS">Any valid work rights</option>
+          </select>
+          <textarea className="input md:col-span-2" rows={3} placeholder="Description" value={jobForm.description} onChange={(e) => setJobForm((f) => ({ ...f, description: e.target.value }))} required />
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={jobForm.visaSponsorshipAvailable} onChange={(e) => setJobForm((f) => ({ ...f, visaSponsorshipAvailable: e.target.checked }))} /> Visa sponsorship available</label>
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={jobForm.partTimeAllowed} onChange={(e) => setJobForm((f) => ({ ...f, partTimeAllowed: e.target.checked }))} /> Part-time allowed</label>
+          <div className="md:col-span-2 flex justify-end"><button className="btn-primary px-5 py-2.5">Publish job</button></div>
+        </form>
+      )}
 
       <div className="space-y-8">
         {jobs.length === 0 ? (
           <div className="bg-white border border-slate-200 p-12 text-center rounded-3xl">
              <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" />
              <p className="text-lg font-bold text-slate-900 mb-1">No Jobs Posted</p>
-             <p className="text-slate-500">You haven't posted any jobs yet.</p>
+             <p className="text-slate-500">You haven&apos;t posted any jobs yet.</p>
           </div>
         ) : (
           jobs.map((job: any) => (
@@ -66,7 +205,7 @@ export default function EmployerDashboard() {
                   <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                     <Briefcase className="w-5 h-5 text-emerald-600" /> {job.title}
                   </h2>
-                  <p className="text-sm text-slate-500 mt-1">{job.location} • {job.type.replace('_', ' ')}</p>
+                  <p className="text-sm text-slate-500 mt-1">{job.location} • {job.type.replace('_', ' ')} • {job.company}</p>
                 </div>
                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
                   <Users className="w-4 h-4 text-emerald-600" />
@@ -92,11 +231,6 @@ export default function EmployerDashboard() {
                         </div>
                         <h3 className="text-lg font-bold text-slate-900 mb-1">{app.studentId?.profile?.firstName} {app.studentId?.profile?.lastName}</h3>
                         <p className="text-slate-500 text-sm mb-3">{app.studentId?.email}</p>
-                        
-                        <div className="flex gap-2">
-                          {app.resumeUrl && <a href="#" className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition">View Resume</a>}
-                          {app.coverLetterUrl && <a href="#" className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition">Cover Letter</a>}
-                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">

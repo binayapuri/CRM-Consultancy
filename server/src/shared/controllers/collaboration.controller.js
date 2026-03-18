@@ -2,12 +2,12 @@ import { CollaborationService } from '../services/collaboration.service.js';
 
 export class CollaborationController {
   static async getMessages(req, res) {
-    const messages = await CollaborationService.getMessages(req.user);
+    const messages = await CollaborationService.getMessages(req.user, req.query);
     res.json(messages);
   }
 
   static async sendMessage(req, res) {
-    const msg = await CollaborationService.sendMessage(req.user, req.body.text);
+    const msg = await CollaborationService.sendMessage(req.user, req.body);
     res.status(201).json(msg);
   }
 

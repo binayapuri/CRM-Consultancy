@@ -2,7 +2,7 @@ import { JobService } from '../services/job.service.js';
 
 export class JobController {
   static async getActiveJobs(req, res) {
-    const jobs = await JobService.getActiveJobs(req.user);
+    const jobs = await JobService.getActiveJobs(req.user, req.query);
     res.json(jobs);
   }
 
@@ -32,7 +32,27 @@ export class JobController {
   }
 
   static async createJob(req, res) {
-    const job = await JobService.createJob(req.body, req.user.id);
+    const job = await JobService.createJob(req.body, req.user);
     res.status(201).json(job);
+  }
+
+  static async listRecruiterEmployers(req, res) {
+    const rows = await JobService.listRecruiterEmployers(req.user);
+    res.json(rows);
+  }
+
+  static async createRecruiterEmployer(req, res) {
+    const row = await JobService.createRecruiterEmployer(req.user, req.body);
+    res.status(201).json(row);
+  }
+
+  static async updateRecruiterEmployer(req, res) {
+    const row = await JobService.updateRecruiterEmployer(req.user, req.params.id, req.body);
+    res.json(row);
+  }
+
+  static async deleteRecruiterEmployer(req, res) {
+    const row = await JobService.deleteRecruiterEmployer(req.user, req.params.id);
+    res.json(row);
   }
 }

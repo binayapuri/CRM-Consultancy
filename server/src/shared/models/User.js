@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, sparse: true }, // for phone login
   phoneVerified: { type: Boolean, default: false },
   googleId: { type: String, sparse: true },
-  role: { type: String, enum: ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'STUDENT', 'SPONSOR', 'UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER'], required: true },
+  role: { type: String, enum: ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'STUDENT', 'SPONSOR', 'UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER', 'RECRUITER'], required: true },
   sponsorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Sponsor' }, // when role=SPONSOR
   profile: {
     firstName: String,

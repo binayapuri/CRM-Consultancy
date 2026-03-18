@@ -12,10 +12,16 @@ const router = express.Router();
 router.get('/', authenticate, asyncHandler(JobController.getActiveJobs));
 
 // Employer Dashboard: Get Jobs + Applications
-router.get('/employer/dashboard', authenticate, requireRole('EMPLOYER', 'SUPER_ADMIN'), asyncHandler(JobController.getEmployerDashboard));
+router.get('/employer/dashboard', authenticate, requireRole('EMPLOYER', 'RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.getEmployerDashboard));
+
+// Recruiter employer profiles (multi-company management)
+router.get('/recruiter/employers', authenticate, requireRole('RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.listRecruiterEmployers));
+router.post('/recruiter/employers', authenticate, requireRole('RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.createRecruiterEmployer));
+router.patch('/recruiter/employers/:id', authenticate, requireRole('RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.updateRecruiterEmployer));
+router.delete('/recruiter/employers/:id', authenticate, requireRole('RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.deleteRecruiterEmployer));
 
 // update application status
-router.patch('/applications/:id/status', authenticate, requireRole('EMPLOYER', 'SUPER_ADMIN'), validate(schemas.updateApplicationStatusSchema), asyncHandler(JobController.updateApplicationStatus));
+router.patch('/applications/:id/status', authenticate, requireRole('EMPLOYER', 'RECRUITER', 'SUPER_ADMIN'), validate(schemas.updateApplicationStatusSchema), asyncHandler(JobController.updateApplicationStatus));
 
 // Student: Get my applications
 router.get('/my-applications', authenticate, requireRole('STUDENT'), asyncHandler(JobController.getMyApplications));
@@ -27,6 +33,6 @@ router.post('/:id/apply', authenticate, requireRole('STUDENT'), validate(schemas
 router.get('/:id', authenticate, asyncHandler(JobController.getJobById));
 
 // Create job (Admin/Agent/Employer)
-router.post('/', authenticate, authorize('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER'), validate(schemas.createJobSchema), asyncHandler(JobController.createJob));
+router.post('/', authenticate, authorize('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'), validate(schemas.createJobSchema), asyncHandler(JobController.createJob));
 
 export default router;

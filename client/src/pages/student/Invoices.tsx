@@ -688,10 +688,17 @@ export default function InvoicesPage() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => navigate('/student/settings?tab=invoices')}
+            onClick={() => navigate('/student/settings?tab=email')}
             className="px-4 py-2.5 rounded-xl bg-sky-600 text-white text-xs sm:text-sm font-black hover:bg-sky-700"
           >
-            Open invoice settings
+            Open SMTP settings
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('BANK')}
+            className="px-4 py-2.5 rounded-xl bg-white text-sky-700 border border-sky-200 text-xs sm:text-sm font-black hover:bg-sky-100"
+          >
+            Edit bank details here
           </button>
         </div>
       </div>
@@ -973,13 +980,12 @@ export default function InvoicesPage() {
             <h2 className="font-black text-slate-900">Your bank details</h2>
             <p className="text-xs text-slate-500 mt-1">
               These details appear in the <span className="font-bold">Payment Information</span> box on every new invoice PDF.
-              Configure SMTP in <span className="font-bold">Settings → Invoices</span> if you want to email invoices directly.
+              Configure SMTP in <span className="font-bold">Settings → Email (SMTP)</span> if you want to email invoices directly.
             </p>
           </div>
           <div className="p-5 space-y-4">
             {bankMsg && (
-              <div className="rounded-xl border px-4 py-3 text-xs sm:text-sm font-bold
-                {bankMsg.includes('successfully') ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-rose-200 bg-rose-50 text-rose-800'}">
+              <div className={`rounded-xl border px-4 py-3 text-xs sm:text-sm font-bold ${bankMsg.includes('successfully') ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-rose-200 bg-rose-50 text-rose-800'}`}>
                 {bankMsg}
               </div>
             )}
@@ -1163,7 +1169,7 @@ export default function InvoicesPage() {
                   </div>
                 ) : (
                   <p className="mt-2 text-xs text-slate-500">
-                    No bank details snapshot on this invoice. Add them in <span className="font-bold">Settings → Invoices</span> for future invoices.
+                    No bank details snapshot on this invoice. Add them in <span className="font-bold">Bank details tab</span> or <span className="font-bold">Settings → Invoices (Payment)</span> for future invoices.
                   </p>
                 )}
               </div>
@@ -1479,7 +1485,7 @@ export default function InvoicesPage() {
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Message
                 <textarea className="mt-1 w-full input" rows={6} value={sendForm.text} onChange={e => setSendForm(f => ({ ...f, text: e.target.value }))} />
               </label>
-              <p className="text-xs text-slate-500">This uses your platform SMTP settings (Super Admin → Settings). The PDF will be attached automatically.</p>
+              <p className="text-xs text-slate-500">This uses your student SMTP settings (Settings → Email (SMTP)). The PDF will be attached automatically.</p>
             </div>
             <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0">
               <button onClick={() => setSendFor(null)} className="btn-secondary">Cancel</button>

@@ -6,7 +6,7 @@ export const createTestAccountSchema = z.object({
   body: z.object({
     email: z.string().email(),
     password: z.string().min(6),
-    role: z.enum(['STUDENT', 'AGENT', 'MANAGER', 'CONSULTANCY_ADMIN']),
+    role: z.enum(['STUDENT', 'AGENT', 'MANAGER', 'CONSULTANCY_ADMIN', 'UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER', 'RECRUITER']),
     profile: z.record(z.any()).optional(),
     consultancyId: z.string().optional()
   })
