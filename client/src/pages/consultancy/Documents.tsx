@@ -88,9 +88,9 @@ export default function Documents() {
   }, {});
 
   return (
-    <div>
+    <div className="w-full min-w-0 max-w-full">
       <div>
-        <h1 className="text-2xl font-display font-bold text-slate-900">Documents</h1>
+        <h1 className="text-xl sm:text-2xl font-display font-bold text-slate-900">Documents</h1>
         <p className="text-slate-500 mt-1">Templates, sample documents & visa checklists for all clients. Personal client documents are in each client&apos;s profile.</p>
       </div>
 
@@ -126,13 +126,13 @@ export default function Documents() {
                   <h2 className="font-display font-semibold text-slate-900 mb-4 flex items-center gap-2"><FileText className="w-5 h-5 text-ori-600" /> {category}</h2>
                   <div className="space-y-3">
                     {items.map((t: any) => (
-                      <div key={t.id} className="flex items-center justify-between p-4 rounded-lg bg-slate-50 border border-slate-100 hover:border-slate-200 transition">
+                      <div key={t.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg bg-slate-50 border border-slate-100 hover:border-slate-200 transition">
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-slate-900">{t.name}</p>
                           <p className="text-sm text-slate-500 mt-0.5">{t.description}</p>
                           <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs bg-slate-200 text-slate-600">{t.category}</span>
                         </div>
-                        <div className="shrink-0 ml-4">
+                        <div className="shrink-0 sm:ml-4">
                           {t.url ? (
                             <a href={t.url} target="_blank" rel="noopener noreferrer" className="btn-primary flex items-center gap-2"><Download className="w-4 h-4" /> Download</a>
                           ) : (

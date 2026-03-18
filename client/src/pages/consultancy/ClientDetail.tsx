@@ -239,7 +239,7 @@ export default function ClientDetail() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto pb-20 animate-in fade-in duration-500">
+    <div className="w-full min-w-0 max-w-7xl mx-auto px-2 sm:px-0 pb-20 animate-in fade-in duration-500">
        {toast && (
         <div className="fixed top-24 right-8 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-3xl shadow-2xl animate-in slide-in-from-right-10 duration-300">
           <div className="p-1.5 bg-emerald-500 rounded-full text-white"><CheckCircle2 className="w-4 h-4" /></div>
@@ -253,7 +253,7 @@ export default function ClientDetail() {
           <Link to={consultancyId ? `/consultancy/clients?consultancyId=${consultancyId}` : '/consultancy/clients'} className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-2 font-bold text-sm transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to Clients List
           </Link>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">{p.firstName} {p.lastName}</h1>
+          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight break-words">{p.firstName} {p.lastName}</h1>
           <p className="text-slate-500 font-bold">{p.email} · Registered {client.createdAt ? new Date(client.createdAt).toLocaleDateString() : 'N/A'}</p>
         </div>
         <div className="flex items-center gap-3">

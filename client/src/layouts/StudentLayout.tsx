@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt } from 'lucide-react';
+import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt, Menu } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import AIChatWidget from '../components/AIChatWidget';
 import Notifications from '../components/Notifications';
@@ -49,25 +49,43 @@ export default function StudentLayout() {
   const { user, logout } = useAuthStore();
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
   const initials = `${user?.profile?.firstName?.[0] ?? ''}${user?.profile?.lastName?.[0] ?? ''}`.toUpperCase() || 'S';
+
+  useEffect(() => {
+    const handleResize = () => { if (window.innerWidth >= 1024) setMobileMenuOpen(false); };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
     <div className="min-h-screen flex" style={{ background: '#F0F4FF', fontFamily: 'Inter, sans-serif' }}>
+      {/* Mobile overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} aria-hidden />
+      )}
       {/* Sidebar */}
       <aside
-        className="flex flex-col fixed h-full z-30 transition-[width] duration-200 ease-in-out overflow-hidden"
-        style={{ width: sidebarWidth, background: '#0F0E2E', boxShadow: '4px 0 24px rgba(0,0,0,0.25)' }}
+        className={`flex flex-col fixed h-full z-50 transition-all duration-200 ease-in-out overflow-hidden
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0 lg:z-30
+        `}
+        style={{
+          width: mobileMenuOpen ? 256 : sidebarWidth,
+          background: '#0F0E2E',
+          boxShadow: mobileMenuOpen ? '4px 0 24px rgba(0,0,0,0.4)' : '4px 0 24px rgba(0,0,0,0.25)',
+        }}
       >
         {/* Logo */}
-        <div className={`border-b border-white/10 shrink-0 ${sidebarCollapsed ? 'px-3 py-4' : 'px-6 py-5'}`}>
+        <div className={`border-b border-white/10 shrink-0 ${(sidebarCollapsed && !mobileMenuOpen) ? 'px-3 py-4' : 'px-6 py-5'}`}>
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-md flex items-center justify-center font-black text-white text-lg shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>O</div>
-            {!sidebarCollapsed && (
+            <div className="w-9 h-9 rounded-md flex items-center justify-center font-black text-white text-lg shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>B</div>
+            {(!sidebarCollapsed || mobileMenuOpen) && (
               <div className="min-w-0">
-                <h1 className="text-white font-black text-lg tracking-tight leading-none">ORIVISA</h1>
+                <h1 className="text-white font-black text-lg tracking-tight leading-none">BIGFEW</h1>
                 <p className="text-xs font-medium mt-0.5" style={{ color: '#6D7ECC' }}>Your Australian Journey</p>
               </div>
             )}
@@ -78,7 +96,7 @@ export default function StudentLayout() {
         <nav className="flex-1 px-3 py-4 overflow-y-auto overflow-x-hidden space-y-6">
           {navSections.map(section => (
             <div key={section.label}>
-              {!sidebarCollapsed && (
+              {(!sidebarCollapsed || mobileMenuOpen) && (
                 <p className="text-xs font-bold uppercase tracking-widest px-3 mb-2" style={{ color: '#3D4A7A' }}>{section.label}</p>
               )}
               <div className="space-y-0.5">
@@ -86,10 +104,11 @@ export default function StudentLayout() {
                   <NavLink
                     key={to}
                     to={to}
-                    title={sidebarCollapsed ? label : undefined}
+                    onClick={() => setMobileMenuOpen(false)}
+                    title={(sidebarCollapsed && !mobileMenuOpen) ? label : undefined}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 group min-h-[40px] ${
-                        sidebarCollapsed ? 'justify-center px-0' : 'justify-between px-3'
+                      `flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 group min-h-[44px] ${
+                        (sidebarCollapsed && !mobileMenuOpen) ? 'justify-center px-0' : 'justify-between px-3'
                       } ${
                         isActive
                           ? 'text-white bg-indigo-500 shadow-md ring-1 ring-black/10'
@@ -99,9 +118,9 @@ export default function StudentLayout() {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <Icon className="w-5 h-5 shrink-0" style={{ width: 20, height: 20 }} />
-                      {!sidebarCollapsed && <span className="truncate">{label}</span>}
+                      {(!sidebarCollapsed || mobileMenuOpen) && <span className="truncate">{label}</span>}
                     </div>
-                    {!sidebarCollapsed && <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />}
+                    {(!sidebarCollapsed || mobileMenuOpen) && <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />}
                   </NavLink>
                 ))}
               </div>
@@ -109,8 +128,8 @@ export default function StudentLayout() {
           ))}
         </nav>
 
-        {/* Collapse toggle */}
-        <div className="p-3 border-t border-white/10">
+        {/* Collapse toggle - desktop only */}
+        <div className="p-3 border-t border-white/10 hidden lg:block">
           <button
             type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -124,15 +143,20 @@ export default function StudentLayout() {
       </aside>
 
       {/* Main: topbar + full-width content */}
-      <div className="flex-1 flex flex-col min-h-screen transition-[margin-left] duration-200 ease-in-out" style={{ marginLeft: sidebarWidth }}>
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
-          <div className="flex-1 max-w-md flex items-center gap-2">
-            <SearchIcon className="w-5 h-5 text-slate-400 shrink-0" />
-            <input
-              type="search"
-              placeholder="Search…"
-              className="w-full px-3 py-2 rounded-md border border-slate-200 bg-slate-50 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400"
-            />
+      <div className={`flex-1 flex flex-col min-h-screen transition-[margin-left] duration-200 ease-in-out ml-0 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0 flex-1 order-2 sm:order-1">
+            <button type="button" onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Open menu">
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="flex-1 max-w-md flex items-center gap-2 min-w-0">
+              <SearchIcon className="w-5 h-5 text-slate-400 shrink-0 hidden sm:block" />
+              <input
+                type="search"
+                placeholder="Search…"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 bg-slate-50 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400"
+              />
+            </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <Notifications />
@@ -175,7 +199,7 @@ export default function StudentLayout() {
             </div>
           </div>
         </header>
-        <main className="flex-1 px-6 py-8 overflow-auto">
+        <main className="flex-1 px-4 sm:px-6 py-6 sm:py-8 overflow-auto">
           <Outlet />
         </main>
       </div>

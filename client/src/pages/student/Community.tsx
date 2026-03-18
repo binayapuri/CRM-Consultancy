@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, ThumbsUp, MapPin, GraduationCap, Plus, Search, Eye } from 'lucide-react';
-import { authFetch, useAuthStore } from '../../store/auth';
+import { useAuthStore } from '../../store/auth';
 
 interface Post {
   _id: string;
@@ -25,19 +25,12 @@ export default function Community() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [newPost, setNewPost] = useState({ title: '', content: '', tags: '', location: '', university: '', category: 'GENERAL', contactPreference: 'IN_APP_MESSAGE' });
-  const [search, setSearch] = useState('');
-  const [filterLocation, setFilterLocation] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
+  const [newPost, setNewPost] = useState({ title: '', content: '', tags: '', location: '', university: '' });
   const { user } = useAuthStore();
 
   const fetchPosts = async () => {
     try {
-      const qs = new URLSearchParams();
-      if (search) qs.set('search', search);
-      if (filterLocation) qs.set('location', filterLocation);
-      if (filterCategory) qs.set('category', filterCategory);
-      const res = await fetch(`/api/community/posts${qs.toString() ? `?${qs.toString()}` : ''}`);
+      const res = await fetch('/api/community/posts');
       if (res.ok) {
         const data = await res.json();
         setPosts(data);
@@ -51,14 +44,14 @@ export default function Community() {
 
   useEffect(() => {
     fetchPosts();
-  }, [search, filterLocation, filterCategory]);
+  }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await authFetch('/api/community/posts', {
+      const res = await fetch('/api/community/posts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({
           ...newPost,
           tags: newPost.tags.split(',').map(t => t.trim()).filter(Boolean)
@@ -66,7 +59,7 @@ export default function Community() {
       });
       if (res.ok) {
         setShowCreate(false);
-        setNewPost({ title: '', content: '', tags: '', location: '', university: '', category: 'GENERAL', contactPreference: 'IN_APP_MESSAGE' });
+        setNewPost({ title: '', content: '', tags: '', location: '', university: '' });
         fetchPosts();
       }
     } catch (e) {
@@ -76,8 +69,9 @@ export default function Community() {
 
   const handleUpvote = async (id: string) => {
     try {
-      const res = await authFetch(`/api/community/posts/${id}/upvote`, {
+      const res = await fetch(`/api/community/posts/${id}/upvote`, {
         method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (res.ok) {
         fetchPosts();
@@ -102,24 +96,22 @@ export default function Community() {
         </button>
       </div>
 
-      <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
-        <div className="flex-1 min-w-[300px] relative">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 mb-8">
+        <div className="flex-1 min-w-0 sm:min-w-[200px] relative">
           <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search discussions..." className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 focus:border-ori-500 transition" />
+          <input type="text" placeholder="Search discussions..." className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 focus:border-ori-500 transition" />
         </div>
-        <select value={filterLocation} onChange={e => setFilterLocation(e.target.value)} className="px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 font-medium text-slate-700">
-          <option value="">All Locations</option>
+        <select className="w-full sm:w-auto px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 font-medium text-slate-700 shrink-0">
+          <option>All Locations</option>
           <option>Sydney</option>
           <option>Melbourne</option>
           <option>Brisbane</option>
         </select>
-        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 font-medium text-slate-700">
-          <option value="">All Categories</option>
-          <option value="ROOM_RENT">Room Rent</option>
-          <option value="JOB_HELP">Job Help</option>
-          <option value="COMMUNITY_SUPPORT">Community Support</option>
-          <option value="STUDY_HELP">Study Help</option>
-          <option value="GENERAL">General</option>
+        <select className="w-full sm:w-auto px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 font-medium text-slate-700 shrink-0">
+          <option>All Topics</option>
+          <option>Visa</option>
+          <option>University</option>
+          <option>Accommodation</option>
         </select>
       </div>
 
@@ -185,7 +177,7 @@ export default function Community() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Content</label>
                 <textarea required rows={5} value={newPost.content} onChange={e => setNewPost({...newPost, content: e.target.value})} className="input resize-none" placeholder="Provide details..." />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Location</label>
                   <input value={newPost.location} onChange={e => setNewPost({...newPost, location: e.target.value})} className="input" placeholder="e.g. Sydney" />
@@ -193,26 +185,6 @@ export default function Community() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">University</label>
                   <input value={newPost.university} onChange={e => setNewPost({...newPost, university: e.target.value})} className="input" placeholder="e.g. UNSW" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Category</label>
-                  <select value={newPost.category} onChange={e => setNewPost({ ...newPost, category: e.target.value })} className="input">
-                    <option value="GENERAL">General</option>
-                    <option value="ROOM_RENT">Room Rent</option>
-                    <option value="JOB_HELP">Job Help</option>
-                    <option value="COMMUNITY_SUPPORT">Community Support</option>
-                    <option value="STUDY_HELP">Study Help</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Contact Preference</label>
-                  <select value={newPost.contactPreference} onChange={e => setNewPost({ ...newPost, contactPreference: e.target.value })} className="input">
-                    <option value="IN_APP_MESSAGE">In-app message</option>
-                    <option value="EMAIL">Email</option>
-                    <option value="PHONE">Phone</option>
-                  </select>
                 </div>
               </div>
               <div>

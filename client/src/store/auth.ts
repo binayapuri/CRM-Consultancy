@@ -105,8 +105,9 @@ export function authFetch(url: string, opts: RequestInit = {}): Promise<Response
   });
 }
 
-/** Safe JSON parse - throws clear error if server returns HTML (e.g. backend not running) */
+/** Safe JSON parse - throws clear error if server returns HTML or malformed JSON */
 export async function safeJson<T = unknown>(res: Response): Promise<T> {
+  const clone = res.clone();
   const contentType = res.headers.get('content-type') || '';
   if (!contentType.includes('application/json')) {
     const text = await res.text();
@@ -115,5 +116,13 @@ export async function safeJson<T = unknown>(res: Response): Promise<T> {
     }
     throw new Error(text || `Request failed: ${res.status}`);
   }
-  return res.json();
+  try {
+    return await res.json();
+  } catch {
+    const text = await clone.text().catch(() => '');
+    if (text?.trim().startsWith('<')) {
+      throw new Error('Backend returned HTML instead of JSON. Is the server running on port 4000? Run: npm run dev');
+    }
+    throw new Error(text ? `Invalid JSON: ${text.slice(0, 120)}...` : `Request failed: ${res.status}`);
+  }
 }

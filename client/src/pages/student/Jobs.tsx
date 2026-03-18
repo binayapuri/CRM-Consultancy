@@ -7,33 +7,15 @@ export default function Jobs() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('');
-  const [location, setLocation] = useState('');
-  const [jobType, setJobType] = useState('');
-  const [visaOnly, setVisaOnly] = useState(false);
-  const [error, setError] = useState('');
 
   const fetchData = async () => {
-    setError('');
-    setLoading(true);
     try {
-      const qs = new URLSearchParams();
-      if (query.trim()) qs.set('search', query.trim());
-      if (location.trim()) qs.set('location', location.trim());
-      if (jobType) qs.set('type', jobType);
-      if (visaOnly) qs.set('visaSponsorship', 'true');
       const [jRes, aRes] = await Promise.all([
-        authFetch(`/api/jobs${qs.toString() ? `?${qs.toString()}` : ''}`),
+        authFetch('/api/jobs'),
         authFetch('/api/jobs/my-applications')
       ]);
-      const jobsData = await jRes.json().catch(() => []);
-      const appsData = await aRes.json().catch(() => []);
-      if (!jRes.ok) throw new Error(jobsData?.error || 'Failed to load jobs');
-      if (!aRes.ok) throw new Error(appsData?.error || 'Failed to load applications');
-      setJobs(Array.isArray(jobsData) ? jobsData : []);
-      setApplications(Array.isArray(appsData) ? appsData : []);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load jobs');
+      setJobs(await jRes.json());
+      setApplications(await aRes.json());
     } finally {
       setLoading(false);
     }
@@ -41,7 +23,7 @@ export default function Jobs() {
 
   useEffect(() => {
     fetchData();
-  }, [query, location, jobType, visaOnly]);
+  }, []);
 
   const applyForJob = async (jobId: string) => {
     try {
@@ -65,36 +47,20 @@ export default function Jobs() {
   const formatType = (type: string) => type.replace('_', ' ');
 
   return (
-    <div className="w-full animate-fade-in-up">
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">Job & Pathway Matcher</h1>
+    <div className="w-full min-w-0 max-w-full animate-fade-in-up">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-display font-black text-slate-900 tracking-tight">Job & Pathway Matcher</h1>
         <p className="text-slate-500 mt-1">Opportunities organically ranked by your ANZSCO code: <span className="font-bold font-mono bg-sky-100 text-sky-800 px-2 rounded">{user?.profile?.anzscoCode || 'Not Set'}</span></p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-2/3">
-          <div className="grid md:grid-cols-4 gap-3 mb-8">
-            <div className="md:col-span-2 relative">
+          <div className="flex gap-4 mb-8">
+            <div className="flex-1 relative">
               <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search title, company, tags..."
-                className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition"
-              />
+              <input type="text" placeholder="Search title or company..." className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition" />
             </div>
-            <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location" className="input" />
-            <select className="input" value={jobType} onChange={(e) => setJobType(e.target.value)}>
-              <option value="">All Types</option>
-              {['FULL_TIME', 'PART_TIME', 'CASUAL', 'CONTRACT', 'INTERNSHIP'].map((x) => <option key={x}>{x}</option>)}
-            </select>
-            <label className="md:col-span-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <input type="checkbox" checked={visaOnly} onChange={(e) => setVisaOnly(e.target.checked)} />
-              Show only jobs with visa sponsorship
-            </label>
           </div>
-          {error && <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</div>}
 
           <div className="space-y-4">
             {loading ? (
@@ -159,8 +125,8 @@ export default function Jobs() {
           </div>
         </div>
 
-        <div className="lg:w-1/3 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm sticky top-6">
+        <div className="lg:w-1/3 space-y-6 min-w-0">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm lg:sticky lg:top-6">
             <div className="bg-slate-50 p-6 border-b border-slate-200">
               <h3 className="font-bold text-slate-900 flex items-center gap-2">My Applications</h3>
             </div>
