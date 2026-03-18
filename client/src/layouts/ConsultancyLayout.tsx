@@ -118,12 +118,13 @@ export default function ConsultancyLayout() {
         </div>
       </aside>
 
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'ml-0' : 'ml-64'}`}>
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ml-0 ${!sidebarCollapsed ? 'lg:ml-64' : ''}`}>
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition"
+            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
             title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+            aria-label={sidebarCollapsed ? 'Open menu' : 'Close menu'}
           >
             {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
           </button>

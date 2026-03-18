@@ -1,7 +1,9 @@
-import Job from '../../shared/models/Job.js';
-import JobApplication from '../../shared/models/JobApplication.js';
-import RecruiterEmployerProfile from '../../shared/models/RecruiterEmployerProfile.js';
-import Notification from '../../shared/models/Notification.js';
+import Job from '../models/Job.js';
+import JobApplication from '../models/JobApplication.js';
+import RecruiterEmployerProfile from '../models/RecruiterEmployerProfile.js';
+import SavedJob from '../models/SavedJob.js';
+import JobAlert from '../models/JobAlert.js';
+import Notification from '../models/Notification.js';
 
 export class JobService {
   static async getActiveJobs(user, query = {}) {
@@ -175,6 +177,50 @@ export class JobService {
     }
     row.isActive = false;
     await row.save();
+    return { success: true };
+  }
+
+  static async getSavedJobs(userId) {
+    const saved = await SavedJob.find({ userId }).populate('jobId').sort({ createdAt: -1 });
+    return saved.filter(s => s.jobId).map(s => s.jobId);
+  }
+
+  static async saveJob(userId, jobId) {
+    const job = await Job.findById(jobId);
+    if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
+    const existing = await SavedJob.findOne({ userId, jobId });
+    if (existing) return existing;
+    return SavedJob.create({ userId, jobId });
+  }
+
+  static async unsaveJob(userId, jobId) {
+    await SavedJob.deleteOne({ userId, jobId });
+    return { success: true };
+  }
+
+  static async getJobAlerts(userId) {
+    return JobAlert.find({ userId }).sort({ createdAt: -1 });
+  }
+
+  static async createJobAlert(userId, data) {
+    const User = (await import('../models/User.js')).default;
+    const email = data.email || (await User.findById(userId).select('email').lean())?.email;
+    if (!email) throw Object.assign(new Error('Email is required for job alerts'), { status: 400 });
+    return JobAlert.create({
+      userId,
+      keywords: data.keywords || '',
+      location: data.location || '',
+      jobType: data.jobType || undefined,
+      visaSponsorship: data.visaSponsorship === true,
+      email,
+      isActive: true,
+    });
+  }
+
+  static async deleteJobAlert(userId, id) {
+    const alert = await JobAlert.findOne({ _id: id, userId });
+    if (!alert) throw Object.assign(new Error('Alert not found'), { status: 404 });
+    await JobAlert.deleteOne({ _id: id });
     return { success: true };
   }
 }

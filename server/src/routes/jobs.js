@@ -26,6 +26,16 @@ router.patch('/applications/:id/status', authenticate, requireRole('EMPLOYER', '
 // Student: Get my applications
 router.get('/my-applications', authenticate, requireRole('STUDENT'), asyncHandler(JobController.getMyApplications));
 
+// Student: Saved jobs
+router.get('/saved', authenticate, requireRole('STUDENT'), asyncHandler(JobController.getSavedJobs));
+router.post('/:id/save', authenticate, requireRole('STUDENT'), asyncHandler(JobController.saveJob));
+router.delete('/:id/save', authenticate, requireRole('STUDENT'), asyncHandler(JobController.unsaveJob));
+
+// Student: Job alerts
+router.get('/alerts', authenticate, requireRole('STUDENT'), asyncHandler(JobController.getJobAlerts));
+router.post('/alerts', authenticate, requireRole('STUDENT'), asyncHandler(JobController.createJobAlert));
+router.delete('/alerts/:id', authenticate, requireRole('STUDENT'), asyncHandler(JobController.deleteJobAlert));
+
 // Student: Apply to a job
 router.post('/:id/apply', authenticate, requireRole('STUDENT'), validate(schemas.applyJobSchema), asyncHandler(JobController.applyToJob));
 

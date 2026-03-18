@@ -1,7 +1,7 @@
-import Message from '../../shared/models/Message.js';
-import CommunityPost from '../../shared/models/CommunityPost.js';
-import CommunityComment from '../../shared/models/CommunityComment.js';
-import Notification from '../../shared/models/Notification.js';
+import Message from '../models/Message.js';
+import CommunityPost from '../models/CommunityPost.js';
+import CommunityComment from '../models/CommunityComment.js';
+import Notification from '../models/Notification.js';
 
 export class CollaborationService {
   // --- Messages ---
@@ -26,12 +26,57 @@ export class CollaborationService {
       return rows.reverse();
     }
 
-    const cid = user.profile?.consultancyId || user._id;
-    const messages = await Message.find({ consultancyId: cid, channel: 'team' })
+    const cid = user.profile?.consultancyId;
+    if (cid) {
+      const messages = await Message.find({ consultancyId: cid, channel: 'team' })
+        .populate('senderId', 'profile email')
+        .sort({ createdAt: -1 })
+        .limit(50);
+      return messages.reverse();
+    }
+
+    const directQ = {
+      channel: 'direct',
+      $or: [{ senderId: user._id }, { recipientId: user._id }],
+    };
+    const rows = await Message.find(directQ)
       .populate('senderId', 'profile email')
+      .populate('recipientId', 'profile email')
+      .populate('contextPostId', 'title')
       .sort({ createdAt: -1 })
-      .limit(50);
-    return messages.reverse();
+      .limit(200);
+    return rows.reverse();
+  }
+
+  static async getConversations(user) {
+    const directQ = {
+      channel: 'direct',
+      $or: [{ senderId: user._id }, { recipientId: user._id }],
+    };
+    const messages = await Message.find(directQ)
+      .populate('senderId', 'profile email')
+      .populate('recipientId', 'profile email')
+      .populate('contextPostId', 'title')
+      .sort({ createdAt: -1 })
+      .limit(500);
+    const seen = new Map();
+    const convos = [];
+    for (const m of messages) {
+      const other = m.senderId?._id?.toString() === user._id.toString() ? m.recipientId : m.senderId;
+      const postId = m.contextPostId?._id?.toString() || '';
+      const key = `${other?._id || ''}:${postId}`;
+      if (!seen.has(key)) {
+        seen.set(key, true);
+        convos.push({
+          otherUser: other,
+          contextPostId: m.contextPostId?._id,
+          contextPostTitle: m.contextPostId?.title,
+          lastMessage: m.text,
+          lastAt: m.createdAt,
+        });
+      }
+    }
+    return convos.sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt));
   }
 
   static async sendMessage(user, payload) {
@@ -42,15 +87,16 @@ export class CollaborationService {
     const cid = user.profile?.consultancyId || user._id;
 
     const data = {
-      consultancyId: cid,
       senderId: user._id,
       text,
-      channel: 'team',
+      channel: recipientId ? 'direct' : 'team',
     };
     if (recipientId) {
       data.recipientId = recipientId;
-      data.channel = 'direct';
       if (postId) data.contextPostId = postId;
+      data.consultancyId = cid || null;
+    } else {
+      data.consultancyId = cid;
     }
 
     const msg = await Message.create({
@@ -107,12 +153,53 @@ export class CollaborationService {
   }
 
   static async addComment(postId, authorId, content) {
+    const post = await CommunityPost.findById(postId);
+    if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
     const comment = new CommunityComment({
       postId,
       authorId,
       content
     });
-    return comment.save();
+    const saved = await comment.save();
+    if (post.authorId && post.authorId.toString() !== authorId.toString()) {
+      await Notification.create({
+        userId: post.authorId,
+        type: 'COMMUNITY_COMMENT',
+        title: 'New comment on your post',
+        message: content.slice(0, 100),
+        relatedEntityType: 'CommunityPost',
+        relatedEntityId: postId,
+      });
+    }
+    return saved;
+  }
+
+  static async sendMessageToPostAuthor(user, postId, text) {
+    const post = await CommunityPost.findById(postId);
+    if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
+    const authorId = post.authorId;
+    if (!authorId) throw Object.assign(new Error('Post author not found'), { status: 404 });
+    if (authorId.toString() === (user._id || user.id).toString()) {
+      throw Object.assign(new Error('Cannot message yourself'), { status: 400 });
+    }
+    const msg = await Message.create({
+      senderId: user._id,
+      recipientId: authorId,
+      contextPostId: postId,
+      text: String(text || '').trim(),
+      channel: 'direct',
+    });
+    await Notification.create({
+      userId: authorId,
+      type: 'DIRECT_MESSAGE',
+      title: 'New message about your community post',
+      message: String(text || '').trim().slice(0, 140),
+      relatedEntityType: 'CommunityPost',
+      relatedEntityId: postId,
+    });
+    return Message.findById(msg._id)
+      .populate('senderId', 'profile email')
+      .populate('recipientId', 'profile email');
   }
 
   static async upvotePost(postId, userId) {

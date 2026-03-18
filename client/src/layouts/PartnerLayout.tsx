@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
-import { LogOut, FileText, Briefcase, ShieldPlus, Menu } from 'lucide-react';
+import { LogOut, FileText, Briefcase, ShieldPlus, Menu, Building2 } from 'lucide-react';
 
 export default function PartnerLayout() {
   const { user, logout } = useAuthStore();
@@ -18,11 +18,14 @@ export default function PartnerLayout() {
   const getNavItems = () => {
     switch (user?.role) {
       case 'UNIVERSITY_PARTNER':
-        return [{ path: '/partner/applications', label: 'Offer Letters', icon: FileText }];
+        return [
+          { path: '/partner/profile', label: 'University Profile', icon: Building2 },
+          { path: '/partner/applications', label: 'Offer Letters', icon: FileText },
+        ];
       case 'INSURANCE_PARTNER':
         return [{ path: '/partner/insurance', label: 'Policies', icon: ShieldPlus }];
       case 'EMPLOYER':
-        return [{ path: '/partner/jobs', label: 'Job Postings', icon: Briefcase }];
+      case 'RECRUITER':
         return [{ path: '/partner/jobs', label: 'Job Postings', icon: Briefcase }];
       case 'SUPER_ADMIN':
         return [

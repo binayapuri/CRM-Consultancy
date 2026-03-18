@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, Video, User, Building2, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { authFetch } from '../../store/auth';
 
 interface Appointment {
   _id: string;
@@ -19,12 +20,10 @@ export default function Bookings() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/appointments', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
+    authFetch('/api/appointments')
       .then(res => res.json())
       .then(data => {
-        setAppointments(data);
+        setAppointments(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(err => {

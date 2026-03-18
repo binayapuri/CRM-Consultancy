@@ -56,3 +56,14 @@ body {
 .toast-animate-in {
   animation: toast-slide-in 0.3s ease-out both;
 }
+
+/* Hide scrollbar for horizontal tab scroll on mobile */
+.scrollbar-hide::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide,
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

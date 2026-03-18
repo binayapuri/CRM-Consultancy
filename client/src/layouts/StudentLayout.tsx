@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt, Menu } from 'lucide-react';
+import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, MessageSquare, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt, Menu } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import AIChatWidget from '../components/AIChatWidget';
 import Notifications from '../components/Notifications';
@@ -32,6 +32,7 @@ const navSections = [
     label: 'Explore',
     items: [
       { to: 'jobs', icon: Briefcase, label: 'Job Board' },
+      { to: 'community', icon: MessageSquare, label: 'Community' },
       { to: 'news', icon: Newspaper, label: 'News & Rules' },
       { to: 'consultancies', icon: SearchIcon, label: 'Find Consultancy' },
     ],
@@ -39,6 +40,7 @@ const navSections = [
   {
     label: 'Account',
     items: [
+      { to: 'messages', icon: MessageSquare, label: 'Messages' },
       { to: 'settings', icon: Settings, label: 'Settings' },
     ],
   },

@@ -9,6 +9,10 @@ const communityPostSchema = new mongoose.Schema({
   location: String, // e.g. 'Sydney', 'Melbourne'
   university: String, // e.g. 'UNSW', 'Monash'
   contactPreference: { type: String, enum: ['IN_APP_MESSAGE', 'EMAIL', 'PHONE'], default: 'IN_APP_MESSAGE' },
+  price: Number,
+  priceType: { type: String, enum: ['FIXED', 'NEGOTIABLE', 'FREE'], default: 'FIXED' },
+  suburb: String,
+  state: String,
   moderationFlags: [String],
   upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   views: { type: Number, default: 0 },

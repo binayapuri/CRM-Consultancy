@@ -5,13 +5,15 @@ const courseSchema = new mongoose.Schema({
   name: { type: String, required: true },
   faculty: String,
   level: { type: String, enum: ['CERTIFICATE', 'DIPLOMA', 'BACHELORS', 'MASTERS', 'PHD', 'OTHER'], required: true },
-  duration: String, // e.g., "3 Years"
-  tuitionFee: Number, // Annual or total fee
-  intakeDates: [String], // e.g., ["February", "July"]
+  duration: String,
+  tuitionFee: Number,
+  cricosCode: String,
+  intakeDates: [String],
+  intakeMonths: [String],
   prPathwayPotential: { type: Boolean, default: false },
   requirements: {
-    english: String, // e.g., "IELTS 6.5"
-    academic: String // e.g., "High School 70%"
+    english: String,
+    academic: String
   },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });

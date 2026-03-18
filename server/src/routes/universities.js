@@ -8,6 +8,12 @@ import * as schemas from '../shared/schemas/education.schema.js';
 
 const router = express.Router();
 
+// University partner: Get own university + courses
+router.get('/me', authenticate, requireRole('UNIVERSITY_PARTNER'), asyncHandler(EducationController.getUniversityMe));
+
+// University partner: Update own university
+router.patch('/me', authenticate, requireRole('UNIVERSITY_PARTNER'), asyncHandler(EducationController.updateUniversityMe));
+
 // Public: Get all active universities
 router.get('/', asyncHandler(EducationController.getUniversities));
 
@@ -26,10 +32,10 @@ router.get('/:id/courses', asyncHandler(EducationController.getCoursesByUniversi
 // Admin: Get all courses for a uni
 router.get('/:id/courses/admin', authenticate, requireRole('SUPER_ADMIN'), asyncHandler(EducationController.getCoursesByUniversity));
 
-// Admin: Create Course
-router.post('/:id/courses', authenticate, requireRole('SUPER_ADMIN'), validate(schemas.createCourseSchema), asyncHandler(EducationController.createCourse));
+// Admin or University partner: Create Course (partner must own the university)
+router.post('/:id/courses', authenticate, requireRole('SUPER_ADMIN', 'UNIVERSITY_PARTNER'), validate(schemas.createCourseSchema), asyncHandler(EducationController.createCourse));
 
-// Admin: Update Course
-router.patch('/courses/:courseId', authenticate, requireRole('SUPER_ADMIN'), validate(schemas.updateCourseSchema), asyncHandler(EducationController.updateCourse));
+// Admin or University partner: Update Course
+router.patch('/courses/:courseId', authenticate, requireRole('SUPER_ADMIN', 'UNIVERSITY_PARTNER'), validate(schemas.updateCourseSchema), asyncHandler(EducationController.updateCourse));
 
 export default router;

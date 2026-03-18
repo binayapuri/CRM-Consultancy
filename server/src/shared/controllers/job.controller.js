@@ -55,4 +55,34 @@ export class JobController {
     const row = await JobService.deleteRecruiterEmployer(req.user, req.params.id);
     res.json(row);
   }
+
+  static async getSavedJobs(req, res) {
+    const jobs = await JobService.getSavedJobs(req.user._id);
+    res.json(jobs);
+  }
+
+  static async saveJob(req, res) {
+    const saved = await JobService.saveJob(req.user._id, req.params.id);
+    res.status(201).json(saved);
+  }
+
+  static async unsaveJob(req, res) {
+    await JobService.unsaveJob(req.user._id, req.params.id);
+    res.json({ success: true });
+  }
+
+  static async getJobAlerts(req, res) {
+    const alerts = await JobService.getJobAlerts(req.user._id);
+    res.json(alerts);
+  }
+
+  static async createJobAlert(req, res) {
+    const alert = await JobService.createJobAlert(req.user._id, req.body);
+    res.status(201).json(alert);
+  }
+
+  static async deleteJobAlert(req, res) {
+    await JobService.deleteJobAlert(req.user._id, req.params.id);
+    res.json({ success: true });
+  }
 }

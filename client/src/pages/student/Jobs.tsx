@@ -1,29 +1,59 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { authFetch, useAuthStore } from '../../store/auth';
-import { Briefcase, MapPin, Building2, Search, DollarSign, CheckCircle } from 'lucide-react';
+import { Briefcase, MapPin, Building2, Search, DollarSign, CheckCircle, Bookmark } from 'lucide-react';
 
 export default function Jobs() {
   const { user } = useAuthStore();
   const [jobs, setJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState({ search: '', location: '', type: '', visaSponsorship: '' });
   const [loading, setLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const [jRes, aRes] = await Promise.all([
-        authFetch('/api/jobs'),
-        authFetch('/api/jobs/my-applications')
+      const params = new URLSearchParams();
+      if (filters.search) params.set('search', filters.search);
+      if (filters.location) params.set('location', filters.location);
+      if (filters.type) params.set('type', filters.type);
+      if (filters.visaSponsorship) params.set('visaSponsorship', 'true');
+      const qs = params.toString();
+      const [jRes, aRes, sRes] = await Promise.all([
+        authFetch(`/api/jobs${qs ? `?${qs}` : ''}`),
+        authFetch('/api/jobs/my-applications'),
+        authFetch('/api/jobs/saved'),
       ]);
       setJobs(await jRes.json());
       setApplications(await aRes.json());
+      const saved = await sRes.json();
+      setSavedIds(new Set((saved || []).map((j: any) => j._id)));
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.search, filters.location, filters.type, filters.visaSponsorship]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  const toggleSave = async (jobId: string) => {
+    const isSaved = savedIds.has(jobId);
+    try {
+      const res = isSaved
+        ? await authFetch(`/api/jobs/${jobId}/save`, { method: 'DELETE' })
+        : await authFetch(`/api/jobs/${jobId}/save`, { method: 'POST' });
+      if (res.ok) {
+        setSavedIds(prev => {
+          const next = new Set(prev);
+          if (isSaved) next.delete(jobId);
+          else next.add(jobId);
+          return next;
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const applyForJob = async (jobId: string) => {
     try {
@@ -55,11 +85,39 @@ export default function Jobs() {
 
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-2/3">
-          <div className="flex gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <div className="flex-1 relative">
               <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-              <input type="text" placeholder="Search title or company..." className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition" />
+              <input
+                type="text"
+                placeholder="Search title or company..."
+                value={filters.search}
+                onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+                className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition"
+              />
             </div>
+            <input
+              placeholder="Location"
+              value={filters.location}
+              onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
+              className="px-4 py-3 rounded-xl border border-slate-200 bg-white sm:w-40"
+            />
+            <select
+              value={filters.type}
+              onChange={e => setFilters(f => ({ ...f, type: e.target.value }))}
+              className="px-4 py-3 rounded-xl border border-slate-200 bg-white sm:w-40"
+            >
+              <option value="">All types</option>
+              <option value="FULL_TIME">Full-time</option>
+              <option value="PART_TIME">Part-time</option>
+              <option value="CASUAL">Casual</option>
+              <option value="CONTRACT">Contract</option>
+              <option value="INTERNSHIP">Internship</option>
+            </select>
+            <label className="flex items-center gap-2 px-4 py-3 rounded-xl border border-slate-200 bg-white cursor-pointer">
+              <input type="checkbox" checked={!!filters.visaSponsorship} onChange={e => setFilters(f => ({ ...f, visaSponsorship: e.target.checked ? '1' : '' }))} />
+              <span className="text-sm font-medium">Visa sponsorship</span>
+            </label>
           </div>
 
           <div className="space-y-4">
@@ -76,6 +134,7 @@ export default function Jobs() {
                 const isMatch = Boolean(user?.profile?.anzscoCode && job.anzscoCode === user.profile.anzscoCode);
                 const hasApplied = applications.some(a => a.jobId?._id === job._id);
 
+                const isSaved = savedIds.has(job._id);
                 return (
                   <div key={job._id} className={`bg-white rounded-lg border p-6 shadow-sm transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6 ${isMatch ? 'border-emerald-300 bg-emerald-50/10' : 'border-slate-200'}`}>
                     <div className="flex-1">
@@ -104,7 +163,14 @@ export default function Jobs() {
                       </div>
                     </div>
 
-                    <div className="shrink-0 flex items-center justify-center">
+                    <div className="shrink-0 flex items-center gap-2 justify-center">
+                       <button
+                         onClick={() => toggleSave(job._id)}
+                         className={`p-2 rounded-lg transition ${isSaved ? 'text-ori-600 bg-ori-50' : 'text-slate-400 hover:bg-slate-100'}`}
+                         title={isSaved ? 'Unsave' : 'Save job'}
+                       >
+                         <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                       </button>
                        {hasApplied ? (
                          <div className="px-6 py-3 bg-slate-100 text-slate-500 font-bold rounded-xl flex items-center gap-2">
                            <CheckCircle className="w-4 h-4" /> Applied

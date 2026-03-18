@@ -9,8 +9,11 @@ function getNotificationLink(n: any): string | null {
   switch (n.relatedEntityType) {
     case 'Client': return `/consultancy/clients/${n.relatedEntityId}`;
     case 'Task': return `/consultancy/kanban`;
-    case 'Application': return `/consultancy/clients`; // Would need clientId - could enhance
+    case 'Application': return `/consultancy/clients`;
     case 'Document': return `/consultancy/clients`;
+    case 'CommunityPost': return `/student/community/${n.relatedEntityId}`;
+    case 'Message':
+    case 'DIRECT_MESSAGE': return `/student/messages`;
     default: return null;
   }
 }
@@ -69,7 +72,7 @@ export default function Notifications() {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-2 w-96 max-h-96 overflow-y-auto bg-white rounded-xl shadow-xl border border-slate-200 z-20">
+          <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-96 max-h-96 overflow-y-auto bg-white rounded-xl shadow-xl border border-slate-200 z-20">
             <div className="p-4 border-b border-slate-200 flex items-center justify-between">
               <h3 className="font-semibold text-slate-900">Notifications</h3>
               {unreadCount > 0 && <button onClick={markAllRead} className="text-sm text-ori-600 hover:underline">Mark all read</button>}
