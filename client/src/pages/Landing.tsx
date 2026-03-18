@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { GraduationCap, Building2, Calculator, Compass, Shield, Users, Send, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import { getDashboardPathForRole } from '../lib/authHelpers';
@@ -54,6 +55,13 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-[#020617] selection:bg-emerald-500/30">
+      <Helmet>
+        <title>Big Few | Australian Migration CRM & Student Hub</title>
+        <meta name="description" content="Experience the future of Australian migration. Manage student visas, PR pathways, and consultancy operations seamlessly." />
+        <meta name="keywords" content="Australia, Visa, Student Visa, PR Pathways, Migration CRM, 189 Visa, 190 Visa, 485 Visa" />
+        <meta property="og:title" content="Big Few | Australian Migration CRM" />
+        <meta property="og:description" content="Manage student visas, PR pathways, and consultancy operations seamlessly." />
+      </Helmet>
       
       {/* Background Orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -77,6 +85,7 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#about" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Our Vision</a>
             <a href="#pathways" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Pathways</a>
+            <a href="#news" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">News</a>
             <a href="#enquiry" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Contact</a>
           </div>
           <div className="flex items-center gap-4">
@@ -326,6 +335,19 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Latest News */}
+      <section id="news" className="py-20 relative z-10 px-6 lg:px-12 bg-white/5 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-4xl font-display font-black text-white">Latest News</h2>
+            <Link to="/news" className="text-emerald-400 font-bold hover:text-emerald-300 transition-colors flex items-center gap-2">
+              View All <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <NewsSection />
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-white/10 py-12 relative z-10 bg-black/50">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row justify-between items-center gap-6">
@@ -341,6 +363,48 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function NewsSection() {
+  const [news, setNews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/news')
+      .then(r => r.json())
+      .then(data => {
+        setNews(Array.isArray(data) ? data.slice(0, 3) : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="text-center text-slate-400 py-10">Loading news...</div>;
+  if (!news.length) return <div className="text-center text-slate-400 py-10">No specific news updates at the moment.</div>;
+
+  return (
+    <div className="grid md:grid-cols-3 gap-6">
+      {news.map(article => (
+        <Link key={article._id} to={`/news/${article.slug}`} className="group block rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:bg-white/10 hover:border-emerald-500/30 transition-all">
+          {article.coverImage && (
+            <div className="h-48 overflow-hidden relative">
+              <img src={article.coverImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            </div>
+          )}
+          <div className="p-6">
+            <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3">
+              {article.categoryId?.name || article.category || 'Update'}
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-emerald-300 transition-colors">{article.title}</h3>
+            <p className="text-slate-400 text-sm line-clamp-3 mb-4">{article.summary || article.content}</p>
+            <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/10">
+              <span className="text-xs text-slate-500">{new Date(article.publishedAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }

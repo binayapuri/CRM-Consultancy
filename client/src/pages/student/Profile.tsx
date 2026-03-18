@@ -146,20 +146,14 @@ export default function StudentProfile() {
       )}
 
       {/* Header */}
-      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-5xl font-black text-slate-900 tracking-tight mb-2">My Profile</h1>
-          <p className="text-slate-500 font-bold max-w-lg">Manage your migration journey details. This is your "source of truth"—everything here helps your agent and AI Compass work for you.</p>
+      <div className="mb-8">
+        <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 mb-2 flex items-center gap-2">
+          <User className="w-3.5 h-3.5" /> Student Portal
         </div>
-        <div className="flex items-center gap-4 bg-white p-2 rounded-xl border border-slate-200">
-          <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-xl border border-indigo-100 uppercase">
-             {profile.firstName?.[0]}{profile.lastName?.[0]}
-          </div>
-          <div className="pr-4">
-            <p className="font-black text-slate-800 leading-none mb-1">{profile.firstName} {profile.lastName}</p>
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Student Portal Profile</p>
-          </div>
-        </div>
+        <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight mb-2">My Profile</h1>
+        <p className="text-slate-500 text-sm font-medium max-w-none">
+          Manage your migration journey details. This is your <span className="text-indigo-600 font-bold">"source of truth"</span>—everything here helps your agent and AI Compass work for you.
+        </p>
       </div>
 
       {/* Modern Navigation Tabs */}

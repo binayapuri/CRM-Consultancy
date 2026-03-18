@@ -292,7 +292,7 @@ router.get('/invoices/export', async (req, res) => {
     zip.on('error', (err) => {
       try {
         res.status(500).end();
-      } catch {}
+      } catch { }
       throw err;
     });
     zip.pipe(res);
@@ -682,14 +682,14 @@ export async function getPointsHandler(req, res) {
 // ─── PATCH /api/student/points — Save PR calculator inputs and total ───────────
 export async function savePointsHandler(req, res) {
   // #region agent log
-  fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:entry', message: 'handler entered', data: { userId: req.user?._id?.toString(), hasBody: !!req.body, bodyKeys: req.body ? Object.keys(req.body) : [] }, timestamp: Date.now(), hypothesisId: 'H3' }) }).catch(() => {});
+  fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:entry', message: 'handler entered', data: { userId: req.user?._id?.toString(), hasBody: !!req.body, bodyKeys: req.body ? Object.keys(req.body) : [] }, timestamp: Date.now(), hypothesisId: 'H3' }) }).catch(() => { });
   // #endregion
   try {
     const user = await User.findById(req.user._id).select('profile');
     const baseProfile = { ...(user?.profile || {}), email: user?.email || user?.profile?.email || '' };
     const client = await getOrCreateStudentClient(req.user._id, baseProfile);
     // #region agent log
-    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:afterClient', message: 'client resolved', data: { clientId: client?._id?.toString() }, timestamp: Date.now(), hypothesisId: 'H4' }) }).catch(() => {});
+    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:afterClient', message: 'client resolved', data: { clientId: client?._id?.toString() }, timestamp: Date.now(), hypothesisId: 'H4' }) }).catch(() => { });
     // #endregion
     const {
       age,
@@ -736,12 +736,12 @@ export async function savePointsHandler(req, res) {
       { new: true }
     );
     // #region agent log
-    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:success', message: 'saved', data: {}, timestamp: Date.now(), hypothesisId: 'H5' }) }).catch(() => {});
+    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:success', message: 'saved', data: {}, timestamp: Date.now(), hypothesisId: 'H5' }) }).catch(() => { });
     // #endregion
     res.json({ pointsData: updated.pointsData });
   } catch (err) {
     // #region agent log
-    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:catch', message: 'handler error', data: { errMessage: err?.message, errName: err?.name }, timestamp: Date.now(), hypothesisId: 'H3' }) }).catch(() => {});
+    fetch('http://127.0.0.1:7746/ingest/ebf2a8b6-d58b-4377-b39c-003055b4ec8c', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6e5329' }, body: JSON.stringify({ sessionId: '6e5329', location: 'student.js:savePointsHandler:catch', message: 'handler error', data: { errMessage: err?.message, errName: err?.name }, timestamp: Date.now(), hypothesisId: 'H3' }) }).catch(() => { });
     // #endregion
     res.status(500).json({ error: err.message });
   }
@@ -1327,7 +1327,7 @@ router.patch('/family-members/:memberId', async (req, res) => {
     if (!client) return res.status(404).json({ error: 'Profile not found' });
     const member = client.familyMembers.id(req.params.memberId);
     if (!member) return res.status(404).json({ error: 'Family member not found' });
-    const allowed = ['relationship','firstName','lastName','dob','nationality','passportNumber','passportExpiry','includedInApplication','visaStatus','notes'];
+    const allowed = ['relationship', 'firstName', 'lastName', 'dob', 'nationality', 'passportNumber', 'passportExpiry', 'includedInApplication', 'visaStatus', 'notes'];
     for (const k of allowed) {
       if (req.body[k] !== undefined) {
         if ((k === 'dob' || k === 'passportExpiry') && req.body[k]) member[k] = new Date(req.body[k]);

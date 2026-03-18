@@ -89,6 +89,8 @@ import SponsorCompanyInfo from './pages/sponsor/CompanyInfo';
 
 // Landing
 import Landing from './pages/Landing';
+import PublicNews from './pages/public/PublicNews';
+import PublicNewsDetail from './pages/public/PublicNewsDetail';
 
 // Global UI
 import { ToastContainer, Modal, ConfirmDialog } from './components/ui';
@@ -114,6 +116,8 @@ export default function App() {
       <ConfirmDialog />
       <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/news" element={<PublicNews />} />
+      <Route path="/news/:slug" element={<PublicNewsDetail />} />
       <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
       <Route path="/forgot-password" element={<GuestOnlyRoute><ForgotPassword /></GuestOnlyRoute>} />
       <Route path="/reset-password" element={<GuestOnlyRoute><ResetPassword /></GuestOnlyRoute>} />
