@@ -1,6 +1,11 @@
 import { JobService } from '../services/job.service.js';
 
 export class JobController {
+  static async getPublicJobs(req, res) {
+    const jobs = await JobService.getPublicJobs(req.query);
+    res.json(jobs);
+  }
+
   static async getActiveJobs(req, res) {
     const jobs = await JobService.getActiveJobs(req.user, req.query);
     res.json(jobs);
@@ -34,6 +39,16 @@ export class JobController {
   static async createJob(req, res) {
     const job = await JobService.createJob(req.body, req.user);
     res.status(201).json(job);
+  }
+
+  static async updateJob(req, res) {
+    const job = await JobService.updateJob(req.params.id, req.user, req.body);
+    res.json(job);
+  }
+
+  static async closeJob(req, res) {
+    const job = await JobService.closeJob(req.params.id, req.user);
+    res.json(job);
   }
 
   static async listRecruiterEmployers(req, res) {

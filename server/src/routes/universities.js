@@ -1,10 +1,24 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
 import { authenticate, requireRole } from '../shared/middleware/auth.js';
 import { validate } from '../shared/middleware/validate.js';
 import { asyncHandler } from '../shared/utils/asyncHandler.js';
 
 import { EducationController } from '../shared/controllers/education.controller.js';
 import * as schemas from '../shared/schemas/education.schema.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadsDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => cb(null, `university-logo-${Date.now()}-${(file.originalname || '').replace(/[^a-zA-Z0-9.-]/g, '_')}`),
+});
+const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } }); // 2MB
 
 const router = express.Router();
 
@@ -14,11 +28,17 @@ router.get('/me', authenticate, requireRole('UNIVERSITY_PARTNER'), asyncHandler(
 // University partner: Update own university
 router.patch('/me', authenticate, requireRole('UNIVERSITY_PARTNER'), asyncHandler(EducationController.updateUniversityMe));
 
+// University partner: Upload logo
+router.post('/me/logo', authenticate, requireRole('UNIVERSITY_PARTNER'), upload.single('file'), asyncHandler(EducationController.uploadLogoMe));
+
 // Public: Get all active universities
 router.get('/', asyncHandler(EducationController.getUniversities));
 
 // Admin: Get all universities (even inactive)
 router.get('/admin', authenticate, requireRole('SUPER_ADMIN'), asyncHandler(EducationController.getUniversities));
+
+// Admin: Get single university
+router.get('/:id', authenticate, requireRole('SUPER_ADMIN'), asyncHandler(EducationController.getUniversityById));
 
 // Admin: Create University
 router.post('/', authenticate, requireRole('SUPER_ADMIN'), validate(schemas.createUniversitySchema), asyncHandler(EducationController.createUniversity));

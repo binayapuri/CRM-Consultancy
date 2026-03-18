@@ -37,6 +37,11 @@ export class EducationController {
     res.json(unis);
   }
 
+  static async getUniversityById(req, res) {
+    const uni = await EducationService.getUniversityById(req.params.id);
+    res.json(uni);
+  }
+
   static async createUniversity(req, res) {
     const uni = await EducationService.createUniversity(req.body);
     res.status(201).json(uni);
@@ -85,6 +90,13 @@ export class EducationController {
 
   static async updateUniversityMe(req, res) {
     const uni = await EducationService.updateUniversityForPartner(req.user, req.body);
+    res.json(uni);
+  }
+
+  static async uploadLogoMe(req, res) {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const uni = await EducationService.updateUniversityForPartner(req.user, { logoUrl: fileUrl });
     res.json(uni);
   }
 }

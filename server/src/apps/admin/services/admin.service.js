@@ -11,12 +11,12 @@ const MASK = '••••••••';
 export class AdminService {
   static async getPendingVerifications() {
     const consultancies = await Consultancy.find({ verified: false }).select('name email abn phone createdAt marnNumbers');
-    const employers = await Employer.find({ verificationStatus: 'PENDING' }).select('companyName abn industry website createdAt');
+    const employers = await Employer.find({ verificationStatus: 'PENDING' }).populate('userId', 'email').select('companyName abn industry website createdAt userId');
     const insurers = await InsuranceProvider.find({ verificationStatus: 'PENDING' }).select('companyName contactDetails createdAt');
 
     return {
       consultancies: consultancies.map(c => ({ id: c._id, type: 'CONSULTANCY', name: c.name, email: c.email, abn: c.abn, marn: c.marnNumbers?.[0], date: c.createdAt })),
-      employers: employers.map(e => ({ id: e._id, type: 'EMPLOYER', name: e.companyName, abn: e.abn, industry: e.industry, date: e.createdAt })),
+      employers: employers.map(e => ({ id: e._id, type: 'EMPLOYER', name: e.companyName, email: e.userId?.email, abn: e.abn, industry: e.industry, date: e.createdAt })),
       insurers: insurers.map(i => ({ id: i._id, type: 'INSURER', name: i.companyName, email: i.contactDetails?.email, date: i.createdAt }))
     };
   }
@@ -55,6 +55,14 @@ export class AdminService {
     const user = await User.findByIdAndUpdate(id, { $set: updateData }, { new: true }).select('-password');
     if (!user) throw Object.assign(new Error('Student not found'), { status: 404 });
     return user;
+  }
+
+  static async getAllEmployers() {
+    const employers = await Employer.find()
+      .populate('userId', 'email profile.firstName profile.lastName')
+      .sort({ createdAt: -1 })
+      .lean();
+    return employers;
   }
 
   static async getDashboardStats() {

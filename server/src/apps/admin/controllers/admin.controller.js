@@ -19,6 +19,11 @@ export class AdminController {
     res.json(data);
   }
 
+  static async getEmployers(req, res) {
+    const data = await AdminService.getAllEmployers();
+    res.json(data);
+  }
+
   static async updateStudent(req, res) {
     const { id } = req.params;
     const data = await AdminService.updateStudent(id, req.body);

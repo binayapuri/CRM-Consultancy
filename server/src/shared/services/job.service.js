@@ -6,6 +6,21 @@ import JobAlert from '../models/JobAlert.js';
 import Notification from '../models/Notification.js';
 
 export class JobService {
+  /** Public jobs listing - no auth required */
+  static async getPublicJobs(query = {}) {
+    const q = { isActive: true, moderationState: { $ne: 'REMOVED' } };
+    const limit = Math.min(parseInt(query.limit, 10) || 50, 100);
+    const skip = Math.max(0, parseInt(query.skip, 10) || 0);
+    if (query.search) {
+      const rx = new RegExp(String(query.search).trim(), 'i');
+      q.$or = [{ title: rx }, { company: rx }, { location: rx }, { tags: rx }];
+    }
+    if (query.location) q.location = new RegExp(String(query.location), 'i');
+    if (query.type) q.type = String(query.type);
+    if (query.visaSponsorship === 'true') q.visaSponsorshipAvailable = true;
+    return Job.find(q).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+  }
+
   static async getActiveJobs(user, query = {}) {
     const q = { isActive: true, moderationState: { $ne: 'REMOVED' } };
     if (query.search) {
@@ -41,7 +56,8 @@ export class JobService {
     for (let job of jobs) {
       const apps = await JobApplication.find({ jobId: job._id })
         .populate('studentId', 'profile.firstName profile.lastName email')
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean();
       job.applications = apps;
     }
     return jobs;
@@ -99,6 +115,25 @@ export class JobService {
     const job = await Job.findById(id);
     if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
     return job;
+  }
+
+  static async updateJob(jobId, user, data) {
+    const job = await Job.findById(jobId);
+    if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
+    const canEdit = user.role === 'SUPER_ADMIN' || String(job.postedBy) === String(user._id);
+    if (!canEdit) throw Object.assign(new Error('Not allowed to edit this job'), { status: 403 });
+    const allowed = ['title', 'company', 'location', 'type', 'description', 'salaryRange', 'requirements', 'visaSponsorshipAvailable', 'partTimeAllowed', 'workRights', 'tags', 'isActive'];
+    const update = {};
+    allowed.forEach(k => { if (data[k] !== undefined) update[k] = data[k]; });
+    return Job.findByIdAndUpdate(jobId, update, { new: true });
+  }
+
+  static async closeJob(jobId, user) {
+    const job = await Job.findById(jobId);
+    if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
+    const canEdit = user.role === 'SUPER_ADMIN' || String(job.postedBy) === String(user._id);
+    if (!canEdit) throw Object.assign(new Error('Not allowed'), { status: 403 });
+    return Job.findByIdAndUpdate(jobId, { isActive: false }, { new: true });
   }
 
   static async createJob(data, postedBy) {

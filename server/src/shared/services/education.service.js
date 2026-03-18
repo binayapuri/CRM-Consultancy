@@ -67,6 +67,12 @@ export class EducationService {
     return University.find(filter).sort('name');
   }
 
+  static async getUniversityById(id) {
+    const uni = await University.findById(id);
+    if (!uni) throw Object.assign(new Error('University not found'), { status: 404 });
+    return uni;
+  }
+
   static async createUniversity(data) {
     return University.create(data);
   }
