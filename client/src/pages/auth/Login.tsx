@@ -285,6 +285,8 @@ export default function Login() {
           <Link to="/register-consultancy" className="text-ori-600 hover:underline">Consultancy</Link>
           {' · '}
           <Link to="/register-university" className="text-ori-600 hover:underline">University</Link>
+          {' · '}
+          <Link to="/register-employer" className="text-ori-600 hover:underline">Employer</Link>
         </p>
       </div>
     </div>

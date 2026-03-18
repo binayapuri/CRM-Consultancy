@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { authFetch } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
-import { Building2, Plus, Edit2, ShieldCheck, MapPin, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Building2, Plus, Edit2, ShieldCheck, MapPin, Trash2, ChevronRight } from 'lucide-react';
 
 type PartnerStatus = 'UNVERIFIED' | 'STANDARD' | 'PREMIUM' | 'VERIFIED';
 type FormData = { name: string; city: string; state: string; partnerStatus: PartnerStatus; isActive: boolean };
@@ -237,43 +238,33 @@ export default function Universities() {
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {universities.map((uni: any) => (
-          <div
+          <Link
             key={uni._id}
-            className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden ${uni.isActive === false ? 'border-slate-200 opacity-75' : 'border-slate-200'}`}
+            to={`/admin/universities/${uni._id}`}
+            className={`block bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden ${uni.isActive === false ? 'border-slate-200 opacity-75' : 'border-slate-200'}`}
           >
             {uni.isActive === false && (
               <span className="absolute top-3 left-3 text-xs font-bold px-2 py-1 rounded bg-slate-200 text-slate-600 z-10">Inactive</span>
             )}
             <div className={`absolute top-0 right-0 w-2 h-full ${uni.partnerStatus === 'PREMIUM' ? 'bg-amber-500' : uni.partnerStatus === 'STANDARD' ? 'bg-sky-500' : 'bg-slate-300'}`} />
-            <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-sky-600 mb-4">
-              <Building2 className="w-6 h-6" />
+            <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-sky-600 mb-4 overflow-hidden">
+              {uni.logoUrl ? <img src={uni.logoUrl} alt="" className="w-full h-full object-contain" /> : <Building2 className="w-6 h-6" />}
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-1 leading-tight">{uni.name}</h3>
             <div className="flex flex-col gap-2 mt-3">
               <p className="text-sm font-medium text-slate-500 flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {uni.location?.city}, {uni.location?.state}</p>
               <p className="text-xs font-bold px-2 py-1 rounded w-max bg-slate-100 text-slate-600">{uni.partnerStatus?.replace('_', ' ') || '—'}</p>
             </div>
-            <div className="hidden group-hover:flex absolute bottom-4 right-4 gap-2">
-              <button
-                type="button"
-                onClick={() => openEditModal(uni)}
-                className="w-10 h-10 border border-slate-200 bg-white rounded-full items-center justify-center text-sky-600 hover:bg-sky-50 shadow-sm transition flex"
-                aria-label="Edit"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              {uni.isActive !== false && (
-                <button
-                  type="button"
-                  onClick={() => handleDelete(uni)}
-                  className="w-10 h-10 border border-slate-200 bg-white rounded-full items-center justify-center text-red-600 hover:bg-red-50 shadow-sm transition flex"
-                  aria-label="Delete"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
+            <div className="flex items-center justify-between mt-3">
+              <span className="text-sky-600 font-bold text-sm group-hover:underline flex items-center gap-1">View details <ChevronRight className="w-4 h-4" /></span>
+              <div className="flex gap-1" onClick={e => e.preventDefault()}>
+                <button type="button" onClick={e => { e.stopPropagation(); openEditModal(uni); }} className="w-8 h-8 border border-slate-200 bg-white rounded-full flex items-center justify-center text-sky-600 hover:bg-sky-50" aria-label="Edit"><Edit2 className="w-4 h-4" /></button>
+                {uni.isActive !== false && (
+                  <button type="button" onClick={e => { e.stopPropagation(); handleDelete(uni); }} className="w-8 h-8 border border-slate-200 bg-white rounded-full flex items-center justify-center text-red-600 hover:bg-red-50" aria-label="Deactivate"><Trash2 className="w-4 h-4" /></button>
+                )}
+              </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
