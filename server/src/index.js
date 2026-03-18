@@ -6,10 +6,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import passport from 'passport';
-import { authenticate } from './middleware/auth.js';
+import { configurePassport } from './config/passport.js';
+import { authenticate } from './shared/middleware/auth.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
-import consultancyRoutes from './routes/consultancies.js';
+import consultancyRoutes from './apps/consultancy/routes.js';
 import clientRoutes from './routes/clients.js';
 import applicationRoutes from './routes/applications.js';
 import documentRoutes from './routes/documents.js';
@@ -31,9 +32,10 @@ import sponsorsRoutes from './routes/sponsors.js';
 import sponsorSendRoutes from './routes/sponsor-send.js';
 import clientSendRoutes from './routes/client-send.js';
 import attendanceRoutes from './routes/attendance.js';
-import adminRoutes from './routes/admin.js';
-import adminNewsRoutes from './routes/admin-news.js';
+import adminRoutes from './apps/admin/routes.js';
+import adminNewsRoutes from './apps/admin/news.js';
 import universitiesRoutes from './routes/universities.js';
+import universityRequestsRoutes from './routes/university-requests.js';
 import offerLettersRoutes from './routes/offer-letters.js';
 import visaTimelineRoutes from './routes/visa-timeline.js';
 import documentTemplatesRoutes from './routes/document-templates.js';
@@ -44,9 +46,10 @@ import newsRoutes from './routes/news.js';
 import jobsRoutes from './routes/jobs.js';
 import appointmentsRoutes from './routes/appointments.js';
 import reviewsRoutes from './routes/reviews.js';
-import studentRoutes, { getPointsHandler, savePointsHandler } from './routes/student.js';
+import studentRoutes, { getPointsHandler, savePointsHandler } from './apps/student/routes.js';
 
 dotenv.config();
+configurePassport();
 
 // Student-only role check (must run after authenticate)
 const studentOnly = (req, res, next) => {
@@ -116,6 +119,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/news', adminNewsRoutes);
 app.use('/api/universities', universitiesRoutes);
+app.use('/api/university-requests', universityRequestsRoutes);
 app.use('/api/offer-letters', offerLettersRoutes);
 app.use('/api/visa-timeline', visaTimelineRoutes);
 app.use('/api/document-templates', documentTemplatesRoutes);
@@ -126,6 +130,9 @@ app.use('/api/news', newsRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/reviews', reviewsRoutes);
+
+import { errorHandler } from './shared/middleware/errorHandler.js';
+app.use(errorHandler);
 
 // Serve static frontend in production
 if (process.env.NODE_ENV === 'production') {

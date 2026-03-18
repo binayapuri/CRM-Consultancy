@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAuthStore, authFetch } from '../../store/auth';
+import { useSearchParams } from 'react-router-dom';
+import { useAuthStore, authFetch, safeJson } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
 import { KeyRound, User, Camera, Shield, Trash2, Eye, EyeOff, CheckCircle2, AlertTriangle, LogOut, Settings as SettingsIcon, Mail, CreditCard } from 'lucide-react';
 import { StudentSectionTabs } from '../../components/StudentSectionTabs';
@@ -17,6 +18,7 @@ const TABS = [
 export default function Settings() {
   const { user, logout } = useAuthStore();
   const { showToast } = useUiStore();
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState('security');
 
   // Security
@@ -61,6 +63,13 @@ export default function Settings() {
   const [reference, setReference] = useState('');
 
   useEffect(() => {
+    const wanted = (searchParams.get('tab') || '').toLowerCase();
+    if (!wanted) return;
+    const valid = new Set(TABS.map((t) => t.id));
+    if (valid.has(wanted)) setTab(wanted);
+  }, [searchParams]);
+
+  useEffect(() => {
     if (tab !== 'invoices' && tab !== 'email') return;
     let cancelled = false;
     (async () => {
@@ -68,7 +77,7 @@ export default function Settings() {
       setInvMsg(null);
       try {
         const res = await authFetch('/api/student/invoice-settings');
-        const data = await res.json();
+        const data = await safeJson<any>(res);
         if (!res.ok) throw new Error(data?.error || 'Failed to load invoice settings');
         if (cancelled) return;
         setSmtpEnabled(!!data?.smtp?.enabled);
@@ -112,7 +121,7 @@ export default function Settings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
       });
-      const data = await res.json();
+      const data = await safeJson<any>(res);
       if (!res.ok) throw new Error(data.error || 'Failed');
       showToast('Password updated successfully!', 'success');
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
@@ -140,7 +149,7 @@ export default function Settings() {
       const fd = new FormData();
       fd.append('file', file);
       const res = await authFetch('/api/student/profile/avatar', { method: 'POST', body: fd });
-      const data = await res.json();
+      const data = await safeJson<any>(res);
       if (!res.ok) throw new Error(data.error || 'Upload failed');
       showToast('Avatar updated successfully!', 'success');
       useAuthStore.getState().fetchUser();
@@ -160,7 +169,7 @@ export default function Settings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName, lastName, phone }),
       });
-      const data = await res.json();
+      const data = await safeJson<any>(res);
       if (!res.ok) throw new Error(data.error || 'Failed to save');
       showToast('Account details saved!', 'success');
       useAuthStore.getState().fetchUser();
@@ -209,7 +218,7 @@ export default function Settings() {
           },
         }),
       });
-      const data = await res.json();
+      const data = await safeJson<any>(res);
       if (!res.ok) throw new Error(data?.error || 'Failed to save');
       setSmtpHasPassword(!!data?.smtp?.hasPassword);
       setSmtpPassword('');
@@ -500,13 +509,13 @@ export default function Settings() {
           <div className="p-5 rounded-lg" style={{ background: '#FFF1F2', border: '1px solid #FECDD3' }}>
             <h3 className="font-black text-red-800 mb-1">Delete Account</h3>
             <p className="text-sm text-red-700 font-medium mb-4">This will permanently delete your account and all associated data. This action is irreversible. To request deletion, please contact support or send an email.</p>
-            <a href="mailto:support@orivisa.com?subject=Delete%20My%20Account&body=Please%20delete%20my%20account%20associated%20with%20this%20email." className="inline-block px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-red-600 hover:bg-red-700 transition-colors">
+            <a href="mailto:support@bigfew.com?subject=Delete%20My%20Account&body=Please%20delete%20my%20account%20associated%20with%20this%20email." className="inline-block px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-red-600 hover:bg-red-700 transition-colors">
               Request Account Deletion
             </a>
           </div>
           <div className="p-5 rounded-lg" style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
             <h3 className="font-black text-amber-800 mb-1">Download My Data</h3>
-            <p className="text-sm text-amber-700 font-medium mb-3">You have the right to export all your data stored in Orivisa.</p>
+            <p className="text-sm text-amber-700 font-medium mb-3">You have the right to export all your data stored in BIGFEW.</p>
             <button className="px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-amber-600 hover:bg-amber-700 transition-colors">
               Request Data Export (Coming Soon)
             </button>

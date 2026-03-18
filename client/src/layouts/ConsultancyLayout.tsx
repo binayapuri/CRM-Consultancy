@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, Kanban, Users, FileText, Target, Calendar, GraduationCap, Shield, Wallet, User, LogOut, UsersRound, History, Settings, PanelLeftClose, PanelLeft, Building2, Clock } from 'lucide-react';
+import { LayoutDashboard, Kanban, Users, FileText, Target, Calendar, GraduationCap, Shield, Wallet, User, LogOut, UsersRound, History, Settings, PanelLeftClose, PanelLeft, Building2, Clock, University } from 'lucide-react';
 import Notifications from '../components/Notifications';
 import TeamMessages from '../components/TeamMessages';
 import { useAuthStore } from '../store/auth';
@@ -22,6 +22,7 @@ const nav = [
   { to: 'oshc', icon: Shield, label: 'OSHC', perm: 'oshc' },
   { to: 'trust', icon: Wallet, label: 'Trust Ledger', adminOnly: true, perm: 'trustLedger' },
   { to: 'sponsors', icon: Building2, label: 'Sponsors', perm: 'sponsors' },
+  { to: 'university-requests', icon: University, label: 'University Requests', adminOnly: true, perm: null },
   { to: 'profile', icon: User, label: 'Profile', perm: null },
   { to: 'settings', icon: Settings, label: 'Settings', adminOnly: true, perm: 'settings' },
 ];

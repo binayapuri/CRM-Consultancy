@@ -64,6 +64,10 @@ export default function SuperUsers() {
           <option value="AGENT">Agent</option>
           <option value="MANAGER">Manager</option>
           <option value="CONSULTANCY_ADMIN">Consultancy Admin</option>
+          <option value="UNIVERSITY_PARTNER">University Partner</option>
+          <option value="EMPLOYER">Employer</option>
+          <option value="RECRUITER">Recruiter</option>
+          <option value="INSURANCE_PARTNER">Insurance Partner</option>
         </select>
       </div>
       {['AGENT', 'MANAGER', 'CONSULTANCY_ADMIN'].includes(form.role) && (

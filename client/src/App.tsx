@@ -13,6 +13,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Activate from './pages/auth/Activate';
 import RegisterConsultancy from './pages/auth/RegisterConsultancy';
+import RegisterUniversity from './pages/auth/RegisterUniversity';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import AuthCallback from './pages/auth/AuthCallback';
@@ -39,6 +40,7 @@ import Attendance from './pages/consultancy/Attendance';
 import LeadForm from './pages/consultancy/LeadForm';
 import LeadDetail from './pages/consultancy/LeadDetail';
 import ClientEdit from './pages/consultancy/ClientEdit';
+import UniversityRequests from './pages/consultancy/UniversityRequests';
 
 // Student pages
 import StudentDashboard from './pages/student/Dashboard';
@@ -71,6 +73,7 @@ import SuperUsers from './pages/super/Users';
 import SuperTraceHistory from './pages/super/TraceHistory';
 import Verifications from './pages/super/Verifications';
 import Universities from './pages/super/Universities';
+import UniversityRequestsAdmin from './pages/super/UniversityRequests';
 import AdminAdvancedSettings from './pages/super/AdminAdvancedSettings';
 import AdminNewsManager from './pages/super/AdminNewsManager';
 import AdminNewsForm from './pages/super/AdminNewsForm';
@@ -98,8 +101,20 @@ import { ToastContainer, Modal, ConfirmDialog } from './components/ui';
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles: string[] }) {
   const { user, token } = useAuthStore();
   if (!token || !user) return <Navigate to="/login" replace />;
-  if (roles.length && !roles.includes(user.role)) return <Navigate to="/" replace />;
+  if (roles.length && !roles.includes(user.role)) return <Navigate to={getDashboardPathForRole(user.role)} replace />;
   return <>{children}</>;
+}
+
+function PartnerHomeRedirect() {
+  const { user } = useAuthStore();
+  const role = user?.role || '';
+  const to =
+    role === 'EMPLOYER' || role === 'RECRUITER'
+      ? '/partner/jobs'
+      : role === 'INSURANCE_PARTNER'
+      ? '/partner/insurance'
+      : '/partner/applications';
+  return <Navigate to={to} replace />;
 }
 
 function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
@@ -124,6 +139,7 @@ export default function App() {
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
       <Route path="/register-consultancy" element={<GuestOnlyRoute><RegisterConsultancy /></GuestOnlyRoute>} />
+      <Route path="/register-university" element={<GuestOnlyRoute><RegisterUniversity /></GuestOnlyRoute>} />
       <Route path="/activate" element={<GuestOnlyRoute><Activate /></GuestOnlyRoute>} />
 
       <Route path="/consultancy" element={<ProtectedRoute roles={['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPER_ADMIN']}><ConsultancyLayout /></ProtectedRoute>}>
@@ -149,6 +165,7 @@ export default function App() {
         <Route path="oshc" element={<OSHC />} />
         <Route path="trust" element={<TrustLedger />} />
         <Route path="sponsors" element={<Sponsors />} />
+        <Route path="university-requests" element={<UniversityRequests />} />
         <Route path="profile" element={<ConsultancyProfile />} />
         <Route path="settings" element={<ConsultancySettings />} />
       </Route>
@@ -185,9 +202,9 @@ export default function App() {
         <Route path="company" element={<SponsorCompanyInfo />} />
       </Route>
 
-      <Route path="/partner" element={<ProtectedRoute roles={['UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER']}><PartnerLayout /></ProtectedRoute>}>
-        <Route index element={<Navigate to="applications" replace />} />
-        <Route path="dashboard" element={<Navigate to="applications" replace />} />
+      <Route path="/partner" element={<ProtectedRoute roles={['UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER', 'RECRUITER']}><PartnerLayout /></ProtectedRoute>}>
+        <Route index element={<PartnerHomeRedirect />} />
+        <Route path="dashboard" element={<PartnerHomeRedirect />} />
         <Route path="applications" element={<UniversityApplications />} />
         <Route path="insurance" element={<InsuranceDashboard />} />
         <Route path="jobs" element={<EmployerDashboard />} />
@@ -204,6 +221,7 @@ export default function App() {
         <Route path="trace-history" element={<SuperTraceHistory />} />
         <Route path="verifications" element={<Verifications />} />
         <Route path="universities" element={<Universities />} />
+        <Route path="university-requests" element={<UniversityRequestsAdmin />} />
         <Route path="students" element={<AdminStudentManager />} />
         <Route path="news" element={<AdminNewsManager />} />
         <Route path="news/add" element={<AdminNewsForm />} />
