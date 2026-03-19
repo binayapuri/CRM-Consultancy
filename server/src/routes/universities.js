@@ -37,6 +37,9 @@ router.get('/', asyncHandler(EducationController.getUniversities));
 // Admin: Get all universities (even inactive)
 router.get('/admin', authenticate, requireRole('SUPER_ADMIN'), asyncHandler(EducationController.getUniversities));
 
+// Admin: Get offer letter applications (before /:id so /:id/offer-applications matches)
+router.get('/:id/offer-applications', authenticate, requireRole('SUPER_ADMIN'), asyncHandler(EducationController.getOfferApplicationsByUniversity));
+
 // Admin: Get single university
 router.get('/:id', authenticate, requireRole('SUPER_ADMIN'), asyncHandler(EducationController.getUniversityById));
 

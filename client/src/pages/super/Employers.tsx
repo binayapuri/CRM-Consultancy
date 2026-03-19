@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authFetch } from '../../store/auth';
 import { Link } from 'react-router-dom';
-import { Briefcase, Building2, Mail, ShieldCheck, ShieldAlert, ExternalLink } from 'lucide-react';
+import { Briefcase, Mail, ShieldCheck, ShieldAlert, ExternalLink } from 'lucide-react';
 
 export default function Employers() {
   const [employers, setEmployers] = useState<any[]>([]);

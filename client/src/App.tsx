@@ -237,8 +237,8 @@ export default function App() {
         <Route path="verifications" element={<Verifications />} />
         <Route path="employers" element={<SuperEmployers />} />
         <Route path="universities" element={<Universities />} />
-        <Route path="universities/:id" element={<UniversityDetail />} />
         <Route path="universities/:id/edit" element={<UniversityEdit />} />
+        <Route path="universities/:id" element={<UniversityDetail />} />
         <Route path="university-requests" element={<UniversityRequestsAdmin />} />
         <Route path="students" element={<AdminStudentManager />} />
         <Route path="news" element={<AdminNewsManager />} />

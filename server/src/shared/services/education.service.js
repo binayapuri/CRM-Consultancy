@@ -1,6 +1,7 @@
 import College from '../../shared/models/College.js';
 import University from '../../shared/models/University.js';
 import Course from '../../shared/models/Course.js';
+import OfferLetterApplication from '../../shared/models/OfferLetterApplication.js';
 
 export class EducationService {
   // --- Colleges ---
@@ -71,6 +72,14 @@ export class EducationService {
     const uni = await University.findById(id);
     if (!uni) throw Object.assign(new Error('University not found'), { status: 404 });
     return uni;
+  }
+
+  static async getOfferApplicationsByUniversity(universityId) {
+    return OfferLetterApplication.find({ universityId })
+      .populate('studentId', 'email profile')
+      .populate('courseId', 'name level')
+      .sort({ createdAt: -1 })
+      .limit(500);
   }
 
   static async createUniversity(data) {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authFetch, useAuthStore } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
-import { Briefcase, MapPin, Building2, Search, DollarSign, CheckCircle, Bookmark, Bell, BookmarkCheck, FileText, X, Plus } from 'lucide-react';
+import { Briefcase, MapPin, Building2, Search, DollarSign, CheckCircle, Bookmark, Bell, BookmarkCheck, X, Plus } from 'lucide-react';
 
 type Tab = 'browse' | 'saved' | 'applications' | 'alerts';
 
@@ -18,21 +18,6 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true);
   const [applyJobId, setApplyJobId] = useState<string | null>(null);
   const [alertsLoading, setAlertsLoading] = useState(false);
-
-  const fetchJobs = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (filters.search) params.set('search', filters.search);
-      if (filters.location) params.set('location', filters.location);
-      if (filters.type) params.set('type', filters.type);
-      if (filters.visaSponsorship) params.set('visaSponsorship', 'true');
-      const qs = params.toString();
-      const res = await authFetch(`/api/jobs${qs ? `?${qs}` : ''}`);
-      setJobs(await res.json());
-    } catch (e) {
-      setJobs([]);
-    }
-  }, [filters.search, filters.location, filters.type, filters.visaSponsorship]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
