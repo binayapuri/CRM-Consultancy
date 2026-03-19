@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore, authFetch } from '../../store/auth';
 import { ArrowRight, Star, Newspaper } from 'lucide-react';
+import { resolveFileUrl } from '../../lib/imageUrl';
 import { STAGE_ICONS, ACTION_ICONS, QUICK_TOOL_ICONS, Sparkles } from './icons';
 
 // ── Journey stages ──────────────────────────────────────────────────────────
@@ -356,7 +357,7 @@ export default function StudentDashboard() {
                 >
                   {article.coverImage ? (
                     <div className="w-14 h-14 rounded-lg overflow-hidden mb-4 bg-slate-100 shrink-0">
-                      <img src={article.coverImage} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                      <img src={resolveFileUrl(article.coverImage)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                     </div>
                   ) : (
                     <div className="w-14 h-14 rounded-lg flex items-center justify-center bg-gradient-to-br from-sky-500 to-blue-600 shadow-md mb-4 group-hover:scale-110 transition-transform text-white">

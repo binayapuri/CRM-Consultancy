@@ -4,6 +4,7 @@ import { LayoutDashboard, Kanban, Users, FileText, Target, Calendar, GraduationC
 import Notifications from '../components/Notifications';
 import TeamMessages from '../components/TeamMessages';
 import { useAuthStore } from '../store/auth';
+import { resolveFileUrl } from '../lib/imageUrl';
 import { authFetch, safeJson } from '../store/auth';
 
 const SIDEBAR_KEY = 'orivisa-sidebar-collapsed';
@@ -138,7 +139,7 @@ export default function ConsultancyLayout() {
                 className="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-100 transition"
               >
                 {user?.profile?.avatar ? (
-                  <img src={user.profile.avatar} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-slate-200" />
+                  <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-slate-200" />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-ori-500 text-white flex items-center justify-center font-semibold text-sm">
                     {initials}

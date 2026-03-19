@@ -43,7 +43,10 @@ export class PortalService {
     const tpl = EMAIL_TEMPLATES.form956;
     
     const html = this.generateForm956Html(client.profile?.firstName, f956, consultancy, tpl);
-    const attachments = this.getSignatureAttachment(f956.signatureUrl);
+    const attachments = [
+      ...this.getSignatureAttachment(f956.signatureUrl),
+      ...this.getConsumerGuideAttachment(f956.consumerGuideUrl),
+    ];
 
     await sendEmail({
       to: clientEmail,
@@ -98,12 +101,14 @@ export class PortalService {
     const blocks = feeBlocks || template.feeBlocks || tplAdvice?.defaultFeeBlocks || [];
 
     const html = this.generateInitialAdviceHtml(body, blocks, bank, f956, consultancy);
+    const attachments = this.getConsumerGuideAttachment(f956.consumerGuideUrl);
 
     await sendEmail({
       to: client.profile?.email,
       subject: template.subject || `Initial Advice & Fee Estimation - ${consultancy.name}`,
       html,
       replyTo: f956.email || consultancy.email || undefined,
+      attachments,
       emailProfile: this.getEmailProfile(consultancy, user) || undefined,
     });
 
@@ -119,7 +124,10 @@ export class PortalService {
 
     const f956 = consultancy.form956Details || {};
     const html = this.generateForm956Html(sponsor.contactPerson?.firstName || sponsor.companyName, f956, consultancy, EMAIL_TEMPLATES.form956);
-    const attachments = this.getSignatureAttachment(f956.signatureUrl);
+    const attachments = [
+      ...this.getSignatureAttachment(f956.signatureUrl),
+      ...this.getConsumerGuideAttachment(f956.consumerGuideUrl),
+    ];
 
     await sendEmail({
       to: sponsor.contactPerson?.email || sponsor.email,
@@ -167,6 +175,23 @@ export class PortalService {
     return [];
   }
 
+  static getConsumerGuideAttachment(consumerGuideUrl) {
+    // Try consultancy-uploaded custom guide first
+    if (consumerGuideUrl) {
+      const basename = consumerGuideUrl.split('/').pop();
+      const cgPath = path.join(uploadsDir, basename);
+      if (fs.existsSync(cgPath)) {
+        return [{ filename: 'MARA-Consumer-Guide.pdf', content: fs.readFileSync(cgPath), contentType: 'application/pdf' }];
+      }
+    }
+    // Fall back to bundled default
+    const defaultPath = path.join(__dirname, '../../assets/consumer_guide.pdf');
+    if (fs.existsSync(defaultPath)) {
+      return [{ filename: 'MARA-Consumer-Guide.pdf', content: fs.readFileSync(defaultPath), contentType: 'application/pdf' }];
+    }
+    return [];
+  }
+
   static generateForm956Html(name, f956, consultancy, tpl) {
     const agentName = f956.agentName || consultancy.name;
     const marn = f956.marnNumber || consultancy.marnNumbers?.[0] || '';
@@ -176,7 +201,7 @@ export class PortalService {
     const email = f956.email || consultancy.email || '';
     const intro = tpl?.bodyIntro || 'As required...';
 
-    return `<!DOCTYPE html><html><body><p>Dear ${name},</p><p>${intro.replace(/\n/g, '<br/>')}</p><ul><li>Agent: ${agentName}</li><li>MARN: ${marn}</li><li>Company: ${companyName}</li><li>Address: ${addr}</li><li>Phone: ${phone}</li><li>Email: ${email}</li></ul><p>Please download Form 956...</p></body></html>`;
+    return `<!DOCTYPE html><html><body><p>Dear ${name},</p><p>${intro.replace(/\n/g, '<br/>')}</p><ul><li>Agent: ${agentName}</li><li>MARN: ${marn}</li><li>Company: ${companyName}</li><li>Address: ${addr}</li><li>Phone: ${phone}</li><li>Email: ${email}</li></ul><p>Please download Form 956...</p><p><strong>Consumer Guide:</strong> Please find the MARA Consumer Guide attached for your reference. Kindly reply to this email with: <em>"Copy of consumer guide received."</em></p></body></html>`;
   }
 
   static generateMiaHtml(name, agentName, marn, tpl) {

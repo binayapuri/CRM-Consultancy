@@ -33,6 +33,22 @@ router.post('/me/signature',
   asyncHandler(ConsultancyController.uploadSignature)
 );
 
+// Consumer Guide PDF upload (up to 5MB)
+const cgStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => cb(null, `consumer-guide-${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`),
+});
+const cgUpload = multer({ storage: cgStorage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
+  if (file.mimetype === 'application/pdf') cb(null, true);
+  else cb(new Error('Only PDF files are allowed'));
+}});
+router.post('/me/consumer-guide',
+  authenticate,
+  requireRole('CONSULTANCY_ADMIN', 'MANAGER'),
+  cgUpload.single('file'),
+  asyncHandler(ConsultancyController.uploadConsumerGuide)
+);
+
 router.get('/', 
   authenticate, 
   asyncHandler(ConsultancyController.getAll)

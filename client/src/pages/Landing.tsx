@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { GraduationCap, Building2, Calculator, Compass, Shield, Users, Send, ArrowRight, Briefcase, BookOpen } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
+import { resolveFileUrl } from '../lib/imageUrl';
 import { getDashboardPathForRole } from '../lib/authHelpers';
 
 const INTERESTS = ['Student Visa (500)', 'Graduate Visa (485)', 'Skilled Migration (189/190/491)', 'Partner Visa', 'Visitor Visa', 'Other'];
@@ -96,7 +97,7 @@ export default function Landing() {
                 className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 border border-white/10 hover:bg-white/15 hover:border-white/20 transition-all"
               >
                 {user.profile?.avatar ? (
-                  <img src={user.profile.avatar} alt="" className="w-8 h-8 rounded-full object-cover border border-white/20" />
+                  <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-8 h-8 rounded-full object-cover border border-white/20" />
                 ) : (
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 bg-gradient-to-br from-emerald-500 to-teal-500">
                     {initials}
@@ -450,7 +451,7 @@ function NewsSection() {
         <Link key={article._id} to={`/news/${article.slug}`} className="group block rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:bg-white/10 hover:border-emerald-500/30 transition-all">
           {article.coverImage && (
             <div className="h-48 overflow-hidden relative">
-              <img src={article.coverImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <img src={resolveFileUrl(article.coverImage)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             </div>
           )}
           <div className="p-6">

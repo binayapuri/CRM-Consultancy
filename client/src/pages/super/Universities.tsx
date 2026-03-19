@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { authFetch } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
 import { Link } from 'react-router-dom';
+import { resolveFileUrl } from '../../lib/imageUrl';
 import { Building2, Plus, Edit2, ShieldCheck, MapPin, Trash2, ChevronRight } from 'lucide-react';
 
 type PartnerStatus = 'UNVERIFIED' | 'STANDARD' | 'PREMIUM' | 'VERIFIED';
@@ -248,7 +249,7 @@ export default function Universities() {
             )}
             <div className={`absolute top-0 right-0 w-2 h-full ${uni.partnerStatus === 'PREMIUM' ? 'bg-amber-500' : uni.partnerStatus === 'STANDARD' ? 'bg-sky-500' : 'bg-slate-300'}`} />
             <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-sky-600 mb-4 overflow-hidden">
-              {uni.logoUrl ? <img src={uni.logoUrl} alt="" className="w-full h-full object-contain" /> : <Building2 className="w-6 h-6" />}
+              {uni.logoUrl ? <img src={resolveFileUrl(uni.logoUrl)} alt="" className="w-full h-full object-contain" /> : <Building2 className="w-6 h-6" />}
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-1 leading-tight">{uni.name}</h3>
             <div className="flex flex-col gap-2 mt-3">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { useAuthStore } from '../../store/auth';
+import { resolveFileUrl } from '../../lib/imageUrl';
 import { User, Key, MapPin, FileCheck, Camera, Save, Eye, EyeOff, Settings, Mail } from 'lucide-react';
 
 export default function ConsultancyProfile() {
@@ -252,7 +253,7 @@ export default function ConsultancyProfile() {
       <div className="card mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-6">
         <div className="relative group">
           {user?.profile?.avatar ? (
-            <img src={user.profile.avatar} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
+            <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
           ) : (
             <div className="w-24 h-24 rounded-full bg-ori-500 text-white flex items-center justify-center text-2xl font-bold">
               {initials}

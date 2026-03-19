@@ -24,6 +24,15 @@ export class ConsultancyService {
     return { signatureUrl: fileUrl, consultancy: c };
   }
 
+  static async uploadConsumerGuide(consultancyId, fileUrl) {
+    if (!consultancyId) throw Object.assign(new Error('No consultancy assigned'), { status: 404 });
+    const c = await Consultancy.findByIdAndUpdate(consultancyId, {
+      'form956Details.consumerGuideUrl': fileUrl,
+    }, { new: true });
+    if (!c) throw Object.assign(new Error('Not found'), { status: 404 });
+    return { consumerGuideUrl: fileUrl, consultancy: c };
+  }
+
   static async getAllConsultancies(user) {
     const filter = user.role === 'SUPER_ADMIN' ? {} : { _id: user.profile?.consultancyId };
     const consultancies = await Consultancy.find(filter || {});

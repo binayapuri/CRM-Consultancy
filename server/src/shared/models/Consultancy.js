@@ -46,6 +46,7 @@ const consultancySchema = new mongoose.Schema({
     agentName: String,
     marnNumber: String,
     signatureUrl: String,
+    consumerGuideUrl: String,
     companyName: String,
     address: String,
     phone: String,

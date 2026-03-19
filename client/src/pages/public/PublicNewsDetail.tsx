@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Calendar, Eye, Shield, Tag } from 'lucide-react';
+import { resolveFileUrl } from '../../lib/imageUrl';
 
 export default function PublicNewsDetail() {
   const { slug } = useParams();
@@ -116,7 +117,7 @@ export default function PublicNewsDetail() {
         
         {article.coverImage && (
            <div className="w-full aspect-video rounded-3xl overflow-hidden border border-white/10 mb-12 shadow-2xl bg-white/5 animate-fade-in-up flex items-center justify-center">
-             <img src={article.coverImage} alt={article.title} className="w-full h-full object-cover" />
+             <img src={resolveFileUrl(article.coverImage)} alt={article.title} className="w-full h-full object-cover" />
            </div>
         )}
         

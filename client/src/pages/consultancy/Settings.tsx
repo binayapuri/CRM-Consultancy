@@ -11,6 +11,7 @@ const SettingsBlock = ({ title, icon: Icon, desc, children, empty, sample }: { t
 );
 import { authFetch, safeJson } from '../../store/auth';
 import { useAuthStore } from '../../store/auth';
+import { resolveFileUrl } from '../../lib/imageUrl';
 
 const DEFAULT_ROLE_PERMISSIONS = [
   { role: 'CONSULTANCY_ADMIN', permissions: { clients: { view: true, create: true, edit: true, delete: true }, applications: { view: true, create: true, edit: true, delete: true }, tasks: { view: true, create: true, edit: true, delete: true }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: true }, documents: { view: true, upload: true, delete: true }, trustLedger: { view: true, edit: true }, employees: { view: true, manage: true }, traceHistory: { view: true }, settings: { view: true, edit: true }, colleges: { view: true, manage: true }, oshc: { view: true, manage: true }, sponsors: { view: true, create: true, edit: true, delete: true }, sendDocuments: true, sendAdvice: true } },
@@ -31,7 +32,7 @@ export default function ConsultancySettings() {
   const [rolePermsExpanded, setRolePermsExpanded] = useState<string | null>(null);
   const [form, setForm] = useState({
     displayName: '',
-    form956Details: { agentName: '', marnNumber: '', companyName: '', address: '', phone: '', email: '', signatureUrl: '' },
+    form956Details: { agentName: '', marnNumber: '', companyName: '', address: '', phone: '', email: '', signatureUrl: '', consumerGuideUrl: '' },
     bankDetails: { accountName: '', bank: '', bsb: '', accountNumber: '' },
     initialAdviceTemplate: { subject: '', body: '', feeBlocks: [] as { label: string; amount: string; description: string }[] },
     rolePermissions: [] as any[],
@@ -39,6 +40,7 @@ export default function ConsultancySettings() {
   });
   const [saving, setSaving] = useState(false);
   const [uploadingSig, setUploadingSig] = useState(false);
+  const [uploadingCg, setUploadingCg] = useState(false);
 
   useEffect(() => {
     try {
@@ -61,12 +63,13 @@ export default function ConsultancySettings() {
           displayName: c?.displayName || c?.name || '',
           form956Details: {
             agentName: c?.form956Details?.agentName || '',
-            marnNumber: c?.form956Details?.marnNumber || c?.marnNumbers?.[0] || '',
-            companyName: c?.form956Details?.companyName || c?.name || '',
-            address: c?.form956Details?.address || [c?.address?.street, c?.address?.city, c?.address?.state].filter(Boolean).join(', ') || '',
-            phone: c?.form956Details?.phone || c?.phone || '',
-            email: c?.form956Details?.email || c?.email || '',
+            marnNumber: c?.form956Details?.marnNumber || '',
+            companyName: c?.form956Details?.companyName || '',
+            address: c?.form956Details?.address || '',
+            phone: c?.form956Details?.phone || '',
+            email: c?.form956Details?.email || '',
             signatureUrl: c?.form956Details?.signatureUrl || '',
+            consumerGuideUrl: c?.form956Details?.consumerGuideUrl || '',
           },
           bankDetails: {
             accountName: c?.bankDetails?.accountName || '',
@@ -102,6 +105,26 @@ export default function ConsultancySettings() {
       alert((err as Error).message);
     } finally {
       setUploadingSig(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleUploadConsumerGuide = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !isAdmin) return;
+    setUploadingCg(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await authFetch('/api/consultancies/me/consumer-guide', { method: 'POST', body: fd });
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error((data as any).error);
+      setForm(f => ({ ...f, form956Details: { ...f.form956Details, consumerGuideUrl: (data as any).consumerGuideUrl } }));
+      alert('Consumer Guide uploaded');
+    } catch (err) {
+      alert((err as Error).message);
+    } finally {
+      setUploadingCg(false);
       e.target.value = '';
     }
   };
@@ -176,7 +199,7 @@ export default function ConsultancySettings() {
               <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Agent Signature (for Form 956 & MIA)</label>
                 <div className="flex items-center gap-4">
                   {form.form956Details.signatureUrl ? (
-                    <img src={form.form956Details.signatureUrl} alt="Signature" className="h-12 object-contain border rounded" />
+                    <img src={resolveFileUrl(form.form956Details.signatureUrl)} alt="Signature" className="h-12 object-contain border rounded" />
                   ) : (
                     <div className="w-24 h-12 rounded border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-xs">No signature</div>
                   )}
@@ -189,6 +212,22 @@ export default function ConsultancySettings() {
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Address</label><input value={form.form956Details.address} onChange={e => setForm(f => ({ ...f, form956Details: { ...f.form956Details, address: e.target.value } }))} className="input" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Phone</label><input value={form.form956Details.phone} onChange={e => setForm(f => ({ ...f, form956Details: { ...f.form956Details, phone: e.target.value } }))} className="input" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Email</label><input type="email" value={form.form956Details.email} onChange={e => setForm(f => ({ ...f, form956Details: { ...f.form956Details, email: e.target.value } }))} className="input" /></div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Consumer Guide PDF (attached to Form 956 & Initial Advice emails)</label>
+                <div className="flex items-center gap-4">
+                  {form.form956Details.consumerGuideUrl ? (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700 font-medium">
+                      <FileText className="w-4 h-4" /> Custom Consumer Guide uploaded
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500">
+                      <FileText className="w-4 h-4" /> Using default guide (or none)
+                    </div>
+                  )}
+                  <label className="btn-secondary cursor-pointer flex items-center gap-2"><Upload className="w-4 h-4" /> {uploadingCg ? 'Uploading...' : 'Upload PDF'}<input type="file" accept="application/pdf" className="hidden" onChange={handleUploadConsumerGuide} disabled={uploadingCg} /></label>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">The PDF will be auto-attached when sending Form 956 and Initial Advice emails.</p>
+              </div>
             </div>
           </SettingsBlock>
         )}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Newspaper, Calendar, Eye, Tag, Shield } from 'lucide-react';
+import { resolveFileUrl } from '../../lib/imageUrl';
 
 export default function PublicNews() {
   const [articles, setArticles] = useState<any[]>([]);
@@ -111,7 +112,7 @@ export default function PublicNews() {
               >
                 {article.coverImage ? (
                   <div className="h-48 shrink-0 overflow-hidden relative border-b border-white/10">
-                    <img src={article.coverImage} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={resolveFileUrl(article.coverImage)} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute top-3 left-3 px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg text-white text-[10px] font-bold uppercase tracking-wider border border-white/10">
                       {categoryLabel(article)}
                     </div>

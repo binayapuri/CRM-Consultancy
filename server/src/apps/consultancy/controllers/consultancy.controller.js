@@ -9,6 +9,14 @@ export class ConsultancyController {
     res.json(result);
   }
 
+  static async uploadConsumerGuide(req, res) {
+    const cid = req.user.profile?.consultancyId;
+    if (!req.file) throw Object.assign(new Error('No file uploaded'), { status: 400 });
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const result = await ConsultancyService.uploadConsumerGuide(cid, fileUrl);
+    res.json(result);
+  }
+
   static async getAll(req, res) {
     const result = await ConsultancyService.getAllConsultancies(req.user);
     res.json(result);

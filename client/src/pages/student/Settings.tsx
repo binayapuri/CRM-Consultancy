@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuthStore, authFetch } from '../../store/auth';
+import { resolveFileUrl } from '../../lib/imageUrl';
 import { useUiStore } from '../../store/ui';
 import { KeyRound, User, Camera, Shield, Trash2, Eye, EyeOff, CheckCircle2, AlertTriangle, LogOut, Settings as SettingsIcon, Mail, CreditCard } from 'lucide-react';
 import { StudentSectionTabs } from '../../components/StudentSectionTabs';
@@ -234,7 +235,7 @@ export default function Settings() {
       {/* User badge */}
       <div className="flex items-center gap-4 p-5 rounded-xl mb-6" style={{ background: 'linear-gradient(135deg, #EEF2FF, #E0FDF4)', border: '1px solid #C7D2FE' }}>
         <div className="w-14 h-14 rounded-lg overflow-hidden bg-indigo-600 flex items-center justify-center text-white text-xl font-black">
-          {user?.profile?.avatar ? <img src={user.profile.avatar} alt="" className="w-full h-full object-cover" /> : (user?.profile?.firstName?.[0] || user?.email?.[0] || '?').toUpperCase()}
+          {user?.profile?.avatar ? <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-full h-full object-cover" /> : (user?.profile?.firstName?.[0] || user?.email?.[0] || '?').toUpperCase()}
         </div>
         <div>
           <p className="font-black text-slate-900 text-lg">{user?.profile?.firstName} {user?.profile?.lastName}</p>
@@ -329,7 +330,7 @@ export default function Settings() {
               {avatarPreview ? (
                 <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
               ) : user?.profile?.avatar ? (
-                <img src={user.profile.avatar} alt="Current" className="w-full h-full object-cover" />
+                <img src={resolveFileUrl(user.profile.avatar)} alt="Current" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-4xl font-black text-indigo-400">{(user?.profile?.firstName?.[0] || '?').toUpperCase()}</span>
               )}

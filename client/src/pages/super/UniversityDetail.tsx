@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { resolveFileUrl } from '../../lib/imageUrl';
 import { authFetch } from '../../store/auth';
 import {
   ArrowLeft,
@@ -135,7 +136,7 @@ export default function UniversityDetail() {
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-xl border-2 border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50">
             {university.logoUrl ? (
-              <img src={university.logoUrl} alt="" className="w-full h-full object-contain" />
+              <img src={resolveFileUrl(university.logoUrl)} alt="" className="w-full h-full object-contain" />
             ) : (
               <Building2 className="w-10 h-10 text-slate-400" />
             )}
