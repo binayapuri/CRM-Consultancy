@@ -6,6 +6,26 @@ export class ClientController {
     res.json(data);
   }
 
+  static async previewBulkEmail(req, res) {
+    const data = await ClientService.previewBulkEmail(req.body, req.user);
+    res.json(data);
+  }
+
+  static async campaignAudience(req, res) {
+    const data = await ClientService.getCampaignAudience(req.body, req.user);
+    res.json(data);
+  }
+
+  static async campaignHistory(req, res) {
+    const data = await ClientService.getCampaignHistory(req.user, req.query);
+    res.json(data);
+  }
+
+  static async sendBulkEmail(req, res) {
+    const data = await ClientService.sendBulkEmail(req.body, req.user);
+    res.json(data);
+  }
+
   static async getTasks(req, res) {
     const data = await ClientService.getTasks(req.params.id, req.user);
     res.json(data);

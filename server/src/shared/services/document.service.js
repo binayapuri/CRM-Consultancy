@@ -19,32 +19,136 @@ const DOC_TYPE_TO_CHECKLIST = {
   FORM_956: 'Form 956', FORM_956A: 'Form 956A',
 };
 
+function parseBoolean(value, fallback = false) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+  }
+  return fallback;
+}
+
+function normalizeMetadata(body = {}, existing = {}) {
+  const metadata = { ...(existing || {}) };
+  if (body.expiryDate !== undefined) metadata.expiryDate = body.expiryDate ? new Date(body.expiryDate) : undefined;
+  if (body.issueDate !== undefined) metadata.issueDate = body.issueDate ? new Date(body.issueDate) : undefined;
+  if (body.metadata && typeof body.metadata === 'object') {
+    Object.assign(metadata, body.metadata);
+    if (body.metadata.expiryDate !== undefined) metadata.expiryDate = body.metadata.expiryDate ? new Date(body.metadata.expiryDate) : undefined;
+    if (body.metadata.issueDate !== undefined) metadata.issueDate = body.metadata.issueDate ? new Date(body.metadata.issueDate) : undefined;
+  }
+  return metadata;
+}
+
+function normalizeVisibility(body = {}, existing = {}) {
+  const input = body.visibility && typeof body.visibility === 'object' ? body.visibility : {};
+  const clientVisible = parseBoolean(
+    body.shareWithClient !== undefined ? body.shareWithClient : input.client,
+    existing.client !== undefined ? existing.client : true
+  );
+  const sponsorVisible = parseBoolean(
+    body.shareWithSponsor !== undefined ? body.shareWithSponsor : input.sponsor,
+    existing.sponsor !== undefined ? existing.sponsor : false
+  );
+  const internalOnly = parseBoolean(body.internalOnly, false);
+  return {
+    client: internalOnly ? false : clientVisible,
+    sponsor: internalOnly ? false : sponsorVisible,
+    internal: internalOnly ? true : (existing.internal !== undefined ? existing.internal : true),
+  };
+}
+
+function deriveDocumentStatus(currentStatus, metadata = {}) {
+  const expiryDate = metadata?.expiryDate ? new Date(metadata.expiryDate) : null;
+  if (expiryDate && !Number.isNaN(expiryDate.getTime()) && expiryDate < new Date()) return 'EXPIRED';
+  if (currentStatus === 'EXPIRED') return 'UPLOADED';
+  return currentStatus || 'UPLOADED';
+}
+
 export class DocumentService {
+  static async syncExpiredStatuses(filter = {}) {
+    const now = new Date();
+    await Document.updateMany(
+      {
+        ...filter,
+        'metadata.expiryDate': { $lt: now },
+        status: { $ne: 'EXPIRED' },
+      },
+      { $set: { status: 'EXPIRED' } }
+    );
+    await Document.updateMany(
+      {
+        ...filter,
+        $or: [
+          { 'metadata.expiryDate': { $exists: false } },
+          { 'metadata.expiryDate': null },
+          { 'metadata.expiryDate': { $gte: now } },
+        ],
+        status: 'EXPIRED',
+      },
+      { $set: { status: 'UPLOADED' } }
+    );
+  }
+
+  static async ensureDocumentAccess(doc, user, query = {}) {
+    if (!doc) throw Object.assign(new Error('Not found'), { status: 404 });
+    if (user.role === 'STUDENT') {
+      if (!doc.clientId) throw Object.assign(new Error('Not authorized'), { status: 403 });
+      const myClient = await Client.findById(doc.clientId);
+      if (!myClient || myClient.userId?.toString() !== user._id.toString()) {
+        throw Object.assign(new Error('Not authorized'), { status: 403 });
+      }
+      if (doc.visibility?.client === false) {
+        throw Object.assign(new Error('This document is not shared with the client portal'), { status: 403 });
+      }
+      return;
+    }
+    if (user.role === 'SUPER_ADMIN') {
+      if (query.consultancyId && doc.consultancyId?.toString() !== String(query.consultancyId)) {
+        throw Object.assign(new Error('Not authorized'), { status: 403 });
+      }
+      return;
+    }
+    const cid = user.profile?.consultancyId || user._id;
+    if (doc.consultancyId?.toString() !== String(cid)) {
+      throw Object.assign(new Error('Not authorized'), { status: 403 });
+    }
+  }
+
   static async getAll(user, query) {
-    const { applicationId, clientId } = query;
+    const { applicationId, clientId, includeAllVersions } = query;
     const filter = {};
     if (applicationId) filter.applicationId = applicationId;
     if (clientId) filter.clientId = clientId;
+    if (!(String(includeAllVersions) === 'true')) filter.isLatest = true;
 
     if (user.role === 'STUDENT') {
       if (!clientId) return [];
       const myClient = await Client.findOne({ userId: user._id, _id: clientId });
       if (!myClient) return [];
+      filter['visibility.client'] = true;
     } else if (user.role === 'SUPER_ADMIN' && query.consultancyId) {
       filter.consultancyId = query.consultancyId;
     } else if (user.role !== 'SUPER_ADMIN') {
       filter.consultancyId = user.profile?.consultancyId || user._id;
     }
-
-    return Document.find(filter).populate('uploadedBy', 'profile').populate('clientId', 'profile');
+    await this.syncExpiredStatuses(filter);
+    return Document.find(filter)
+      .populate('uploadedBy', 'profile')
+      .populate('clientId', 'profile')
+      .sort({ createdAt: -1 });
   }
 
   static async create(data, user) {
     const consultancyId = user.profile?.consultancyId || user._id;
     const doc = await Document.create({
       ...data,
+      metadata: normalizeMetadata(data),
+      visibility: normalizeVisibility(data),
       consultancyId,
       uploadedBy: user._id,
+      status: deriveDocumentStatus(data.status, normalizeMetadata(data)),
     });
 
     if (doc.clientId) {
@@ -61,7 +165,7 @@ export class DocumentService {
 
   static async upload(file, body, user) {
     if (!file) throw Object.assign(new Error('No file uploaded'), { status: 400 });
-    const { clientId, applicationId, type } = body;
+    const { clientId, applicationId, type, replaceDocumentId } = body;
     let consultancyId = user.profile?.consultancyId || user._id;
 
     if (user.role === 'STUDENT' && clientId) {
@@ -72,29 +176,54 @@ export class DocumentService {
       consultancyId = myClient.consultancyId;
     }
 
-    const fileUrl = `/uploads/${file.filename}`;
-    const doc = await Document.create({
-      name: file.originalname,
-      type: type || 'Document',
-      fileUrl,
-      fileKey: file.filename,
-      clientId: clientId || undefined,
-      applicationId: applicationId || undefined,
-      consultancyId,
-      uploadedBy: user._id,
-      status: 'UPLOADED',
-    });
-
-    if (clientId && (type === 'PHOTO' || type === 'CLIENT_SIGNATURE')) {
-      const update = type === 'PHOTO' ? { 'profile.photoUrl': fileUrl } : { 'profile.signatureUrl': fileUrl };
-      await Client.findByIdAndUpdate(clientId, update);
+    let replacement = null;
+    if (replaceDocumentId) {
+      replacement = await Document.findById(replaceDocumentId);
+      await this.ensureDocumentAccess(replacement, user);
     }
 
-    if (clientId) {
-      const client = await Client.findById(clientId).select('assignedAgentId consultancyId profile userId');
-      await logAudit(consultancyId, 'Document', doc._id, 'CREATE', user._id, {
-        description: `Document uploaded: ${type || doc.name || 'Document'}`,
-        clientId,
+    const fileUrl = `/uploads/${file.filename}`;
+    const versionGroupId = replacement?.versionGroupId || replacement?._id || undefined;
+    const version = replacement ? Number(replacement.version || 1) + 1 : 1;
+    const metadata = normalizeMetadata(body, replacement?.metadata || {});
+    const visibility = normalizeVisibility(body, replacement?.visibility || {});
+    const doc = await Document.create({
+      name: file.originalname,
+      type: type || replacement?.type || 'Document',
+      fileUrl,
+      fileKey: file.filename,
+      clientId: clientId || replacement?.clientId || undefined,
+      applicationId: applicationId || replacement?.applicationId || undefined,
+      sponsorId: replacement?.sponsorId || undefined,
+      consultancyId: replacement?.consultancyId || consultancyId,
+      versionGroupId,
+      previousVersionId: replacement?._id || undefined,
+      metadata,
+      visibility,
+      version,
+      isLatest: true,
+      uploadedBy: user._id,
+      status: deriveDocumentStatus('UPLOADED', metadata),
+    });
+
+    if (replacement) {
+      await Document.findByIdAndUpdate(replacement._id, { isLatest: false });
+    }
+
+    const effectiveClientId = clientId || replacement?.clientId;
+    const effectiveApplicationId = applicationId || replacement?.applicationId;
+    const effectiveType = type || replacement?.type;
+
+    if (effectiveClientId && (effectiveType === 'PHOTO' || effectiveType === 'CLIENT_SIGNATURE')) {
+      const update = effectiveType === 'PHOTO' ? { 'profile.photoUrl': fileUrl } : { 'profile.signatureUrl': fileUrl };
+      await Client.findByIdAndUpdate(effectiveClientId, update);
+    }
+
+    if (effectiveClientId) {
+      const client = await Client.findById(effectiveClientId).select('assignedAgentId consultancyId profile userId');
+      await logAudit(doc.consultancyId, 'Document', doc._id, 'CREATE', user._id, {
+        description: replacement ? `Document new version uploaded: ${effectiveType || doc.name || 'Document'} v${version}` : `Document uploaded: ${effectiveType || doc.name || 'Document'}`,
+        clientId: effectiveClientId,
         applicationId: doc.applicationId,
         assignedAgentId: client?.assignedAgentId,
       });
@@ -111,21 +240,21 @@ export class DocumentService {
           consultancyId: client.consultancyId,
           userIds: toNotify,
           excludeUserId: user._id,
-          type: 'DOCUMENT_UPLOADED',
-          title: user.role === 'STUDENT' ? 'Client uploaded document' : 'New document from your agent',
+          type: replacement ? 'DOCUMENT_VERSION_UPLOADED' : 'DOCUMENT_UPLOADED',
+          title: replacement ? 'Document updated with a new version' : user.role === 'STUDENT' ? 'Client uploaded document' : 'New document from your agent',
           message: user.role === 'STUDENT'
-            ? `${client.profile?.firstName} ${client.profile?.lastName} uploaded ${type}`
-            : `Your agent uploaded ${type || doc.name || 'a document'}`,
+            ? `${client.profile?.firstName} ${client.profile?.lastName} uploaded ${effectiveType}`
+            : replacement ? `A new version of ${effectiveType || doc.name || 'a document'} was uploaded` : `Your agent uploaded ${effectiveType || doc.name || 'a document'}`,
           relatedEntityType: 'Document',
           relatedEntityId: doc._id,
         });
       }
     }
 
-    const checklistName = DOC_TYPE_TO_CHECKLIST[type];
-    if (clientId && checklistName) {
-      const appFilter = { clientId, status: { $nin: ['COMPLETED'] } };
-      if (applicationId) appFilter._id = applicationId;
+    const checklistName = DOC_TYPE_TO_CHECKLIST[effectiveType];
+    if (effectiveClientId && checklistName) {
+      const appFilter = { clientId: effectiveClientId, status: { $nin: ['COMPLETED'] } };
+      if (effectiveApplicationId) appFilter._id = effectiveApplicationId;
       const apps = await Application.find(appFilter);
       for (const app of apps) {
         const idx = (app.documentChecklist || []).findIndex((i) => {
@@ -143,8 +272,34 @@ export class DocumentService {
     return doc;
   }
 
+  static async bulkUpload(files, body, user) {
+    const uploads = Array.isArray(files) ? files : [];
+    if (!uploads.length) throw Object.assign(new Error('No files uploaded'), { status: 400 });
+    const created = [];
+    for (const file of uploads) {
+      const doc = await this.upload(file, body, user);
+      created.push(doc);
+    }
+    return created;
+  }
+
   static async update(id, data, user) {
-    const doc = await Document.findByIdAndUpdate(id, data, { new: true });
+    const existing = await Document.findById(id);
+    await this.ensureDocumentAccess(existing, user);
+    const metadata = normalizeMetadata(data, existing?.metadata || {});
+    const visibility = normalizeVisibility(data, existing?.visibility || {});
+    const patch = {
+      ...data,
+      metadata,
+      visibility,
+      status: data.status ? deriveDocumentStatus(data.status, metadata) : deriveDocumentStatus(existing?.status, metadata),
+    };
+    delete patch.expiryDate;
+    delete patch.issueDate;
+    delete patch.shareWithClient;
+    delete patch.shareWithSponsor;
+    delete patch.internalOnly;
+    const doc = await Document.findByIdAndUpdate(id, patch, { new: true });
     if (!doc) throw Object.assign(new Error('Not found'), { status: 404 });
 
     if (doc.clientId && Object.keys(data).length) {
@@ -162,13 +317,7 @@ export class DocumentService {
   static async delete(id, user) {
     const doc = await Document.findById(id);
     if (!doc) throw Object.assign(new Error('Not found'), { status: 404 });
-
-    if (user.role === 'STUDENT' && doc.clientId) {
-      const myClient = await Client.findById(doc.clientId);
-      if (!myClient || myClient.userId?.toString() !== user._id.toString()) {
-        throw Object.assign(new Error('Not authorized'), { status: 403 });
-      }
-    }
+    await this.ensureDocumentAccess(doc, user);
 
     if (doc.clientId) {
       const client = await Client.findById(doc.clientId).select('assignedAgentId');
@@ -181,11 +330,28 @@ export class DocumentService {
     }
 
     await doc.deleteOne();
+    if (doc.isLatest && doc.previousVersionId) {
+      await Document.findByIdAndUpdate(doc.previousVersionId, { isLatest: true });
+    }
     if (doc.fileKey) {
       const filePath = path.join(uploadsDir, doc.fileKey);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
     return { deleted: true };
+  }
+
+  static async getVersions(id, user) {
+    const doc = await Document.findById(id);
+    await this.ensureDocumentAccess(doc, user);
+    const groupId = doc.versionGroupId || doc._id;
+    return Document.find({
+      $or: [
+        { _id: groupId },
+        { versionGroupId: groupId },
+      ],
+    })
+      .populate('uploadedBy', 'profile')
+      .sort({ version: -1, createdAt: -1 });
   }
 
   static getChecklist(visaSubclass) {

@@ -10,6 +10,10 @@ const router = express.Router();
 
 // --- Core Client Reads ---
 router.get('/', authenticate, validate(schemas.getClientsSchema), asyncHandler(ClientController.getAll));
+router.get('/campaign-history', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT'), validate(schemas.campaignHistorySchema), asyncHandler(ClientController.campaignHistory));
+router.post('/campaign-audience', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT'), validate(schemas.campaignAudienceSchema), asyncHandler(ClientController.campaignAudience));
+router.post('/bulk-email-preview', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT'), validate(schemas.bulkEmailSchema), asyncHandler(ClientController.previewBulkEmail));
+router.post('/bulk-email-send', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT'), validate(schemas.bulkEmailSchema), asyncHandler(ClientController.sendBulkEmail));
 router.get('/:id', authenticate, validate(schemas.getByIdSchema), asyncHandler(ClientController.getById));
 router.get('/:id/tasks', authenticate, validate(schemas.getByIdSchema), asyncHandler(ClientController.getTasks));
 router.get('/:id/activity', authenticate, validate(schemas.getByIdSchema), asyncHandler(ClientController.getActivity));

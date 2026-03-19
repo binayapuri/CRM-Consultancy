@@ -1,0 +1,14 @@
+Sample List of Applicants
+
+Advertising platform 1:
+- Candidate A - Australian citizen - Not suitable (insufficient commercial kitchen experience)
+- Candidate B - Permanent resident - Declined interview
+
+Advertising platform 2:
+- Candidate C - Australian citizen - Not suitable (no relevant trade qualification)
+- Candidate D - Temporary resident - Not suitable (not available for required shifts)
+
+Notes:
+- Keep screenshots or PDFs of the advertisements
+- Keep payment receipts or invoices
+- Keep a short record of why each local applicant was not progressed

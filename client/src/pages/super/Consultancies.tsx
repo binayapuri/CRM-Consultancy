@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
-import { Plus, Pencil, Trash2, Eye, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Check, Search, Filter, X } from 'lucide-react';
 
 const SPECIALIZATIONS = ['Student Visa', 'Graduate Visa (485)', 'Skilled Migration (189/190/491)', 'Partner Visa', 'AAT', 'Visitor Visa'];
 
@@ -22,6 +22,9 @@ const emptyForm = () => ({
 
 export default function SuperConsultancies() {
   const [consultancies, setConsultancies] = useState<any[]>([]);
+  const [q, setQ] = useState('');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [editingConsultancy, setEditingConsultancy] = useState<{ _id: string } | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
@@ -220,6 +223,13 @@ export default function SuperConsultancies() {
     });
   };
 
+  const filtered = consultancies.filter((c: any) => {
+    const haystack = `${c.displayName || ''} ${c.name || ''} ${c.email || ''} ${c.abn || ''} ${(c.specializations || []).join(' ')}`.toLowerCase();
+    const searchMatch = haystack.includes(q.toLowerCase());
+    const verifiedMatch = !verifiedOnly || !!c.verified;
+    return searchMatch && verifiedMatch;
+  });
+
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -228,6 +238,22 @@ export default function SuperConsultancies() {
           <p className="text-slate-500 mt-1">All registered consultancies</p>
         </div>
         <button type="button" onClick={openAddModal} className="btn-primary flex items-center gap-2"><Plus className="w-4 h-4" /> Add Consultancy</button>
+      </div>
+      <div className="mt-6 flex flex-wrap gap-4">
+        <div className="relative flex-1 min-w-[260px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input value={q} onChange={e => setQ(e.target.value)} className="input pl-9" placeholder="Search by name, email, ABN, specialization..." />
+        </div>
+        <button type="button" onClick={() => setShowFilters(v => !v)} className={`btn-secondary flex items-center gap-2 ${showFilters ? 'ring-2 ring-ori-500' : ''}`}><Filter className="w-4 h-4" /> Filters</button>
+        {showFilters && (
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" checked={verifiedOnly} onChange={e => setVerifiedOnly(e.target.checked)} className="rounded" />
+              Verified only
+            </label>
+            {(verifiedOnly || q) && <button type="button" onClick={() => { setVerifiedOnly(false); setQ(''); }} className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1"><X className="w-4 h-4" /> Clear</button>}
+          </div>
+        )}
       </div>
       <div className="card mt-6 overflow-hidden">
         <table className="w-full">
@@ -241,7 +267,7 @@ export default function SuperConsultancies() {
             </tr>
           </thead>
           <tbody>
-            {consultancies.map((c: any) => (
+            {filtered.map((c: any) => (
               <tr key={c._id} className="border-b border-slate-100 hover:bg-slate-50/50">
                 <td className="px-4 py-3 font-medium">{c.displayName || c.name}</td>
                 <td className="px-4 py-3 text-slate-600">{c.abn || '-'}</td>
@@ -256,6 +282,11 @@ export default function SuperConsultancies() {
             ))}
           </tbody>
         </table>
+        {!filtered.length && (
+          <div className="px-4 py-10 text-center text-slate-500 text-sm">
+            No consultancies match the current search or filters.
+          </div>
+        )}
       </div>
     </div>
   );

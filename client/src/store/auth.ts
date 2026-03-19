@@ -79,7 +79,7 @@ function isTokenInvalid401(res: Response, body: { error?: string } | null): bool
   return /invalid token|token expired|jwt|signature|malformed|sign in again|no token|authorization/i.test(msg);
 }
 
-const API_BASE =
+export const API_BASE =
   (import.meta.env.VITE_API_URL as string) ||
   (import.meta.env.DEV ? 'http://localhost:4000' : '');
 

@@ -13,5 +13,6 @@ router.get('/', authenticate, asyncHandler(AppointmentController.getUserAppointm
 
 // Book an appointment (Student)
 router.post('/', authenticate, validate(schemas.createAppointmentSchema), asyncHandler(AppointmentController.bookAppointment));
+router.patch('/:id', authenticate, validate(schemas.updateAppointmentSchema), asyncHandler(AppointmentController.updateAppointment));
 
 export default router;

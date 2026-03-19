@@ -25,8 +25,10 @@ const router = express.Router();
 router.get('/', authenticate, validate(schemas.getDocsSchema), asyncHandler(DocumentController.getAll));
 router.post('/', authenticate, validate(schemas.createDocSchema), asyncHandler(DocumentController.create));
 router.post('/upload', authenticate, upload.single('file'), validate(schemas.uploadDocSchema), asyncHandler(DocumentController.upload));
+router.post('/bulk-upload', authenticate, upload.array('files', 20), validate(schemas.bulkUploadDocSchema), asyncHandler(DocumentController.bulkUpload));
 router.patch('/:id', authenticate, validate(schemas.updateDocSchema), asyncHandler(DocumentController.update));
 router.delete('/:id', authenticate, validate(schemas.deleteDocSchema), asyncHandler(DocumentController.delete));
+router.get('/:id/versions', authenticate, validate(schemas.documentVersionsSchema), asyncHandler(DocumentController.getVersions));
 
 router.get('/checklist/:visaSubclass', validate(schemas.getChecklistSchema), asyncHandler(DocumentController.getChecklist));
 

@@ -40,6 +40,9 @@ import offerLettersRoutes from './routes/offer-letters.js';
 import visaTimelineRoutes from './routes/visa-timeline.js';
 import documentTemplatesRoutes from './routes/document-templates.js';
 import insuranceRoutes from './routes/insurance.js';
+import consultancyBillingRoutes from './routes/consultancy-billing.js';
+import consultancyOpsRoutes from './routes/consultancy-ops.js';
+import trackingRoutes from './routes/tracking.js';
 
 import communityRoutes from './routes/community.js';
 import newsRoutes from './routes/news.js';
@@ -125,6 +128,9 @@ app.use('/api/offer-letters', offerLettersRoutes);
 app.use('/api/visa-timeline', visaTimelineRoutes);
 app.use('/api/document-templates', documentTemplatesRoutes);
 app.use('/api/insurance', insuranceRoutes);
+app.use('/api/consultancy-billing', consultancyBillingRoutes);
+app.use('/api/consultancy-ops', consultancyOpsRoutes);
+app.use('/api/tracking', trackingRoutes);
 
 app.use('/api/community', communityRoutes);
 app.use('/api/news', newsRoutes);

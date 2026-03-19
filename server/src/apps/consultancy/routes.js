@@ -10,7 +10,7 @@ import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
 import { ConsultancyController } from './controllers/consultancy.controller.js';
 import { 
-  signatureSchema, searchSchema, getByIdSchema, registerConsultancySchema, 
+  signatureSchema, searchSchema, getByIdSchema, overviewQuerySchema, registerConsultancySchema, 
   createConsultancySchema, updateConsultancySchema, updateByIdSchema, deleteConsultancySchema 
 } from './schemas/consultancy.schema.js';
 
@@ -62,6 +62,18 @@ router.get('/search',
 router.get('/me', 
   authenticate, 
   asyncHandler(ConsultancyController.getMe)
+);
+
+router.get('/me/overview',
+  authenticate,
+  validate(overviewQuerySchema),
+  asyncHandler(ConsultancyController.getMyOverview)
+);
+
+router.get('/me/report-export',
+  authenticate,
+  validate(overviewQuerySchema),
+  asyncHandler(ConsultancyController.exportReport)
 );
 
 router.get('/:id', 

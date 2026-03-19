@@ -1,0 +1,25 @@
+Work Reference Sample
+
+To whom it may concern,
+
+This letter confirms that [Employee Name] was employed by [Employer Name]
+as a [Position Title] from [Start Date] to [End Date].
+
+Main duties included:
+- Duty 1
+- Duty 2
+- Duty 3
+
+Employment details:
+- Hours worked per week: [Hours]
+- Employment type: [Full-time / Part-time / Casual]
+- Salary: [Amount]
+
+Please contact us if further information is required.
+
+Sincerely,
+[Name]
+[Position]
+[Company]
+[Phone]
+[Email]

@@ -17,6 +17,12 @@ export const getByIdSchema = z.object({
   params: z.object({ id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ID') })
 });
 
+export const overviewQuerySchema = z.object({
+  query: z.object({
+    consultancyId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ID').optional(),
+  }),
+});
+
 export const registerConsultancySchema = z.object({
   body: z.object({
     email: z.string().email(),

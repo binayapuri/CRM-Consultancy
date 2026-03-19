@@ -322,6 +322,11 @@ export default function Kanban() {
                           <User className="w-3 h-3" />
                           {t.clientId ? [t.clientId.profile?.firstName, t.clientId.profile?.lastName].filter(Boolean).join(' ') : '—'}
                         </p>
+                        {(t.tags || []).includes('AUTOMATION') && (
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-violet-700 bg-violet-100 inline-flex px-2 py-1 rounded-full mt-2">
+                            Automated
+                          </p>
+                        )}
                         {t.comments?.length > 0 && <p className="text-xs text-slate-400 mt-1 flex items-center gap-1"><MessageSquare className="w-3 h-3" />{t.comments.length} comments</p>}
                       </div>
                       <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
@@ -355,6 +360,7 @@ export default function Kanban() {
               <div className="flex gap-2 flex-wrap items-center">
                 <span className={`px-2 py-1 rounded text-xs ${selectedTask.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : selectedTask.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-600'}`}>{selectedTask.status}</span>
                 <span className="px-2 py-1 rounded text-xs bg-slate-100">{selectedTask.priority}</span>
+                {(selectedTask.tags || []).includes('AUTOMATION') && <span className="px-2 py-1 rounded text-xs bg-violet-100 text-violet-700">Automated workflow</span>}
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-500">Assign:</span>
                   <select value={selectedTask.assignedTo?._id || selectedTask.assignedTo || ''} onChange={e => assignTask(selectedTask._id, e.target.value)} className="input text-sm py-1 w-40">

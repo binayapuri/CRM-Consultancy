@@ -12,7 +12,12 @@ export const validate = (schema) => async (req, res, next) => {
     return next();
   } catch (err) {
     if (err.name === 'ZodError') {
-      const formattedErrors = err.errors.map((e) => ({
+      const issues = Array.isArray(err.issues)
+        ? err.issues
+        : Array.isArray(err.errors)
+          ? err.errors
+          : [];
+      const formattedErrors = issues.map((e) => ({
         path: e.path.join('.'),
         message: e.message,
       }));

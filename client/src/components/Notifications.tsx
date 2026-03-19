@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authFetch } from '../store/auth';
+import { API_BASE, authFetch, useAuthStore } from '../store/auth';
 import { Bell } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -20,6 +20,7 @@ function getNotificationLink(n: any): string | null {
 
 export default function Notifications() {
   const navigate = useNavigate();
+  const token = useAuthStore((state) => state.token);
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
 
@@ -38,9 +39,35 @@ export default function Notifications() {
       .catch(() => setNotifications([]));
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
-    return () => clearInterval(interval);
-  }, []);
+    const interval = setInterval(fetchNotifications, 60000);
+    let stream: EventSource | null = null;
+    if (token) {
+      const url = `${API_BASE}/api/notifications/stream?token=${encodeURIComponent(token)}`;
+      stream = new EventSource(url);
+      stream.addEventListener('notification', (event) => {
+        const payload = JSON.parse((event as MessageEvent).data);
+        setNotifications((prev) => {
+          const exists = prev.some((item) => item._id === payload._id);
+          if (exists) return prev;
+          return [payload, ...prev].slice(0, 100);
+        });
+      });
+      stream.addEventListener('notification.read', (event) => {
+        const payload = JSON.parse((event as MessageEvent).data);
+        setNotifications((prev) => prev.map((item) => item._id === payload.id ? { ...item, read: true } : item));
+      });
+      stream.addEventListener('notification.read-all', () => {
+        setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
+      });
+      stream.onerror = () => {
+        stream?.close();
+      };
+    }
+    return () => {
+      clearInterval(interval);
+      stream?.close();
+    };
+  }, [token]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

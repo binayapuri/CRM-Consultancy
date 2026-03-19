@@ -10,6 +10,7 @@ const rolePermissionSchema = new mongoose.Schema({
     leads: { view: { type: Boolean, default: true }, create: { type: Boolean, default: true }, edit: { type: Boolean, default: true }, delete: { type: Boolean, default: false } },
     documents: { view: { type: Boolean, default: true }, upload: { type: Boolean, default: true }, delete: { type: Boolean, default: false } },
     trustLedger: { view: { type: Boolean, default: false }, edit: { type: Boolean, default: false } },
+    billing: { view: { type: Boolean, default: false }, create: { type: Boolean, default: false }, edit: { type: Boolean, default: false }, delete: { type: Boolean, default: false } },
     employees: { view: { type: Boolean, default: false }, manage: { type: Boolean, default: false } },
     traceHistory: { view: { type: Boolean, default: false } },
     settings: { view: { type: Boolean, default: false }, edit: { type: Boolean, default: false } },
@@ -67,7 +68,10 @@ const consultancySchema = new mongoose.Schema({
   initialAdviceTemplate: {
     subject: String,
     body: String,
+    sponsorship482Body: String,
     feeBlocks: [{ label: String, amount: String, description: String }],
+    governmentFeeBlocks: [{ label: String, amount: String, description: String, payer: String }],
+    checklistItems: [String],
   },
   // Multiple email profiles - admin adds, employees can choose which to use
   emailProfiles: [{

@@ -131,7 +131,7 @@ export class AuthService {
 
   static async updateMe(user, data) {
     const { profile } = data;
-    const allowed = ['firstName', 'lastName', 'phone', 'marnNumber', 'passportNumber', 'passportExpiry', 'passportCountry', 'address', 'preferredEmailProfileId'];
+    const allowed = ['firstName', 'lastName', 'phone', 'marnNumber', 'passportNumber', 'passportExpiry', 'passportCountry', 'address', 'preferredEmailProfileId', 'notificationPreferences'];
     const update = {};
     if (profile) {
       for (const k of allowed) {
