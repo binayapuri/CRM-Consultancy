@@ -11,7 +11,7 @@ export const createEmployeeSchema = z.object({
     email: z.string().email(),
     password: z.string().optional(),
     role: z.enum(['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT']).optional(),
-    profile: z.record(z.any()).optional()
+    profile: z.record(z.string(), z.any()).optional()
   })
 });
 
@@ -20,7 +20,7 @@ export const updateEmployeeSchema = z.object({
   body: z.object({
     password: z.string().optional(),
     role: z.string().optional(),
-    profile: z.record(z.any()).optional(),
+    profile: z.record(z.string(), z.any()).optional(),
     isActive: z.boolean().optional()
   })
 });

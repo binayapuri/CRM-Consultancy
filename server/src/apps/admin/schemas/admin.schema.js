@@ -32,6 +32,6 @@ export const updateSettingsSchema = z.object({
         privateKey: z.string().optional(),
       }).passthrough().optional(),
     }).passthrough().optional(),
-    notifications: z.record(z.any()).optional(),
+    notifications: z.record(z.string(), z.any()).optional(),
   }).passthrough(),
 });

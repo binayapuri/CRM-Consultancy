@@ -7,12 +7,12 @@ export const getLeadsSchema = z.object({
 });
 
 export const createLeadSchema = z.object({
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const updateLeadSchema = z.object({
   params: idParam,
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const publicEnquirySchema = z.object({

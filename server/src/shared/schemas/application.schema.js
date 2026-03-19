@@ -20,7 +20,7 @@ export const createAppSchema = z.object({
 
 export const updateAppSchema = z.object({
   params: idParam,
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const updateChecklistSchema = z.object({

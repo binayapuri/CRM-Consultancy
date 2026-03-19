@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const checkInSchema = z.object({
   body: z.object({
-    location: z.record(z.any()).optional()
+    location: z.record(z.string(), z.any()).optional()
   })
 });
 

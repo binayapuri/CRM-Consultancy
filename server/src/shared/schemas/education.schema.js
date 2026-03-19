@@ -19,30 +19,30 @@ export const compareCollegesSchema = z.object({
 });
 
 export const createCollegeSchema = z.object({
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const updateCollegeSchema = z.object({
   params: idParam,
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 // Universities & Courses
 export const createUniversitySchema = z.object({
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const updateUniversitySchema = z.object({
   params: idParam,
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const createCourseSchema = z.object({
   params: idParam, // universityId
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const updateCourseSchema = z.object({
   params: z.object({ courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ID') }),
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });

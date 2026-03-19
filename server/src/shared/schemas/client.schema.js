@@ -15,10 +15,10 @@ export const bulkEmailSchema = z.object({
     clientIds: z.array(z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ID')).min(1),
     subject: z.string().min(1),
     body: z.string().min(1),
-    mergeData: z.record(z.record(z.any())).optional(),
+    mergeData: z.record(z.string(), z.record(z.string(), z.any())).optional(),
     campaignKey: z.string().optional(),
     campaignLabel: z.string().optional(),
-    audience: z.array(z.record(z.any())).optional(),
+    audience: z.array(z.record(z.string(), z.any())).optional(),
   })
 });
 
@@ -39,26 +39,26 @@ export const campaignHistorySchema = z.object({
 export const getByIdSchema = z.object({ params: idParam });
 
 export const createClientSchema = z.object({
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const updateClientSchema = z.object({
   params: idParam,
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const deleteClientSchema = z.object({ params: idParam });
 
 // Sub-arrays (using basic any records for now due to deep nesting complexity, but structured natively)
-export const addArrayItemSchema = z.object({ params: idParam, body: z.record(z.any()) });
-export const updateArrayItemSchema = z.object({ params: idxParam, body: z.record(z.any()) });
+export const addArrayItemSchema = z.object({ params: idParam, body: z.record(z.string(), z.any()) });
+export const updateArrayItemSchema = z.object({ params: idxParam, body: z.record(z.string(), z.any()) });
 
 export const addActivitySchema = z.object({
   params: idParam,
   body: z.object({
     text: z.string().min(1),
     type: z.string().optional(),
-    metadata: z.record(z.any()).optional()
+    metadata: z.record(z.string(), z.any()).optional()
   })
 });
 
@@ -91,5 +91,5 @@ export const updateNoteSchema = z.object({
 
 export const deleteNoteSchema = z.object({ params: idxParam });
 
-export const updateGenericSchema = z.object({ params: idParam, body: z.record(z.any()) });
+export const updateGenericSchema = z.object({ params: idParam, body: z.record(z.string(), z.any()) });
 export const deleteNestedSchema = (key) => z.object({ params: nestedIdParam(key) });
