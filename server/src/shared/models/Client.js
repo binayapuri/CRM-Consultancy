@@ -116,6 +116,31 @@ const familyMemberSchema = new mongoose.Schema({
   travelHistory: [travelHistorySchema],
 }, { _id: true });
 
+const privacyConsentSchema = new mongoose.Schema({
+  dataCollection: { type: Boolean, default: false },
+  dataSharing: { type: Boolean, default: false },
+  marketing: { type: Boolean, default: false },
+  consentedAt: Date,
+  consentSource: {
+    type: String,
+    enum: ['FORM', 'EMAIL', 'PORTAL', 'VERBAL', 'OTHER'],
+    default: 'PORTAL',
+  },
+  notes: String,
+}, { _id: false });
+
+const retentionSchema = new mongoose.Schema({
+  archiveStatus: {
+    type: String,
+    enum: ['ACTIVE', 'UNDER_REVIEW', 'READY_TO_ARCHIVE', 'ARCHIVED'],
+    default: 'ACTIVE',
+  },
+  archiveEligibleAt: Date,
+  archivedAt: Date,
+  lastReviewedAt: Date,
+  archiveReason: String,
+}, { _id: false });
+
 const clientSchema = new mongoose.Schema({
   consultancyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultancy', required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -248,6 +273,8 @@ const clientSchema = new mongoose.Schema({
     editedAt: Date,
     isLegalAdvice: Boolean,
   }],
+  privacyConsent: { type: privacyConsentSchema, default: () => ({}) },
+  retention: { type: retentionSchema, default: () => ({}) },
   assignedAgentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   agentDisconnectedAt: Date,
   status: { type: String, enum: ['LEAD', 'ACTIVE', 'ARCHIVED', 'DISCONNECTED', 'PENDING_ACCESS'], default: 'ACTIVE' },

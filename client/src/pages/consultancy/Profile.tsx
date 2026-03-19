@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { useAuthStore } from '../../store/auth';
-import { User, Key, MapPin, FileCheck, Camera, Save, Eye, EyeOff, Settings, Mail } from 'lucide-react';
+import { resolveFileUrl } from '../../lib/imageUrl';
+import { User, Key, MapPin, FileCheck, Camera, Save, Eye, EyeOff, Settings, Mail, Bell } from 'lucide-react';
 
 export default function ConsultancyProfile() {
   const { user, fetchUser } = useAuthStore();
-  const [activeSection, setActiveSection] = useState<'personal' | 'passport' | 'address' | 'email' | 'security'>('personal');
+  const [activeSection, setActiveSection] = useState<'personal' | 'passport' | 'address' | 'email' | 'notifications' | 'security'>('personal');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -38,6 +39,23 @@ export default function ConsultancyProfile() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [emailProfiles, setEmailProfiles] = useState<{ _id: string; name: string; isDefault?: boolean }[]>([]);
   const [preferredEmailProfileId, setPreferredEmailProfileId] = useState<string>('');
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    inApp: true,
+    email: false,
+    sms: false,
+    categories: {
+      tasks: true,
+      deadlines: true,
+      documents: true,
+      billing: true,
+      messages: true,
+      community: true,
+      jobs: true,
+      access: true,
+      marketing: false,
+      system: true,
+    },
+  });
 
   useEffect(() => {
     if (user) {
@@ -63,6 +81,24 @@ export default function ConsultancyProfile() {
         country: addr.country || 'Australia',
       });
       setPreferredEmailProfileId(p.preferredEmailProfileId || '');
+      const np = p.notificationPreferences || {};
+      setNotificationPreferences({
+        inApp: np.inApp !== false,
+        email: !!np.email,
+        sms: !!np.sms,
+        categories: {
+          tasks: np.categories?.tasks !== false,
+          deadlines: np.categories?.deadlines !== false,
+          documents: np.categories?.documents !== false,
+          billing: np.categories?.billing !== false,
+          messages: np.categories?.messages !== false,
+          community: np.categories?.community !== false,
+          jobs: np.categories?.jobs !== false,
+          access: np.categories?.access !== false,
+          marketing: !!np.categories?.marketing,
+          system: np.categories?.system !== false,
+        },
+      });
     }
   }, [user]);
 
@@ -229,11 +265,31 @@ export default function ConsultancyProfile() {
     }
   };
 
+  const handleSaveNotifications = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await authFetch('/api/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: { notificationPreferences } }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      fetchUser();
+      showMsg('success', 'Notification preferences updated');
+    } catch (err) {
+      showMsg('error', (err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const sections = [
     { id: 'personal' as const, label: 'Personal Details', icon: User },
     { id: 'passport' as const, label: 'Passport', icon: FileCheck },
     { id: 'address' as const, label: 'Address', icon: MapPin },
     ...(emailProfiles.length ? [{ id: 'email' as const, label: 'Email', icon: Mail }] : []),
+    { id: 'notifications' as const, label: 'Notifications', icon: Bell },
     { id: 'security' as const, label: 'Security', icon: Key },
   ];
 
@@ -252,7 +308,7 @@ export default function ConsultancyProfile() {
       <div className="card mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-6">
         <div className="relative group">
           {user?.profile?.avatar ? (
-            <img src={user.profile.avatar} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
+            <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           ) : (
             <div className="w-24 h-24 rounded-full bg-ori-500 text-white flex items-center justify-center text-2xl font-bold">
               {initials}
@@ -393,6 +449,68 @@ export default function ConsultancyProfile() {
                 <option value="">Use consultancy default</option>
                 {emailProfiles.map(p => <option key={p._id} value={p._id}>{p.name}{p.isDefault ? ' (default)' : ''}</option>)}
               </select>
+            </div>
+            <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2"><Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}</button>
+          </form>
+        </div>
+      )}
+
+      {activeSection === 'notifications' && (
+        <div className="card mt-6">
+          <h3 className="font-display font-semibold text-slate-900 mb-4 flex items-center gap-2"><Bell className="w-5 h-5 text-ori-600" /> Notification Preferences</h3>
+          <form onSubmit={handleSaveNotifications} className="space-y-6">
+            <div className="grid sm:grid-cols-3 gap-4">
+              <label className="rounded-xl border border-slate-200 p-4 flex items-start gap-3">
+                <input type="checkbox" checked={notificationPreferences.inApp} onChange={e => setNotificationPreferences(v => ({ ...v, inApp: e.target.checked }))} className="mt-1" />
+                <div>
+                  <p className="font-medium text-slate-900">In-app alerts</p>
+                  <p className="text-sm text-slate-500">Live bell updates and notification center items.</p>
+                </div>
+              </label>
+              <label className="rounded-xl border border-slate-200 p-4 flex items-start gap-3">
+                <input type="checkbox" checked={notificationPreferences.email} onChange={e => setNotificationPreferences(v => ({ ...v, email: e.target.checked }))} className="mt-1" />
+                <div>
+                  <p className="font-medium text-slate-900">Email alerts</p>
+                  <p className="text-sm text-slate-500">Preference saved for upcoming email delivery flows.</p>
+                </div>
+              </label>
+              <label className="rounded-xl border border-slate-200 p-4 flex items-start gap-3">
+                <input type="checkbox" checked={notificationPreferences.sms} onChange={e => setNotificationPreferences(v => ({ ...v, sms: e.target.checked }))} className="mt-1" />
+                <div>
+                  <p className="font-medium text-slate-900">SMS alerts</p>
+                  <p className="text-sm text-slate-500">Preference saved for future urgent reminders.</p>
+                </div>
+              </label>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-slate-900 mb-3">Alert categories</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {[
+                  ['tasks', 'Tasks and assignments'],
+                  ['deadlines', 'Deadlines and expiry alerts'],
+                  ['documents', 'Document uploads and checklist updates'],
+                  ['billing', 'Quotes and invoices'],
+                  ['messages', 'Direct messages'],
+                  ['community', 'Community replies'],
+                  ['jobs', 'Job application updates'],
+                  ['access', 'Portal invitations and access requests'],
+                  ['marketing', 'Announcements and marketing'],
+                  ['system', 'System and compliance notices'],
+                ].map(([key, label]) => (
+                  <label key={key} className="rounded-xl border border-slate-200 px-4 py-3 flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={(notificationPreferences.categories as any)[key]}
+                      onChange={e => setNotificationPreferences(v => ({
+                        ...v,
+                        categories: { ...v.categories, [key]: e.target.checked },
+                      }))}
+                    />
+                    <span className="text-sm text-slate-700">{label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
             <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2"><Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}</button>
           </form>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Newspaper, Calendar, Eye, ArrowRight, Tag } from 'lucide-react';
 import { StudentSectionTabs } from '../../components/StudentSectionTabs';
+import { resolveFileUrl } from '../../lib/imageUrl';
 
 interface Article {
   _id: string;
@@ -89,7 +90,7 @@ export default function News() {
                 >
                   {article.coverImage ? (
                     <div className="sm:w-32 shrink-0 h-24 sm:h-[100px] overflow-hidden relative">
-                      <img src={article.coverImage} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <img src={resolveFileUrl(article.coverImage)} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded-md text-white text-[10px] font-bold uppercase tracking-wider">
                         {categoryLabel(article)}
                       </div>

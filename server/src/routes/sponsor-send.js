@@ -8,8 +8,16 @@ import * as schemas from '../shared/schemas/portal.schema.js';
 
 const router = express.Router();
 
-router.post('/:sponsorId/send-form956', authenticate, requireRole('CONSULTANCY_ADMIN', 'AGENT', 'SUPER_ADMIN'), validate(schemas.idParamsSchema), asyncHandler(PortalController.sendForm956ToSponsor));
+router.post('/:sponsorId/preview-form956', authenticate, requireRole('CONSULTANCY_ADMIN', 'AGENT', 'SUPER_ADMIN'), validate(schemas.previewSponsorDraftSchema), asyncHandler(PortalController.previewForm956ToSponsor));
 
-router.post('/:sponsorId/send-mia', authenticate, requireRole('CONSULTANCY_ADMIN', 'AGENT', 'SUPER_ADMIN'), validate(schemas.idParamsSchema), asyncHandler(PortalController.sendMiaToSponsor));
+router.post('/:sponsorId/send-form956', authenticate, requireRole('CONSULTANCY_ADMIN', 'AGENT', 'SUPER_ADMIN'), validate(schemas.previewSponsorDraftSchema), asyncHandler(PortalController.sendForm956ToSponsor));
+
+router.post('/:sponsorId/preview-mia', authenticate, requireRole('CONSULTANCY_ADMIN', 'AGENT', 'SUPER_ADMIN'), validate(schemas.previewSponsorDraftSchema), asyncHandler(PortalController.previewMiaToSponsor));
+
+router.post('/:sponsorId/send-mia', authenticate, requireRole('CONSULTANCY_ADMIN', 'AGENT', 'SUPER_ADMIN'), validate(schemas.previewSponsorDraftSchema), asyncHandler(PortalController.sendMiaToSponsor));
+
+router.post('/:sponsorId/preview-sponsorship-package', authenticate, requireRole('CONSULTANCY_ADMIN', 'AGENT', 'SUPER_ADMIN'), validate(schemas.previewSponsorDraftSchema), asyncHandler(PortalController.previewSponsorshipPackage));
+
+router.post('/:sponsorId/send-sponsorship-package', authenticate, requireRole('CONSULTANCY_ADMIN', 'AGENT', 'SUPER_ADMIN'), validate(schemas.previewSponsorDraftSchema), asyncHandler(PortalController.sendSponsorshipPackage));
 
 export default router;

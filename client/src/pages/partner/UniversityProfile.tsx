@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { authFetch } from '../../store/auth';
+import { resolveFileUrl } from '../../lib/imageUrl';
 import { Building2, GraduationCap, Save, X, MapPin, Mail, Plus, DollarSign, Settings, Image } from 'lucide-react';
 
 function AddCourseForm({ universityId, branches, onAdded }: { universityId?: string; branches: Branch[]; onAdded: () => void }) {
@@ -334,7 +335,7 @@ export default function UniversityProfile() {
             <div className="flex flex-col items-center gap-2">
               <div className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50">
                 {form.logoUrl ? (
-                  <img src={form.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                  <img src={resolveFileUrl(form.logoUrl)} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
                   <Image className="w-10 h-10 text-slate-400" />
                 )}

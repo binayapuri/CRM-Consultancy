@@ -3,7 +3,7 @@ import JobApplication from '../models/JobApplication.js';
 import RecruiterEmployerProfile from '../models/RecruiterEmployerProfile.js';
 import SavedJob from '../models/SavedJob.js';
 import JobAlert from '../models/JobAlert.js';
-import Notification from '../models/Notification.js';
+import { createNotification } from '../utils/notify.js';
 
 export class JobService {
   /** Public jobs listing - no auth required */
@@ -66,7 +66,7 @@ export class JobService {
   static async updateApplicationStatus(id, status) {
     const app = await JobApplication.findByIdAndUpdate(id, { status }, { new: true });
     if (app?.studentId) {
-      await Notification.create({
+      await createNotification({
         userId: app.studentId,
         type: 'JOB_APPLICATION_UPDATE',
         title: 'Your job application was updated',
@@ -99,7 +99,7 @@ export class JobService {
       coverLetterUrl
     });
     if (job.postedBy) {
-      await Notification.create({
+      await createNotification({
         userId: job.postedBy,
         type: 'NEW_JOB_APPLICATION',
         title: 'New application received',

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ChevronLeft, Calendar, Eye, Tag, Newspaper } from 'lucide-react';
+import { resolveFileUrl } from '../../lib/imageUrl';
 
 interface Article {
   _id: string;
@@ -99,7 +100,7 @@ export default function NewsDetail() {
         {article.coverImage && (
           <div className="aspect-[21/9] sm:aspect-[3/1] w-full overflow-hidden bg-slate-100">
             <img
-              src={article.coverImage}
+              src={resolveFileUrl(article.coverImage)}
               alt=""
               className="w-full h-full object-cover"
             />

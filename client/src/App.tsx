@@ -26,10 +26,12 @@ import Clients from './pages/consultancy/Clients';
 import ClientDetail from './pages/consultancy/ClientDetail';
 import Documents from './pages/consultancy/Documents';
 import Leads from './pages/consultancy/Leads';
+import ConsultancyCalendarView from './pages/consultancy/CalendarView';
 import DailyTasks from './pages/consultancy/DailyTasks';
 import Colleges from './pages/consultancy/Colleges';
 import OSHC from './pages/consultancy/OSHC';
 import TrustLedger from './pages/consultancy/TrustLedger';
+import ConsultancyBilling from './pages/consultancy/Billing';
 import Sponsors from './pages/consultancy/Sponsors';
 import ConsultancyProfile from './pages/consultancy/Profile';
 import ConsultancySettings from './pages/consultancy/Settings';
@@ -168,6 +170,7 @@ export default function App() {
         <Route path="documents" element={<Documents />} />
         <Route path="templates" element={<Navigate to="documents" replace />} />
         <Route path="leads" element={<Leads />} />
+        <Route path="calendar" element={<ConsultancyCalendarView />} />
         <Route path="leads/add" element={<LeadForm />} />
         <Route path="leads/:id/edit" element={<LeadForm />} />
         <Route path="leads/:id" element={<LeadDetail />} />
@@ -176,6 +179,7 @@ export default function App() {
         <Route path="colleges" element={<Colleges />} />
         <Route path="oshc" element={<OSHC />} />
         <Route path="trust" element={<TrustLedger />} />
+        <Route path="billing" element={<ConsultancyBilling />} />
         <Route path="sponsors" element={<Sponsors />} />
         <Route path="university-requests" element={<UniversityRequests />} />
         <Route path="profile" element={<ConsultancyProfile />} />

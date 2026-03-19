@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, Video, User, Building2, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
+import { resolveFileUrl } from '../../lib/imageUrl';
 
 interface Appointment {
   _id: string;
@@ -80,7 +81,7 @@ export default function Bookings() {
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-full bg-slate-100 border-2 border-white shadow-md overflow-hidden shrink-0">
                           {apt.agentId.profile?.avatar ? (
-                            <img src={apt.agentId.profile.avatar} alt="Agent" className="w-full h-full object-cover" />
+                            <img src={resolveFileUrl(apt.agentId.profile.avatar)} alt="Agent" className="w-full h-full object-cover" />
                           ) : (
                             <User className="w-full h-full p-3 text-slate-400" />
                           )}
@@ -161,7 +162,7 @@ export default function Bookings() {
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden shrink-0">
                               {apt.agentId.profile?.avatar ? (
-                                <img src={apt.agentId.profile.avatar} alt="Agent" className="w-full h-full object-cover" />
+                                <img src={resolveFileUrl(apt.agentId.profile.avatar)} alt="Agent" className="w-full h-full object-cover" />
                               ) : (
                                 <User className="w-full h-full p-1.5 text-slate-400" />
                               )}

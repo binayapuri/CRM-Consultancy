@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, MessageSquare, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt, Menu } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
+import { resolveFileUrl } from '../lib/imageUrl';
 import AIChatWidget from '../components/AIChatWidget';
 import Notifications from '../components/Notifications';
 
@@ -168,7 +169,7 @@ export default function StudentLayout() {
                 className="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-100 transition"
               >
                 {user?.profile?.avatar ? (
-                  <img src={user.profile.avatar} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-slate-200" />
+                  <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-slate-200" />
                 ) : (
                   <div className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm text-white shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
                     {initials}

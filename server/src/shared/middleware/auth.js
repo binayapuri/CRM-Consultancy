@@ -6,6 +6,14 @@ import Consultancy from '../models/Consultancy.js';
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production';
 
+export async function getAuthenticatedUserFromToken(token) {
+  if (!token) return null;
+  const decoded = jwt.verify(token, JWT_SECRET);
+  const user = await User.findById(decoded.userId).select('-password');
+  if (!user || !user.isActive) return null;
+  return user;
+}
+
 export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -13,12 +21,8 @@ export const authenticate = async (req, res, next) => {
       return res.status(401).json({ error: 'Access denied. No token provided.' });
     }
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await getAuthenticatedUserFromToken(token);
     if (!user) return res.status(401).json({ error: 'User not found.' });
-    if (!user.isActive) {
-      return res.status(403).json({ error: 'Your account is inactive. Contact support.' });
-    }
     req.user = user;
     next();
   } catch (err) {
@@ -44,6 +48,7 @@ const FEATURE_MAP = {
   leads: { path: 'leads', actions: ['view', 'create', 'edit', 'delete'] },
   documents: { path: 'documents', actions: ['view', 'upload', 'delete'] },
   trustLedger: { path: 'trustLedger', actions: ['view', 'edit'] },
+  billing: { path: 'billing', actions: ['view', 'create', 'edit', 'delete'] },
   employees: { path: 'employees', actions: ['view', 'manage'] },
   traceHistory: { path: 'traceHistory', actions: ['view'] },
   settings: { path: 'settings', actions: ['view', 'edit'] },

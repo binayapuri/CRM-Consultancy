@@ -1,7 +1,8 @@
 import Application from '../../shared/models/Application.js';
-import Notification from '../../shared/models/Notification.js';
+import { createNotification } from '../utils/notify.js';
 import { logAudit } from '../../shared/utils/audit.js';
 import { notifyUsers } from '../../shared/utils/notify.js';
+import { WorkflowAutomationService } from './workflow-automation.service.js';
 
 const getConsultancyId = (user) => user.profile?.consultancyId || user._id;
 
@@ -90,6 +91,7 @@ export class ApplicationService {
       clientId: app.clientId, applicationId: app._id,
       visaSubclass: app.visaSubclass, assignedAgentId: app.agentId,
     });
+    await WorkflowAutomationService.onApplicationCreated(app, user._id);
     return app;
   }
 
@@ -121,6 +123,10 @@ export class ApplicationService {
         visaSubclass: app.visaSubclass, assignedAgentId: app.agentId?._id || app.agentId,
       });
     }
+    await WorkflowAutomationService.onApplicationUpdated(app, {
+      status: data.status,
+      stageDeadline: data.stageDeadline,
+    }, user._id);
     return app;
   }
 
@@ -162,7 +168,7 @@ export class ApplicationService {
         visaSubclass: app.visaSubclass, assignedAgentId: app.agentId?._id || app.agentId,
       });
       if (app.agentId && app.agentId._id?.toString() !== user._id.toString()) {
-        await Notification.create({
+        await createNotification({
           consultancyId: app.consultancyId, userId: app.agentId._id,
           type: 'APPLICATION_UPDATE', title: 'Application status updated',
           message: `${app.clientId?.profile?.firstName} ${app.clientId?.profile?.lastName} — Subclass ${app.visaSubclass}: ${status}`,

@@ -9,6 +9,33 @@ export const getClientsSchema = z.object({
   query: z.object({ consultancyId: z.string().optional() })
 });
 
+export const bulkEmailSchema = z.object({
+  body: z.object({
+    consultancyId: z.string().optional(),
+    clientIds: z.array(z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ID')).min(1),
+    subject: z.string().min(1),
+    body: z.string().min(1),
+    mergeData: z.record(z.record(z.any())).optional(),
+    campaignKey: z.string().optional(),
+    campaignLabel: z.string().optional(),
+    audience: z.array(z.record(z.any())).optional(),
+  })
+});
+
+export const campaignAudienceSchema = z.object({
+  body: z.object({
+    consultancyId: z.string().optional(),
+    campaignKey: z.enum(['VISA_EXPIRY_30', 'DOCUMENT_EXPIRY_30', 'RFI_RESPONSE_7', 'PRIVACY_CONSENT_GAP']),
+  })
+});
+
+export const campaignHistorySchema = z.object({
+  query: z.object({
+    consultancyId: z.string().optional(),
+    limit: z.string().optional(),
+  }),
+});
+
 export const getByIdSchema = z.object({ params: idParam });
 
 export const createClientSchema = z.object({

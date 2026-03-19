@@ -1,7 +1,7 @@
 import Message from '../models/Message.js';
 import CommunityPost from '../models/CommunityPost.js';
 import CommunityComment from '../models/CommunityComment.js';
-import Notification from '../models/Notification.js';
+import { createNotification } from '../utils/notify.js';
 
 export class CollaborationService {
   // --- Messages ---
@@ -103,7 +103,7 @@ export class CollaborationService {
       ...data,
     });
     if (recipientId) {
-      await Notification.create({
+      await createNotification({
         userId: recipientId,
         type: 'DIRECT_MESSAGE',
         title: 'New message from BIGFEW community',
@@ -162,7 +162,7 @@ export class CollaborationService {
     });
     const saved = await comment.save();
     if (post.authorId && post.authorId.toString() !== authorId.toString()) {
-      await Notification.create({
+      await createNotification({
         userId: post.authorId,
         type: 'COMMUNITY_COMMENT',
         title: 'New comment on your post',
@@ -189,7 +189,7 @@ export class CollaborationService {
       text: String(text || '').trim(),
       channel: 'direct',
     });
-    await Notification.create({
+    await createNotification({
       userId: authorId,
       type: 'DIRECT_MESSAGE',
       title: 'New message about your community post',

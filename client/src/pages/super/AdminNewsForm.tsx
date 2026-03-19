@@ -4,6 +4,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { authFetch } from '../../store/auth';
 import { safeJson } from '../../store/auth';
+import { resolveFileUrl } from '../../lib/imageUrl';
 import { useUiStore } from '../../store/ui';
 import { ArrowLeft, Save, Upload, X } from 'lucide-react';
 
@@ -187,7 +188,7 @@ export default function AdminNewsForm() {
             <div className="space-y-2">
               <div className="relative inline-block">
                 <img
-                  src={form.coverImage}
+                  src={resolveFileUrl(form.coverImage)}
                   alt="Cover preview"
                   className="max-h-48 w-auto max-w-full rounded-lg border border-slate-200 object-contain bg-slate-50"
                 />

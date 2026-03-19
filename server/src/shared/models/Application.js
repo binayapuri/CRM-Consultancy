@@ -36,6 +36,30 @@ const applicationSchema = new mongoose.Schema({
   notes: [{ text: String, addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, addedAt: Date, isLegalAdvice: Boolean }],
   form956Signed: { type: Boolean, default: false },
   form956SignedAt: Date,
+  communicationDraft: {
+    subject: String,
+    body: String,
+    occupation: String,
+    anzscoCode: String,
+    positionTitle: String,
+    sbsStatus: String,
+    includeConsumerGuide: { type: Boolean, default: true },
+    includeForm956Attachment: { type: Boolean, default: false },
+    consumerGuideAcknowledged: { type: Boolean, default: false },
+    consumerGuideAcknowledgedAt: Date,
+    feeBlocks: [{ label: String, amount: String, description: String }],
+    governmentFeeBlocks: [{ label: String, amount: String, description: String, payer: String }],
+    checklistItems: [String],
+    sampleAttachments: [String],
+  },
+  compliance: {
+    form956SentAt: Date,
+    miaSentAt: Date,
+    initialAdviceSentAt: Date,
+    sponsorshipPackageSentAt: Date,
+    consumerGuideSentAt: Date,
+    consumerGuideAcknowledgedAt: Date,
+  },
 }, { timestamps: true });
 
 applicationSchema.index({ consultancyId: 1, status: 1 });

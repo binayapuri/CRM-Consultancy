@@ -1,5 +1,7 @@
 import Notification from '../../shared/models/Notification.js';
 import Client from '../../shared/models/Client.js';
+import { createNotification } from '../utils/notify.js';
+import { heartbeatUserNotifications, publishUserNotification, subscribeUserNotifications, unsubscribeUserNotifications } from '../utils/notification-broker.js';
 
 export class NotificationService {
   static async sendToClient(user, data) {
@@ -14,7 +16,7 @@ export class NotificationService {
       throw Object.assign(new Error('Client has not activated their account yet'), { status: 400 });
     }
 
-    return Notification.create({
+    return createNotification({
       consultancyId: cid,
       userId: client.userId,
       type: type || 'CHECKLIST_SENT',
@@ -32,6 +34,7 @@ export class NotificationService {
 
   static async readAll(userId) {
     await Notification.updateMany({ userId }, { read: true, readAt: new Date() });
+    publishUserNotification(userId, 'notification.read-all', { success: true });
     return { success: true };
   }
 
@@ -42,6 +45,21 @@ export class NotificationService {
       { new: true }
     );
     if (!notif) throw Object.assign(new Error('Not found'), { status: 404 });
+    publishUserNotification(userId, 'notification.read', { id: notif._id });
     return notif;
+  }
+
+  static stream(user, req, res) {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+    });
+    subscribeUserNotifications(user._id, res);
+    const heartbeat = setInterval(() => heartbeatUserNotifications(user._id), 25000);
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      unsubscribeUserNotifications(user._id, res);
+    });
   }
 }

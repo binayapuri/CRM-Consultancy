@@ -1,6 +1,10 @@
 import { NotificationService } from '../services/notification.service.js';
 
 export class NotificationController {
+  static stream(req, res) {
+    NotificationService.stream(req.user, req, res);
+  }
+
   static async sendToClient(req, res) {
     const notif = await NotificationService.sendToClient(req.user, req.body);
     res.status(201).json(notif);

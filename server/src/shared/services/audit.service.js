@@ -20,9 +20,11 @@ export class AuditService {
 
   static async getAllLogs(user, query) {
     const cid = user.profile?.consultancyId || user._id;
-    const { clientId, entityType, userId, assignedAgentId, visaSubclass, dateFrom, dateTo, page = 1, limit = 50 } = query;
-    
-    const filter = user.role === 'SUPER_ADMIN' ? {} : { consultancyId: cid };
+    const { clientId, entityType, userId, assignedAgentId, visaSubclass, dateFrom, dateTo, page = 1, limit = 50, consultancyId } = query;
+
+    const filter = user.role === 'SUPER_ADMIN'
+      ? (consultancyId ? { consultancyId } : {})
+      : { consultancyId: cid };
     if (clientId) filter.clientId = clientId;
     if (entityType) filter.entityType = entityType;
     if (userId) filter.changedBy = userId;
