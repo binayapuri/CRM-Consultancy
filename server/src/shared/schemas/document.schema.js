@@ -19,8 +19,8 @@ export const createDocSchema = z.object({
     name: z.string().optional(),
     fileUrl: z.string().optional(),
     fileKey: z.string().optional(),
-    metadata: z.record(z.any()).optional(),
-    visibility: z.record(z.any()).optional(),
+    metadata: z.record(z.string(), z.any()).optional(),
+    visibility: z.record(z.string(), z.any()).optional(),
   }).passthrough()
 });
 
@@ -53,7 +53,7 @@ export const bulkUploadDocSchema = z.object({
 
 export const updateDocSchema = z.object({
   params: idParam,
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const deleteDocSchema = z.object({ params: idParam });

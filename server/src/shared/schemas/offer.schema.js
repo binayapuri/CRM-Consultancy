@@ -28,10 +28,10 @@ export const getOshcSchema = z.object({
 });
 
 export const createOshcSchema = z.object({
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const updateOshcSchema = z.object({
   params: idParam,
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });

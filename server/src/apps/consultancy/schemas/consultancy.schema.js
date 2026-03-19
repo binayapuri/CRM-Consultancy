@@ -37,7 +37,7 @@ export const registerConsultancySchema = z.object({
 });
 
 export const createConsultancySchema = z.object({
-  body: z.record(z.any()) // Flexible for Super Admin raw creation for now
+  body: z.record(z.string(), z.any()) // Flexible for Super Admin raw creation for now
 });
 
 export const updateConsultancySchema = z.object({
@@ -49,7 +49,7 @@ export const updateConsultancySchema = z.object({
 
 export const updateByIdSchema = z.object({
   params: z.object({ id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ID') }),
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const deleteConsultancySchema = z.object({

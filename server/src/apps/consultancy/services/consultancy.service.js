@@ -13,6 +13,7 @@ import Attendance from '../../../shared/models/Attendance.js';
 import AuditLog from '../../../shared/models/AuditLog.js';
 import ConsultancyBilling from '../../../shared/models/ConsultancyBilling.js';
 import { isBusinessEmail } from '../../../shared/utils/emailValidation.js';
+import { normalizeCampaignAutomation } from '../../../shared/services/campaign-scheduler.service.js';
 import jwt from 'jsonwebtoken';
 
 export class ConsultancyService {
@@ -315,6 +316,7 @@ export class ConsultancyService {
         { role: 'AGENT', permissions: { clients: { view: true, create: true, edit: true, delete: false }, applications: { view: true, create: true, edit: true, delete: false }, tasks: { view: true, create: true, edit: true, delete: false }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: false }, documents: { view: true, upload: true, delete: false }, trustLedger: { view: false, edit: false }, billing: { view: true, create: true, edit: true, delete: false }, employees: { view: true, manage: false }, traceHistory: { view: false }, settings: { view: false, edit: false }, colleges: { view: true, manage: false }, oshc: { view: true, manage: false }, sponsors: { view: true, create: true, edit: true, delete: false }, sendDocuments: true, sendAdvice: true } },
         { role: 'SUPPORT', permissions: { clients: { view: true, create: false, edit: true, delete: false }, applications: { view: true, create: false, edit: true, delete: false }, tasks: { view: true, create: true, edit: true, delete: false }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: false }, documents: { view: true, upload: true, delete: false }, trustLedger: { view: false, edit: false }, billing: { view: true, create: false, edit: false, delete: false }, employees: { view: false, manage: false }, traceHistory: { view: false }, settings: { view: false, edit: false }, colleges: { view: true, manage: false }, oshc: { view: true, manage: false }, sponsors: { view: true, create: false, edit: true, delete: false }, sendDocuments: true, sendAdvice: false } },
       ],
+      campaignAutomation: normalizeCampaignAutomation(),
     });
 
     const user = await User.create({ email, password, role: 'CONSULTANCY_ADMIN', profile: { firstName, lastName, consultancyId: consultancy._id } });
@@ -323,6 +325,7 @@ export class ConsultancyService {
   }
 
   static async createConsultancy(data) {
+    if (!data.campaignAutomation) data.campaignAutomation = normalizeCampaignAutomation();
     return Consultancy.create(data);
   }
 
@@ -338,12 +341,34 @@ export class ConsultancyService {
         return p;
       });
     }
+    if (updateData.campaignAutomation) {
+      const existing = await Consultancy.findById(cid).select('campaignAutomation').lean();
+      updateData.campaignAutomation = normalizeCampaignAutomation({
+        ...(existing?.campaignAutomation || {}),
+        ...(updateData.campaignAutomation || {}),
+        schedules: {
+          ...((existing?.campaignAutomation || {}).schedules || {}),
+          ...((updateData.campaignAutomation || {}).schedules || {}),
+        },
+      });
+    }
     const c = await Consultancy.findByIdAndUpdate(cid, updateData, { new: true });
     if (!c) throw Object.assign(new Error('Not found'), { status: 404 });
     return c;
   }
 
   static async updateConsultancyById(id, updateData) {
+    if (updateData.campaignAutomation) {
+      const existing = await Consultancy.findById(id).select('campaignAutomation').lean();
+      updateData.campaignAutomation = normalizeCampaignAutomation({
+        ...(existing?.campaignAutomation || {}),
+        ...(updateData.campaignAutomation || {}),
+        schedules: {
+          ...((existing?.campaignAutomation || {}).schedules || {}),
+          ...((updateData.campaignAutomation || {}).schedules || {}),
+        },
+      });
+    }
     const c = await Consultancy.findByIdAndUpdate(id, updateData, { new: true });
     if (!c) throw Object.assign(new Error('Not found'), { status: 404 });
     return c;

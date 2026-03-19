@@ -7,7 +7,7 @@ export const createTestAccountSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
     role: z.enum(['STUDENT', 'AGENT', 'MANAGER', 'CONSULTANCY_ADMIN', 'UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER', 'RECRUITER']),
-    profile: z.record(z.any()).optional(),
+    profile: z.record(z.string(), z.any()).optional(),
     consultancyId: z.string().optional()
   })
 });
@@ -18,7 +18,7 @@ export const getUsersSchema = z.object({
 
 export const updateUserSchema = z.object({
   params: idParam,
-  body: z.record(z.any())
+  body: z.record(z.string(), z.any())
 });
 
 export const deleteUserSchema = z.object({ params: idParam });

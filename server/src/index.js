@@ -43,6 +43,7 @@ import insuranceRoutes from './routes/insurance.js';
 import consultancyBillingRoutes from './routes/consultancy-billing.js';
 import consultancyOpsRoutes from './routes/consultancy-ops.js';
 import trackingRoutes from './routes/tracking.js';
+import { CampaignSchedulerService } from './shared/services/campaign-scheduler.service.js';
 
 import communityRoutes from './routes/community.js';
 import newsRoutes from './routes/news.js';
@@ -87,7 +88,10 @@ app.get('/api/health', (req, res) => res.json({ ok: true, timestamp: new Date().
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/orivisa';
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✓ MongoDB connected'))
+  .then(() => {
+    console.log('✓ MongoDB connected');
+    CampaignSchedulerService.start();
+  })
   .catch(err => console.error('MongoDB error:', err));
 
 // API Routes — register /api/student/points explicitly first so PATCH is always matched

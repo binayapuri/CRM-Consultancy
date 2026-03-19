@@ -28,7 +28,7 @@ export const registerSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
     role: z.string().optional(),
-    profile: z.record(z.any()).optional()
+    profile: z.record(z.string(), z.any()).optional()
   })
 });
 
@@ -41,7 +41,7 @@ export const loginSchema = z.object({
 
 export const updateMeSchema = z.object({
   body: z.object({
-    profile: z.record(z.any()).optional()
+    profile: z.record(z.string(), z.any()).optional()
   })
 });
 

@@ -85,6 +85,10 @@ const consultancySchema = new mongoose.Schema({
     isDefault: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
   }],
+  campaignAutomation: {
+    schedules: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    lastSchedulerHeartbeatAt: Date,
+  },
 }, { timestamps: true });
 
 consultancySchema.pre('save', function (next) {

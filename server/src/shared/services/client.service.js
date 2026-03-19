@@ -75,7 +75,7 @@ function renderMergeTemplate(template = '', context = {}) {
   });
 }
 
-const CAMPAIGN_TEMPLATES = {
+export const CAMPAIGN_TEMPLATES = {
   VISA_EXPIRY_30: {
     label: 'Visa Expiry Reminder',
     description: 'Remind clients whose current visa is expiring within 30 days.',
@@ -431,6 +431,9 @@ export class ClientService {
       metadata: {
         mergeFieldsUsed: Object.keys(payload.mergeData || {}).length,
         mergeData: payload.mergeData || {},
+        triggerSource: payload.triggerSource || 'MANUAL',
+        scheduledRun: !!payload.scheduledRun,
+        scheduleKey: payload.scheduleKey || null,
         audienceSnapshot: Array.isArray(payload.audience) && payload.audience.length
           ? payload.audience
           : clients.map((client) => ({

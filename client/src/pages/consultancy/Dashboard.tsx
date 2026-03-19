@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Users, FileText, Target, ArrowRight, Activity, TrendingUp, AlertTriangle, CheckSquare, ShieldCheck, CalendarClock, Archive, ReceiptText, Download, Mail, X } from 'lucide-react';
+import { Users, FileText, Target, ArrowRight, Activity, TrendingUp, AlertTriangle, CheckSquare, ShieldCheck, CalendarClock, Archive, ReceiptText, Download, Mail, X, Save } from 'lucide-react';
 import { authFetch, safeJson } from '../../store/auth';
 import { useAuthStore } from '../../store/auth';
 import { format } from 'date-fns';
@@ -37,6 +37,24 @@ export default function ConsultancyDashboard() {
   const [campaignData, setCampaignData] = useState<any | null>(null);
   const [campaignDraft, setCampaignDraft] = useState({ subject: '', body: '' });
   const [campaignPreview, setCampaignPreview] = useState<any | null>(null);
+  const [campaignSchedules, setCampaignSchedules] = useState<Record<string, any>>({});
+  const [savingCampaignSchedules, setSavingCampaignSchedules] = useState(false);
+
+  const defaultCampaignSchedules = {
+    VISA_EXPIRY_30: { enabled: false, frequency: 'DAILY', weekday: 1, hour: 9, minute: 0 },
+    DOCUMENT_EXPIRY_30: { enabled: false, frequency: 'DAILY', weekday: 1, hour: 9, minute: 15 },
+    RFI_RESPONSE_7: { enabled: false, frequency: 'DAILY', weekday: 1, hour: 9, minute: 30 },
+    PRIVACY_CONSENT_GAP: { enabled: false, frequency: 'WEEKLY', weekday: 1, hour: 10, minute: 0 },
+  } as const;
+  const weekdayOptions = [
+    { value: 0, label: 'Sunday' },
+    { value: 1, label: 'Monday' },
+    { value: 2, label: 'Tuesday' },
+    { value: 3, label: 'Wednesday' },
+    { value: 4, label: 'Thursday' },
+    { value: 5, label: 'Friday' },
+    { value: 6, label: 'Saturday' },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -83,6 +101,16 @@ export default function ConsultancyDashboard() {
     })();
   }, [user?.id, user?._id, user?.role, consultancyId]);
 
+  useEffect(() => {
+    const schedules = overview?.consultancy?.campaignAutomation?.schedules || {};
+    setCampaignSchedules({
+      VISA_EXPIRY_30: { ...defaultCampaignSchedules.VISA_EXPIRY_30, ...(schedules.VISA_EXPIRY_30 || {}) },
+      DOCUMENT_EXPIRY_30: { ...defaultCampaignSchedules.DOCUMENT_EXPIRY_30, ...(schedules.DOCUMENT_EXPIRY_30 || {}) },
+      RFI_RESPONSE_7: { ...defaultCampaignSchedules.RFI_RESPONSE_7, ...(schedules.RFI_RESPONSE_7 || {}) },
+      PRIVACY_CONSENT_GAP: { ...defaultCampaignSchedules.PRIVACY_CONSENT_GAP, ...(schedules.PRIVACY_CONSENT_GAP || {}) },
+    });
+  }, [overview]);
+
   const now = new Date();
   const inDays = (d: Date, days: number) => {
     const end = new Date(now);
@@ -128,6 +156,58 @@ export default function ConsultancyDashboard() {
     .reduce((sum: number, b: any) => sum + Number(b.total || 0), 0);
   const paidInvoices = billingRows.filter((b: any) => b.documentType === 'INVOICE' && b.status === 'PAID').length;
   const scopedPath = (path: string) => (consultancyId ? `${path}${path.includes('?') ? '&' : '?'}consultancyId=${consultancyId}` : path);
+  const canManageCampaignSchedules = ['CONSULTANCY_ADMIN', 'MANAGER', 'SUPER_ADMIN'].includes(user?.role || '');
+
+  const describeSchedule = (schedule: any) => {
+    if (!schedule?.enabled) return 'Manual only';
+    const hour = String(schedule.hour ?? 9).padStart(2, '0');
+    const minute = String(schedule.minute ?? 0).padStart(2, '0');
+    if (schedule.frequency === 'WEEKLY') {
+      return `Weekly on ${weekdayOptions.find((option) => option.value === Number(schedule.weekday ?? 1))?.label || 'Monday'} at ${hour}:${minute}`;
+    }
+    return `Daily at ${hour}:${minute}`;
+  };
+
+  const updateCampaignSchedule = (campaignKey: string, patch: Record<string, any>) => {
+    setCampaignSchedules((current) => ({
+      ...current,
+      [campaignKey]: {
+        ...(current[campaignKey] || defaultCampaignSchedules[campaignKey as keyof typeof defaultCampaignSchedules]),
+        ...patch,
+      },
+    }));
+  };
+
+  const saveCampaignSchedules = async () => {
+    if (!canManageCampaignSchedules) return;
+    setSavingCampaignSchedules(true);
+    try {
+      const res = await authFetch('/api/consultancies/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          consultancyId: consultancyId || undefined,
+          campaignAutomation: {
+            schedules: campaignSchedules,
+          },
+        }),
+      });
+      const data = await safeJson<any>(res);
+      if (!res.ok) throw new Error(data?.error || 'Failed to save campaign automation');
+      setOverview((current: any) => current ? ({
+        ...current,
+        consultancy: {
+          ...current.consultancy,
+          campaignAutomation: data?.campaignAutomation || { schedules: campaignSchedules },
+        },
+      }) : current);
+      alert('Campaign automation saved.');
+    } catch (err: any) {
+      alert(err.message || 'Failed to save campaign automation');
+    } finally {
+      setSavingCampaignSchedules(false);
+    }
+  };
 
   const handleExportReports = async () => {
     setExporting(true);
@@ -336,6 +416,7 @@ export default function ConsultancyDashboard() {
                     <span>{row.createdAt ? format(new Date(row.createdAt), 'dd MMM HH:mm') : '-'}</span>
                     <span>{row.campaignKey || 'CUSTOM_BULK_EMAIL'}</span>
                     <span>{row.openRate || 0}% open rate</span>
+                    <span>{row?.metadata?.triggerSource === 'SCHEDULED' ? 'Scheduled' : 'Manual'}</span>
                   </div>
                   <div className="mt-3">
                     <button onClick={() => relaunchCampaign(row)} className="text-sm font-medium text-indigo-600 hover:underline">
@@ -661,17 +742,84 @@ export default function ConsultancyDashboard() {
             </h2>
             <p className="text-sm text-slate-500 mt-1">Launch guided outreach based on live compliance and deadline cohorts.</p>
           </div>
+          {canManageCampaignSchedules && (
+            <button onClick={saveCampaignSchedules} disabled={savingCampaignSchedules} className="btn-secondary inline-flex items-center gap-2">
+              <Save className="w-4 h-4" />
+              {savingCampaignSchedules ? 'Saving...' : 'Save Automation'}
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {CAMPAIGNS.map((campaign) => (
-            <button
+            <div
               key={campaign.key}
-              onClick={() => openCampaign(campaign.key)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-left hover:border-indigo-300 hover:bg-indigo-50 transition"
+              className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-left"
             >
-              <p className="font-semibold text-slate-900">{campaign.label}</p>
-              <p className="text-sm text-slate-500 mt-1">{campaign.hint}</p>
-            </button>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-slate-900">{campaign.label}</p>
+                  <p className="text-sm text-slate-500 mt-1">{campaign.hint}</p>
+                </div>
+                <button
+                  onClick={() => openCampaign(campaign.key)}
+                  className="shrink-0 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold uppercase tracking-wide text-white hover:bg-indigo-700"
+                >
+                  Launch
+                </button>
+              </div>
+              <div className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">
+                {describeSchedule(campaignSchedules[campaign.key])}
+              </div>
+              <div className="mt-3 text-xs text-slate-500 space-y-1">
+                {campaignSchedules[campaign.key]?.lastRunAt && <p>Last run: {format(new Date(campaignSchedules[campaign.key].lastRunAt), 'dd MMM HH:mm')}</p>}
+                {typeof campaignSchedules[campaign.key]?.lastSentCount === 'number' && (
+                  <p>Last result: {campaignSchedules[campaign.key]?.lastSentCount || 0} sent, {campaignSchedules[campaign.key]?.lastFailedCount || 0} failed, audience {campaignSchedules[campaign.key]?.lastAudienceCount || 0}</p>
+                )}
+                {campaignSchedules[campaign.key]?.lastError && <p className="text-rose-600">{campaignSchedules[campaign.key].lastError}</p>}
+              </div>
+              {canManageCampaignSchedules && (
+                <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
+                  <label className="flex items-center justify-between gap-3 text-sm font-medium text-slate-700">
+                    <span>Enable schedule</span>
+                    <input
+                      type="checkbox"
+                      checked={!!campaignSchedules[campaign.key]?.enabled}
+                      onChange={(e) => updateCampaignSchedule(campaign.key, { enabled: e.target.checked })}
+                    />
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={campaignSchedules[campaign.key]?.frequency || 'DAILY'}
+                      onChange={(e) => updateCampaignSchedule(campaign.key, { frequency: e.target.value })}
+                      className="input"
+                    >
+                      <option value="DAILY">Daily</option>
+                      <option value="WEEKLY">Weekly</option>
+                    </select>
+                    <input
+                      type="time"
+                      value={`${String(campaignSchedules[campaign.key]?.hour ?? 9).padStart(2, '0')}:${String(campaignSchedules[campaign.key]?.minute ?? 0).padStart(2, '0')}`}
+                      onChange={(e) => {
+                        const [hour, minute] = e.target.value.split(':').map(Number);
+                        updateCampaignSchedule(campaign.key, { hour, minute });
+                      }}
+                      className="input"
+                    />
+                  </div>
+                  {campaignSchedules[campaign.key]?.frequency === 'WEEKLY' && (
+                    <select
+                      value={campaignSchedules[campaign.key]?.weekday ?? 1}
+                      onChange={(e) => updateCampaignSchedule(campaign.key, { weekday: Number(e.target.value) })}
+                      className="input"
+                    >
+                      {weekdayOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+            </div>
           ))}
         </div>
       </div>
