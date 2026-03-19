@@ -42,6 +42,11 @@ export class EducationController {
     res.json(uni);
   }
 
+  static async getOfferApplicationsByUniversity(req, res) {
+    const apps = await EducationService.getOfferApplicationsByUniversity(req.params.id);
+    res.json(apps);
+  }
+
   static async createUniversity(req, res) {
     const uni = await EducationService.createUniversity(req.body);
     res.status(201).json(uni);

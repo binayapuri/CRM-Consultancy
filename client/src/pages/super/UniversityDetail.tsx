@@ -8,11 +8,9 @@ import {
   GraduationCap,
   DollarSign,
   Plus,
-  X,
   Edit2,
-  Mail,
-  Image,
-  ShieldCheck,
+  FileText,
+  UserCheck,
 } from 'lucide-react';
 
 interface Branch {
@@ -39,6 +37,7 @@ export default function UniversityDetail() {
   const { id } = useParams();
   const [university, setUniversity] = useState<any>(null);
   const [courses, setCourses] = useState<any[]>([]);
+  const [offerApps, setOfferApps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [discountForm, setDiscountForm] = useState<Partial<DiscountRule>>({ name: '', type: 'PERCENTAGE', value: 0, applicableTo: 'ALL', isActive: true });
@@ -47,12 +46,14 @@ export default function UniversityDetail() {
   const fetchData = async () => {
     if (!id) return;
     try {
-      const [uniRes, coursesRes] = await Promise.all([
+      const [uniRes, coursesRes, appsRes] = await Promise.all([
         authFetch(`/api/universities/${id}`),
         authFetch(`/api/universities/${id}/courses/admin`),
+        authFetch(`/api/universities/${id}/offer-applications`),
       ]);
       if (uniRes.ok) setUniversity(await uniRes.json());
       if (coursesRes.ok) setCourses(await coursesRes.json());
+      if (appsRes.ok) setOfferApps(await appsRes.json());
     } catch {
       setUniversity(null);
     } finally {
@@ -203,6 +204,32 @@ export default function UniversityDetail() {
                   <p className="text-sm text-slate-500">{c.level} • {c.tuitionFee ? `$${c.tuitionFee}` : '-'} {c.fees?.length ? `(${c.fees.length} branch fees)` : ''}</p>
                 </div>
                 {c.cricosCode && <span className="text-xs text-slate-500">CRICOS {c.cricosCode}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><FileText className="w-5 h-5 text-emerald-600" /> Offer Letters & Enrolled ({offerApps.length})</h2>
+        <p className="text-slate-500 text-sm mb-4">Students who applied for offer letters at this university. ACCEPTED = enrolled.</p>
+        {offerApps.length === 0 ? (
+          <p className="text-slate-500 text-sm">No offer letter applications yet.</p>
+        ) : (
+          <div className="space-y-2 mb-6">
+            {offerApps.map((app: any) => (
+              <div key={app._id} className={`p-4 rounded-xl border flex justify-between items-center ${app.status === 'ACCEPTED' ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
+                <div>
+                  <p className="font-bold text-slate-900">
+                    {app.studentId?.profile?.firstName} {app.studentId?.profile?.lastName}
+                    {app.status === 'ACCEPTED' && <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-200 text-emerald-800"><UserCheck className="w-3 h-3 inline mr-0.5" /> Enrolled</span>}
+                  </p>
+                  <p className="text-sm text-slate-500">{app.studentId?.email}</p>
+                  <p className="text-xs text-slate-600 mt-1">{app.courseId?.name} ({app.courseId?.level})</p>
+                </div>
+                <span className={`px-2 py-1 rounded text-xs font-bold ${app.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-700' : app.status === 'OFFERED' ? 'bg-amber-100 text-amber-700' : app.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>
+                  {app.status}
+                </span>
               </div>
             ))}
           </div>

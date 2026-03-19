@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authFetch, useAuthStore } from '../../store/auth';
-import { XCircle, Briefcase, Users, Plus, Building2, Pencil, Archive, FileText, ExternalLink } from 'lucide-react';
+import { XCircle, Briefcase, Users, Plus, Building2, Pencil, Archive, FileText } from 'lucide-react';
 
 export default function EmployerDashboard() {
   const { user } = useAuthStore();
