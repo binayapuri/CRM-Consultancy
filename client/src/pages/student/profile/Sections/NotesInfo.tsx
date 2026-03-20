@@ -176,7 +176,7 @@ export const NotesInfo: React.FC<NotesInfoProps> = ({
         </p>
       </ProfileCard>
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between gap-3 mb-4">
         <h3 className="font-black text-slate-800 flex items-center gap-2">
           <StickyNote className="w-5 h-5 text-indigo-600" /> My Journals & Notes
         </h3>
@@ -206,7 +206,7 @@ export const NotesInfo: React.FC<NotesInfoProps> = ({
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 {onUpdateNote && (
                   <button
                     onClick={() => openEditNoteModal(note)}

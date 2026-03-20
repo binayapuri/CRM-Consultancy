@@ -99,7 +99,8 @@ export default function Settings() {
     };
   }, [tab]);
 
-  const inp = 'w-full px-4 py-3 rounded-xl text-sm font-medium text-slate-800 outline-none transition-all focus:ring-2 focus:ring-indigo-500/40 bg-slate-50 border border-slate-200';
+  const inp =
+    'w-full min-w-0 max-w-full px-3 sm:px-4 py-3 rounded-xl text-sm font-medium text-slate-800 outline-none transition-all focus:ring-2 focus:ring-indigo-500/40 bg-slate-50 border border-slate-200';
 
   const handlePasswordChange = async () => {
     setPwMsg(null);
@@ -224,7 +225,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="w-full animate-fade-in-up">
+    <div className="w-full min-w-0 max-w-full animate-fade-in-up">
       <div className="mb-8">
         <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
           <SettingsIcon className="w-10 h-10 text-indigo-600 shrink-0" aria-hidden /> Settings
@@ -354,51 +355,67 @@ export default function Settings() {
 
       {/* Email (SMTP) Tab */}
       {tab === 'email' && (
-        <div className="bg-white rounded-xl p-6 space-y-6" style={{ border: '1px solid #E8EDFB' }}>
-          <div>
-            <h2 className="font-black text-slate-900 text-xl flex items-center gap-2"><Mail className="w-5 h-5 text-indigo-600" /> Email sending (SMTP)</h2>
-            <p className="text-sm text-slate-500 font-medium mt-2">
+        <div
+          className="bg-white rounded-xl p-4 sm:p-6 space-y-4 sm:space-y-6 w-full min-w-0 max-w-[95vw] sm:max-w-full mx-auto"
+          style={{ border: '1px solid #E8EDFB' }}
+        >
+          <div className="min-w-0">
+            <h2 className="font-black text-slate-900 text-lg sm:text-xl flex flex-wrap items-center gap-2 min-w-0">
+              <Mail className="w-5 h-5 text-indigo-600 shrink-0" aria-hidden />{' '}
+              <span className="break-words">Email sending (SMTP)</span>
+            </h2>
+            <p className="text-sm text-slate-500 font-medium mt-2 break-words">
               Configure your own SMTP (private) for sending invoices and other future emails from BIGFEW (for example, reminders or statements).
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 p-5">
-            <h3 className="font-black text-slate-900 flex items-center gap-2"><Mail className="w-4 h-4 text-emerald-600" /> SMTP (Send from your email)</h3>
-            <div className="mt-4 flex items-center gap-2">
-              <input type="checkbox" checked={smtpEnabled} onChange={(e) => setSmtpEnabled(e.target.checked)} />
-              <span className="text-sm font-bold text-slate-700">Enable my SMTP for invoice emails</span>
+          <div className="rounded-xl border border-slate-200 p-4 sm:p-5 min-w-0 overflow-hidden">
+            <h3 className="font-black text-slate-900 flex flex-wrap items-center gap-2 min-w-0">
+              <Mail className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden />{' '}
+              <span className="break-words">SMTP (Send from your email)</span>
+            </h3>
+            <div className="mt-4 flex flex-wrap items-start gap-2">
+              <input type="checkbox" checked={smtpEnabled} onChange={(e) => setSmtpEnabled(e.target.checked)} className="mt-1 shrink-0" />
+              <span className="text-sm font-bold text-slate-700 min-w-0 break-words">Enable my SMTP for invoice emails</span>
             </div>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
+              <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">SMTP Host</label>
                 <input value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} className={inp} placeholder="smtp.gmail.com" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Port</label>
                 <input type="number" value={smtpPort} onChange={(e) => setSmtpPort(Number(e.target.value))} className={inp} placeholder="587" />
-                <p className="text-xs text-slate-500 mt-1">587 = STARTTLS (secure unchecked). 465 = implicit TLS (secure checked).</p>
+                <p className="text-xs text-slate-500 mt-1 break-words">587 = STARTTLS (secure unchecked). 465 = implicit TLS (secure checked).</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Username</label>
                 <input value={smtpUser} onChange={(e) => setSmtpUser(e.target.value)} className={inp} placeholder="your@email.com" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">From (optional)</label>
                 <input value={smtpFrom} onChange={(e) => setSmtpFrom(e.target.value)} className={inp} placeholder="Your Name <your@email.com>" />
               </div>
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Password / App password</label>
                 <input value={smtpPassword} onChange={(e) => setSmtpPassword(e.target.value)} className={inp} placeholder={smtpHasPassword ? 'Saved (enter to replace)' : 'Enter app password'} />
-                <p className="text-xs text-slate-400 mt-1">We recommend using a Gmail/App password. Your password is stored encrypted.</p>
+                <p className="text-xs text-slate-400 mt-1 break-words">We recommend using a Gmail/App password. Your password is stored encrypted.</p>
               </div>
-              <div className="md:col-span-2 flex items-center gap-2">
-                <input type="checkbox" checked={smtpSecure} onChange={(e) => setSmtpSecure(e.target.checked)} />
-                <span className="text-sm font-bold text-slate-700">Use implicit TLS (for port 465 only; leave unchecked for 587)</span>
+              <div className="md:col-span-2 flex flex-wrap items-start gap-2 min-w-0">
+                <input type="checkbox" checked={smtpSecure} onChange={(e) => setSmtpSecure(e.target.checked)} className="mt-1 shrink-0" />
+                <span className="text-sm font-bold text-slate-700 min-w-0 break-words">
+                  Use implicit TLS (for port 465 only; leave unchecked for 587)
+                </span>
               </div>
             </div>
           </div>
 
-          <button onClick={saveInvoiceSettings} disabled={invLoading} className="px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+          <button
+            onClick={saveInvoiceSettings}
+            disabled={invLoading}
+            className="w-full sm:w-auto px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}
+          >
             {invLoading ? 'Saving...' : 'Save Invoice Settings'}
           </button>
           <Alert msg={invMsg} />
@@ -407,34 +424,43 @@ export default function Settings() {
 
       {/* Invoices / Payment Tab */}
       {tab === 'invoices' && (
-        <div className="bg-white rounded-xl p-6 space-y-6" style={{ border: '1px solid #E8EDFB' }}>
-          <div>
-            <h2 className="font-black text-slate-900 text-xl flex items-center gap-2"><CreditCard className="w-5 h-5 text-indigo-600" /> Invoice payment details</h2>
-            <p className="text-sm text-slate-500 font-medium mt-2">
+        <div
+          className="bg-white rounded-xl p-4 sm:p-6 space-y-4 sm:space-y-6 w-full min-w-0 max-w-[95vw] sm:max-w-full mx-auto"
+          style={{ border: '1px solid #E8EDFB' }}
+        >
+          <div className="min-w-0">
+            <h2 className="font-black text-slate-900 text-lg sm:text-xl flex flex-wrap items-center gap-2 min-w-0">
+              <CreditCard className="w-5 h-5 text-indigo-600 shrink-0" aria-hidden />{' '}
+              <span className="break-words">Invoice payment details</span>
+            </h2>
+            <p className="text-sm text-slate-500 font-medium mt-2 break-words">
               These bank details appear in the <strong>Payment Information</strong> box on your invoice PDFs and in the student Invoice Manager.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 p-5">
-            <h3 className="font-black text-slate-900 flex items-center gap-2"><CreditCard className="w-4 h-4 text-emerald-600" /> Bank details (for getting paid)</h3>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+          <div className="rounded-xl border border-slate-200 p-4 sm:p-5 min-w-0 overflow-hidden">
+            <h3 className="font-black text-slate-900 flex flex-wrap items-center gap-2 min-w-0">
+              <CreditCard className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden />{' '}
+              <span className="break-words">Bank details (for getting paid)</span>
+            </h3>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
+              <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Bank name</label>
                 <input value={bankName} onChange={(e) => setBankName(e.target.value)} className={inp} placeholder="Commonwealth Bank" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Account name</label>
                 <input value={accountName} onChange={(e) => setAccountName(e.target.value)} className={inp} placeholder="Your legal name" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">BSB</label>
                 <input value={bsb} onChange={(e) => setBsb(e.target.value)} className={inp} placeholder="062-948" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Account number</label>
                 <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className={inp} placeholder="12345678" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">PayID type</label>
                 <select value={payIdType} onChange={(e) => setPayIdType(e.target.value as any)} className={inp}>
                   <option value="">None</option>
@@ -442,18 +468,23 @@ export default function Settings() {
                   <option value="PHONE">Phone</option>
                 </select>
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">PayID</label>
                 <input value={payId} onChange={(e) => setPayId(e.target.value)} className={inp} placeholder="you@email.com or +61..." />
               </div>
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Payment reference (optional)</label>
                 <input value={reference} onChange={(e) => setReference(e.target.value)} className={inp} placeholder="e.g., Invoice number as reference" />
               </div>
             </div>
           </div>
 
-          <button onClick={saveInvoiceSettings} disabled={invLoading} className="px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+          <button
+            onClick={saveInvoiceSettings}
+            disabled={invLoading}
+            className="w-full sm:w-auto px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}
+          >
             {invLoading ? 'Saving...' : 'Save Invoice Settings'}
           </button>
           <Alert msg={invMsg} />

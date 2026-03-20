@@ -67,3 +67,10 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Horizontal tab strips: reliable swipe + momentum on mobile */
+.student-tabs-x-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}

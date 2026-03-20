@@ -385,7 +385,7 @@ export default function Jobs() {
                     {applied ? (
                       <div className="px-6 py-3 bg-slate-100 text-slate-500 font-bold rounded-xl flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Applied</div>
                     ) : (
-                      <button onClick={() => openApplyModal(j._id)} className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-sm whitespace-nowrap">
+                      <button onClick={() => openApplyModal(j._id)} className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-sm">
                         Apply with Vault
                       </button>
                     )}
