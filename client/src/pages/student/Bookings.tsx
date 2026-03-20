@@ -140,7 +140,57 @@ export default function Bookings() {
               <History className="w-5 h-5 text-slate-400" /> Past Sessions
             </h2>
             <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
+              {/* Mobile: stacked cards */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {past.map(apt => (
+                  <div key={apt._id} className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden shrink-0">
+                          {apt.agentId.profile?.avatar ? (
+                            <img src={resolveFileUrl(apt.agentId.profile.avatar)} alt="Agent" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-full h-full p-2 text-slate-400" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-slate-700 truncate">
+                            {apt.agentId.profile?.firstName} {apt.agentId.profile?.lastName || ''}
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            {new Date(apt.startTime).toLocaleDateString()}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            {new Date(apt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className={`shrink-0 px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
+                          apt.status === 'COMPLETED'
+                            ? 'bg-slate-100 text-slate-600'
+                            : 'bg-red-50 text-red-600'
+                        }`}
+                      >
+                        {apt.status === 'COMPLETED' ? 'Completed' : apt.status}
+                      </span>
+                    </div>
+
+                    <div className="mt-3">
+                      <p className="text-sm text-slate-700 font-medium">{apt.topic}</p>
+                      <Link
+                        to="/student/consultancies"
+                        className="mt-3 inline-flex text-sm font-bold text-ori-600 hover:text-ori-700 items-center gap-1"
+                      >
+                        Book Again <ExternalLink className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop/tablet: existing table */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold border-b border-slate-200">

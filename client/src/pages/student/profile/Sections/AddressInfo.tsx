@@ -82,7 +82,12 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({ current, previous, onS
                        <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(item.from).toLocaleDateString()} - {item.to ? new Date(item.to).toLocaleDateString() : 'Present'}</span>
                     </div>
                   </div>
-                  <button onClick={() => onDeletePrevious(item._id)} className="self-end sm:self-auto p-2 text-slate-400 hover:text-red-500 rounded-xl transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
+                  <button
+                    onClick={() => onDeletePrevious(item._id)}
+                    className="p-2 text-slate-300 hover:text-red-500 rounded-xl transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}

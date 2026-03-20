@@ -176,7 +176,7 @@ export const NotesInfo: React.FC<NotesInfoProps> = ({
         </p>
       </ProfileCard>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+      <div className="flex items-center justify-between gap-3 mb-4">
         <h3 className="font-black text-slate-800 flex items-center gap-2">
           <StickyNote className="w-5 h-5 text-indigo-600" /> My Journals & Notes
         </h3>
