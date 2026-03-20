@@ -29,22 +29,22 @@ export const TravelInfo: React.FC<TravelInfoProps> = ({ items, onAdd, onDelete }
       <div className="space-y-6">
         <div className="space-y-4">
           {items.map((item) => (
-            <div key={item._id} className={`relative group p-5 rounded-lg border transition-all ${item.visaRefused ? 'bg-red-50/30 border-red-100 hover:bg-red-50' : 'bg-slate-50/50 border-slate-100 hover:bg-white hover:border-indigo-100'}`}>
-              <div className="flex justify-between items-start">
+            <div key={item._id} className={`relative group p-4 sm:p-5 rounded-lg border transition-all ${item.visaRefused ? 'bg-red-50/30 border-red-100 hover:bg-red-50' : 'bg-slate-50/50 border-slate-100 hover:bg-white hover:border-indigo-100'}`}>
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h4 className="font-black text-slate-800 text-base">{item.country}</h4>
                     {item.visaRefused && <span className="flex items-center gap-1 text-[10px] font-black uppercase text-red-600 bg-red-100 px-2 py-0.5 rounded-full"><AlertTriangle className="w-3 h-3" /> Refused</span>}
                     {item.visaGranted && !item.visaRefused && <span className="flex items-center gap-1 text-[10px] font-black uppercase text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full"><ShieldCheck className="w-3 h-3" /> Granted</span>}
                   </div>
                   <p className="font-bold text-indigo-600 text-sm">{item.city} · {item.purpose}</p>
-                  <div className="flex items-center gap-x-4 pt-1 text-xs font-bold text-slate-400">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs font-bold text-slate-400">
                     <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(item.dateFrom).toLocaleDateString()} - {new Date(item.dateTo).toLocaleDateString()}</span>
                     <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> {item.visaType}</span>
                   </div>
                   {item.refusalReason && <p className="text-xs text-red-500 mt-2 font-black p-2 bg-red-100/50 rounded-lg">Reason: {item.refusalReason}</p>}
                 </div>
-                <button onClick={() => onDelete(item._id)} className="p-2 text-slate-300 hover:text-red-500 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => onDelete(item._id)} className="self-end sm:self-auto p-2 text-slate-400 hover:text-red-500 rounded-xl transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
           ))}
@@ -64,13 +64,13 @@ export const TravelInfo: React.FC<TravelInfoProps> = ({ items, onAdd, onDelete }
               <F label="From"><SI type="date" value={newEntry.dateFrom} onChange={e => setNewEntry({...newEntry, dateFrom: e.target.value})} /></F>
               <F label="To"><SI type="date" value={newEntry.dateTo} onChange={e => setNewEntry({...newEntry, dateTo: e.target.value})} /></F>
             </div>
-            <div className="flex items-center gap-6 py-2 border-y border-slate-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 py-2 border-y border-slate-200">
                <label className="flex items-center gap-2 cursor-pointer group"><input type="checkbox" checked={newEntry.visaGranted} onChange={e => setNewEntry({...newEntry, visaGranted: e.target.checked})} className="w-4 h-4 rounded accent-emerald-500" /><span className="text-sm font-bold text-slate-600 group-hover:text-slate-800">Visa Granted?</span></label>
                <label className="flex items-center gap-2 cursor-pointer group"><input type="checkbox" checked={newEntry.visaRefused} onChange={e => setNewEntry({...newEntry, visaRefused: e.target.checked})} className="w-4 h-4 rounded accent-red-500" /><span className="text-sm font-bold text-slate-600 group-hover:text-slate-800">Visa Refused?</span></label>
             </div>
             {newEntry.visaRefused && <F label="Reason for Refusal"><TA value={newEntry.refusalReason} onChange={e => setNewEntry({...newEntry, refusalReason: e.target.value})} /></F>}
             <F label="Additional Notes"><TA value={newEntry.notes} onChange={e => setNewEntry({...newEntry, notes: e.target.value})} /></F>
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
               <button onClick={() => setShowAddForm(false)} className={btnCancel} disabled={isSaving}>Cancel</button>
               <button onClick={handleAdd} className={btnPrimary} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Record'}</button>
             </div>

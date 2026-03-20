@@ -146,13 +146,13 @@ export default function StudentLayout() {
       </aside>
 
       {/* Main: topbar + full-width content */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-[margin-left] duration-200 ease-in-out ml-0 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 min-w-0 flex-1 order-2 sm:order-1">
+      <div className={`flex-1 flex flex-col min-h-screen transition-[margin-left] duration-200 ease-in-out ml-0 min-w-0 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0 flex-1 basis-full sm:basis-auto order-2 sm:order-1">
             <button type="button" onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Open menu">
               <Menu className="w-5 h-5" />
             </button>
-            <div className="flex-1 max-w-md flex items-center gap-2 min-w-0">
+            <div className="flex-1 max-w-full sm:max-w-md flex items-center gap-2 min-w-0">
               <SearchIcon className="w-5 h-5 text-slate-400 shrink-0 hidden sm:block" />
               <input
                 type="search"
@@ -161,7 +161,7 @@ export default function StudentLayout() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 ml-auto">
             <Notifications />
             <div className="relative">
               <button
@@ -202,7 +202,7 @@ export default function StudentLayout() {
             </div>
           </div>
         </header>
-        <main className="flex-1 px-4 sm:px-6 py-6 sm:py-8 overflow-auto">
+        <main className="flex-1 min-w-0 px-3 sm:px-6 py-5 sm:py-8 overflow-auto">
           <Outlet />
         </main>
       </div>

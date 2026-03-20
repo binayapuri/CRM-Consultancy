@@ -71,18 +71,18 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({ current, previous, onS
         <div className="space-y-6">
           <div className="space-y-4">
             {previous.map((item) => (
-              <div key={item._id} className="relative group bg-slate-50/50 p-5 rounded-lg border border-slate-100 hover:border-indigo-100 transition-all">
-                <div className="flex justify-between items-start">
+              <div key={item._id} className="relative group bg-slate-50/50 p-4 sm:p-5 rounded-lg border border-slate-100 hover:border-indigo-100 transition-all">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                   <div className="space-y-1">
                     <p className="font-black text-slate-800 text-sm leading-tight">
                       {[item.street, item.suburb, item.city, item.state, item.postcode, item.country].filter(Boolean).join(', ')}
                     </p>
-                    <div className="flex items-center gap-3 pt-1">
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-500">{item.type}</span>
                        <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(item.from).toLocaleDateString()} - {item.to ? new Date(item.to).toLocaleDateString() : 'Present'}</span>
                     </div>
                   </div>
-                  <button onClick={() => onDeletePrevious(item._id)} className="p-2 text-slate-300 hover:text-red-500 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => onDeletePrevious(item._id)} className="self-end sm:self-auto p-2 text-slate-400 hover:text-red-500 rounded-xl transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
             ))}
@@ -102,12 +102,12 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({ current, previous, onS
                 <F label="State"><SI value={newEntry.state} onChange={e => setNewEntry({...newEntry, state: e.target.value})} /></F>
                 <F label="Postcode"><SI value={newEntry.postcode} onChange={e => setNewEntry({...newEntry, postcode: e.target.value})} /></F>
                 <F label="Country"><SI value={newEntry.country} onChange={e => setNewEntry({...newEntry, country: e.target.value})} /></F>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <F label="From"><SI type="date" value={newEntry.from} onChange={e => setNewEntry({...newEntry, from: e.target.value})} /></F>
                   <F label="To"><SI type="date" value={newEntry.to} onChange={e => setNewEntry({...newEntry, to: e.target.value})} /></F>
                 </div>
               </div>
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
                 <button onClick={() => setShowAddForm(false)} className={btnCancel} disabled={isSaving}>Cancel</button>
                 <button onClick={handleAddPrevious} className={btnPrimary} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add History'}</button>
               </div>

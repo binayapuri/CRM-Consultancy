@@ -1,14 +1,59 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Bell, Shield, Save, Building2, FileSignature, CreditCard, Upload, Users, ChevronDown, ChevronUp, Mail, Plus, X, FileText } from 'lucide-react';
+import { Bell, Shield, Save, Building2, FileSignature, CreditCard, Upload, Users, ChevronDown, ChevronUp, Mail, Plus, X, FileText, CircleHelp, CheckCircle2 } from 'lucide-react';
 
-const SettingsBlock = ({ title, icon: Icon, desc, children, empty, sample }: { title: string; icon: any; desc: string; children: React.ReactNode; empty?: boolean; sample?: React.ReactNode }) => (
-  <div className="card">
-    <h2 className="font-display font-semibold text-slate-900 mb-2 flex items-center gap-2"><Icon className="w-5 h-5 text-ori-600" /> {title}</h2>
-    <p className="text-slate-600 text-sm mb-4">{desc}</p>
-    {empty && sample ? <div className="p-4 rounded-lg bg-slate-50 border border-dashed border-slate-200 text-slate-500 text-sm">{sample}</div> : children}
+type HelpStep = {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+};
+
+const HelpSteps = ({ title = 'Setup guide', steps, note }: { title?: string; steps: HelpStep[]; note?: string }) => (
+  <div className="mb-4 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 sm:p-5">
+    <p className="text-xs font-black uppercase tracking-widest text-indigo-700">{title}</p>
+    <div className="mt-3 space-y-3">
+      {steps.map((step, index) => (
+        <div key={`${title}-${index}`} className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm border border-indigo-100">
+            {step.icon}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-900">{index + 1}. {step.title}</p>
+            <p className="text-sm text-slate-600">{step.description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+    {note && <p className="mt-4 text-xs font-medium text-slate-500">{note}</p>}
   </div>
 );
+
+const SettingsBlock = ({ title, icon: Icon, desc, children, empty, sample, help }: { title: string; icon: any; desc: string; children: React.ReactNode; empty?: boolean; sample?: React.ReactNode; help?: React.ReactNode }) => {
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  return (
+    <div className="card">
+      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="font-display font-semibold text-slate-900 flex items-center gap-2"><Icon className="w-5 h-5 text-ori-600" /> {title}</h2>
+          <p className="text-slate-600 text-sm mt-2">{desc}</p>
+        </div>
+        {help && (
+          <button
+            type="button"
+            onClick={() => setHelpOpen((open) => !open)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50"
+          >
+            <CircleHelp className="w-4 h-4 text-indigo-600" />
+            {helpOpen ? 'Hide Help' : 'Setup Help'}
+          </button>
+        )}
+      </div>
+      {help && helpOpen && help}
+      {empty && sample ? <div className="p-4 rounded-lg bg-slate-50 border border-dashed border-slate-200 text-slate-500 text-sm">{sample}</div> : children}
+    </div>
+  );
+};
 import { authFetch, safeJson } from '../../store/auth';
 import { useAuthStore } from '../../store/auth';
 import { resolveFileUrl } from '../../lib/imageUrl';
@@ -209,7 +254,20 @@ export default function ConsultancySettings() {
 
       <div className="mt-6 space-y-6 max-w-2xl">
         {isAdmin && (
-          <SettingsBlock title="Consultancy Branding" icon={Building2} desc="This name appears in the sidebar header. Leave blank to use the default consultancy name.">
+          <SettingsBlock
+            title="Consultancy Branding"
+            icon={Building2}
+            desc="This name appears in the sidebar header. Leave blank to use the default consultancy name."
+            help={
+              <HelpSteps
+                title="How to set branding"
+                steps={[
+                  { icon: <Building2 className="w-4 h-4" />, title: 'Enter the public display name', description: 'Use the name staff and clients should see in the sidebar and across communications.' },
+                  { icon: <CheckCircle2 className="w-4 h-4" />, title: 'Save before testing the workflow', description: 'Once saved, the updated name will show in communication previews and the portal header.' },
+                ]}
+              />
+            }
+          >
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Display Name (in header)</label>
               <input value={form.displayName} onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))} className="input" placeholder="e.g. ORIVISA Migration" />
@@ -218,7 +276,23 @@ export default function ConsultancySettings() {
         )}
 
         {isAdmin && (
-          <SettingsBlock title="Form 956 & Document Details" icon={FileSignature} desc="Used to pre-fill the official Home Affairs Form 956 PDF and to send compliant Initial Advice / MIA communication.">
+          <SettingsBlock
+            title="Form 956 & Document Details"
+            icon={FileSignature}
+            desc="Used to pre-fill the official Home Affairs Form 956 PDF and to send compliant Initial Advice / MIA communication."
+            help={
+              <HelpSteps
+                title="Form 956 / MIA setup steps"
+                steps={[
+                  { icon: <Upload className="w-4 h-4" />, title: 'Upload the agent signature first', description: 'This signature is used inside the generated Form 956 and the MIA agreement PDF.' },
+                  { icon: <FileSignature className="w-4 h-4" />, title: 'Complete the agent and office details', description: 'Fill in agent name, MARN, company name, address, phone, and email exactly as you want them to appear in the PDF and email drafts.' },
+                  { icon: <FileText className="w-4 h-4" />, title: 'Upload the consumer guide PDF if you use a custom one', description: 'If you do not upload one, the system will fall back to the default consumer guide where available.' },
+                  { icon: <CheckCircle2 className="w-4 h-4" />, title: 'Save consultancy settings, then test from a client record', description: 'Open a client application workflow and refresh preview to confirm the Form 956 and MIA attachments render correctly.' },
+                ]}
+                note="Recommended order: signature -> agent details -> consumer guide -> save -> test preview."
+              />
+            }
+          >
             <div className="grid md:grid-cols-2 gap-4">
               <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Agent Signature (for Form 956 & MIA)</label>
                 <div className="flex items-center gap-4">
@@ -257,7 +331,22 @@ export default function ConsultancySettings() {
         )}
 
         {isAdmin && (
-          <SettingsBlock title="Initial Advice Template" icon={FileText} desc="Default template for initial advice and fee estimation emails. Customize per client when sending.">
+          <SettingsBlock
+            title="Initial Advice Template"
+            icon={FileText}
+            desc="Default template for initial advice and fee estimation emails. Customize per client when sending."
+            help={
+              <HelpSteps
+                title="Initial advice template steps"
+                steps={[
+                  { icon: <FileText className="w-4 h-4" />, title: 'Load a starter template', description: 'Use the default MARA-compliant template or the 482 sponsorship template to avoid writing from scratch.' },
+                  { icon: <CheckCircle2 className="w-4 h-4" />, title: 'Update subject and body', description: 'Set the general subject line and the default introduction that should appear in most matters.' },
+                  { icon: <CreditCard className="w-4 h-4" />, title: 'Maintain fee blocks and checklist items', description: 'Keep the professional fee blocks, government fees, and checklist items current so they populate automatically in previews.' },
+                  { icon: <Mail className="w-4 h-4" />, title: 'Review inside a client workflow before sending', description: 'The saved template becomes the starting draft, but staff can still edit it per client before sending.' },
+                ]}
+              />
+            }
+          >
             <button type="button" onClick={async () => {
               try {
                 const t = await authFetch('/api/constants/email-templates').then(r => safeJson(r)) as any;
@@ -338,7 +427,23 @@ export default function ConsultancySettings() {
         )}
 
         {isAdmin && (
-          <SettingsBlock title="Email Configuration" icon={Mail} desc="Add multiple SMTP profiles. Employees can use the default or choose their own in Profile. Common: Gmail (smtp.gmail.com:587), Office365. Use app password for Gmail.">
+          <SettingsBlock
+            title="Email Configuration"
+            icon={Mail}
+            desc="Add multiple SMTP profiles. Employees can use the default or choose their own in Profile. Common: Gmail (smtp.gmail.com:587), Office365. Use app password for Gmail."
+            help={
+              <HelpSteps
+                title="SMTP setup steps"
+                steps={[
+                  { icon: <Plus className="w-4 h-4" />, title: 'Add one email profile first', description: 'Create a profile for the mailbox your team will send from, such as the main office mailbox.' },
+                  { icon: <Mail className="w-4 h-4" />, title: 'Enter SMTP host, port, user, and password', description: 'For Gmail, use smtp.gmail.com on port 587 and an app password rather than the normal account password.' },
+                  { icon: <CheckCircle2 className="w-4 h-4" />, title: 'Mark one profile as default and active', description: 'If no employee-specific profile is selected, the system uses the default active profile for sending.' },
+                  { icon: <Save className="w-4 h-4" />, title: 'Save consultancy settings before using email actions', description: 'The communication workflow sends mail through the saved SMTP profile, so save here before trying to send Initial Advice, Form 956, or MIA.' },
+                ]}
+                note="If email is not arriving, first confirm the SMTP profile is active and the credentials/app password are valid."
+              />
+            }
+          >
             <p className="text-slate-600 text-sm mb-4">Add multiple SMTP profiles. Employees can use the default or choose their own in Profile. Used when sending Form 956, MIA, Initial Advice.</p>
             <p className="text-slate-500 text-xs mb-4">Common: Gmail (smtp.gmail.com:587), Office365 (smtp.office365.com:587), SendGrid, Mailgun. Use app password for Gmail.</p>
             <div className="space-y-4">
@@ -369,7 +474,21 @@ export default function ConsultancySettings() {
         )}
 
         {isAdmin && (
-          <SettingsBlock title="Role Permissions" icon={Users} desc="Configure feature access per role. CONSULTANCY_ADMIN has full access. AGENT and SUPPORT permissions can be restricted.">
+          <SettingsBlock
+            title="Role Permissions"
+            icon={Users}
+            desc="Configure feature access per role. CONSULTANCY_ADMIN has full access. AGENT and SUPPORT permissions can be restricted."
+            help={
+              <HelpSteps
+                title="Permissions setup steps"
+                steps={[
+                  { icon: <Users className="w-4 h-4" />, title: 'Open the role you want to adjust', description: 'Start with AGENT or SUPPORT if you want to tighten access without affecting administrators.' },
+                  { icon: <CheckCircle2 className="w-4 h-4" />, title: 'Turn on only the actions needed', description: 'Enable view/create/edit/delete or feature toggles depending on the responsibilities of that role.' },
+                  { icon: <Save className="w-4 h-4" />, title: 'Save consultancy settings and re-test with that user', description: 'After saving, sign in as a user from that role and confirm that the allowed screens and actions match your expectations.' },
+                ]}
+              />
+            }
+          >
             <div className="space-y-3">
               {(form.rolePermissions || DEFAULT_ROLE_PERMISSIONS).map((rp, rIdx) => (
                 <div key={rp.role} className="border rounded-lg overflow-hidden">
@@ -411,7 +530,21 @@ export default function ConsultancySettings() {
         )}
 
         {isAdmin && (
-          <SettingsBlock title="Bank Details (for fee advice)" icon={CreditCard} desc="Shown in initial advice and fee estimation emails.">
+          <SettingsBlock
+            title="Bank Details (for fee advice)"
+            icon={CreditCard}
+            desc="Shown in initial advice and fee estimation emails."
+            help={
+              <HelpSteps
+                title="Bank details steps"
+                steps={[
+                  { icon: <CreditCard className="w-4 h-4" />, title: 'Enter the account details clients should pay into', description: 'These values appear in fee advice and quotation emails when payment instructions are shown.' },
+                  { icon: <CheckCircle2 className="w-4 h-4" />, title: 'Double-check BSB and account number', description: 'Make sure these details are correct before saving because they are sent directly to clients.' },
+                  { icon: <Mail className="w-4 h-4" />, title: 'Refresh an initial advice preview', description: 'Open a client workflow and check that payment details appear exactly as intended.' },
+                ]}
+              />
+            }
+          >
             <div className="grid md:grid-cols-2 gap-4">
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Account Name</label><input value={form.bankDetails.accountName} onChange={e => setForm(f => ({ ...f, bankDetails: { ...f.bankDetails, accountName: e.target.value } }))} className="input" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Bank</label><input value={form.bankDetails.bank} onChange={e => setForm(f => ({ ...f, bankDetails: { ...f.bankDetails, bank: e.target.value } }))} className="input" placeholder="e.g. Westpac" /></div>

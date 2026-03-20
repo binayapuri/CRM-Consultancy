@@ -176,11 +176,11 @@ export const NotesInfo: React.FC<NotesInfoProps> = ({
         </p>
       </ProfileCard>
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <h3 className="font-black text-slate-800 flex items-center gap-2">
           <StickyNote className="w-5 h-5 text-indigo-600" /> My Journals & Notes
         </h3>
-        <button onClick={openNewNoteModal} className={btnPrimary}>
+        <button onClick={openNewNoteModal} className={`${btnPrimary} w-full sm:w-auto justify-center`}>
           <Plus className="w-4 h-4" /> New Note
         </button>
       </div>
@@ -189,9 +189,9 @@ export const NotesInfo: React.FC<NotesInfoProps> = ({
         {notes.map((note) => (
           <div
             key={note._id}
-            className="group bg-white p-5 rounded-lg border border-slate-200 hover:border-indigo-400 transition-all shadow-sm flex flex-col justify-between"
+            className="group bg-white p-4 sm:p-5 rounded-lg border border-slate-200 hover:border-indigo-400 transition-all shadow-sm flex flex-col justify-between"
           >
-            <div className="flex justify-between items-start mb-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <span
                   className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
@@ -206,7 +206,7 @@ export const NotesInfo: React.FC<NotesInfoProps> = ({
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 {onUpdateNote && (
                   <button
                     onClick={() => openEditNoteModal(note)}
@@ -233,7 +233,7 @@ export const NotesInfo: React.FC<NotesInfoProps> = ({
                 </button>
               </div>
             </div>
-            <h4 className="font-black text-slate-800 text-sm mb-2">{note.title}</h4>
+            <h4 className="font-black text-slate-800 text-sm mb-2 break-words">{note.title}</h4>
             <p className="text-xs text-slate-500 font-medium line-clamp-3 mb-4">{note.text}</p>
             <p className="text-[10px] font-bold text-slate-400 mt-auto">
               {new Date(note.addedAt).toLocaleDateString('en-AU', {
