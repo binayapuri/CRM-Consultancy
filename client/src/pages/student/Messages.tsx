@@ -27,6 +27,21 @@ export default function Messages() {
   const [newText, setNewText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    const sync = () => setIsMobile(mql.matches);
+    sync();
+    // Safari fallback: older versions may not support addEventListener on MediaQueryList.
+    const mqlAny = mql as any;
+    if (typeof mqlAny.addEventListener === 'function') mqlAny.addEventListener('change', sync);
+    else if (typeof mqlAny.addListener === 'function') mqlAny.addListener(sync);
+    return () => {
+      if (typeof mqlAny.removeEventListener === 'function') mqlAny.removeEventListener('change', sync);
+      else if (typeof mqlAny.removeListener === 'function') mqlAny.removeListener(sync);
+    };
+  }, []);
 
   const fetchConversations = async () => {
     try {
@@ -112,94 +127,108 @@ export default function Messages() {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col sm:flex-row min-h-[400px]">
-        <div className="w-full sm:w-80 border-b sm:border-b-0 sm:border-r border-slate-200 flex flex-col">
-          <div className="p-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-900">Conversations</h2>
+        {(!selected || !isMobile) && (
+          <div className="w-full sm:w-80 border-b sm:border-b-0 sm:border-r border-slate-200 flex flex-col">
+            <div className="p-4 border-b border-slate-100">
+              <h2 className="font-bold text-slate-900">Conversations</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {conversations.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-sm">No conversations yet. Message someone from a community post!</div>
+              ) : (
+                conversations.map((c) => {
+                  const key = `${c.otherUser?._id}:${c.contextPostId || ''}`;
+                  const isSelected =
+                    selected?.recipientId === c.otherUser?._id &&
+                    (selected?.postId || '') === (c.contextPostId || '');
+                  const name = `${c.otherUser?.profile?.firstName || ''} ${c.otherUser?.profile?.lastName || ''}`.trim() || c.otherUser?.email || 'User';
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setSelected({ recipientId: c.otherUser!._id, postId: c.contextPostId })}
+                      className={`w-full text-left p-4 border-b border-slate-50 hover:bg-slate-50 transition ${isSelected ? 'bg-ori-50 border-l-4 border-l-ori-600' : ''}`}
+                    >
+                      <p className="font-bold text-slate-900 truncate">{name}</p>
+                      {c.contextPostTitle && <p className="text-xs text-slate-500 truncate">Re: {c.contextPostTitle}</p>}
+                      <p className="text-sm text-slate-600 truncate mt-0.5">{c.lastMessage}</p>
+                      <p className="text-xs text-slate-400 mt-1">{new Date(c.lastAt).toLocaleDateString()}</p>
+                    </button>
+                  );
+                })
+              )}
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            {conversations.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-sm">No conversations yet. Message someone from a community post!</div>
-            ) : (
-              conversations.map((c) => {
-                const key = `${c.otherUser?._id}:${c.contextPostId || ''}`;
-                const isSelected =
-                  selected?.recipientId === c.otherUser?._id &&
-                  (selected?.postId || '') === (c.contextPostId || '');
-                const name = `${c.otherUser?.profile?.firstName || ''} ${c.otherUser?.profile?.lastName || ''}`.trim() || c.otherUser?.email || 'User';
-                return (
+        )}
+
+        {((selected || !isMobile) && (
+          <div className="flex-1 flex flex-col min-h-[300px]">
+            {selected ? (
+              <>
+                <div className="p-4 border-b border-slate-100 bg-slate-50">
+                  {isMobile && (
+                    <button
+                      type="button"
+                      onClick={() => setSelected(null)}
+                      className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:bg-slate-100 px-2 py-1 rounded-lg mb-2"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Back to conversations
+                    </button>
+                  )}
+                  <p className="font-bold text-slate-900">
+                    {selectedConvo?.otherUser?.profile?.firstName} {selectedConvo?.otherUser?.profile?.lastName}
+                  </p>
+                  {selectedConvo?.contextPostTitle && (
+                    <p className="text-xs text-slate-500">Re: {selectedConvo.contextPostTitle}</p>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {messages.map(m => {
+                    const isFromThem = (m.senderId?._id || m.senderId)?.toString() === selected.recipientId;
+                    return (
+                    <div
+                      key={m._id}
+                      className={`flex ${isFromThem ? 'justify-start' : 'justify-end'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-xl px-4 py-2 ${
+                          isFromThem
+                            ? 'bg-slate-100 text-slate-900'
+                            : 'bg-ori-600 text-white'
+                        }`}
+                      >
+                        <p className="text-sm">{m.text}</p>
+                        <p className="text-[10px] opacity-70 mt-1">{new Date(m.createdAt).toLocaleTimeString()}</p>
+                      </div>
+                    </div>
+                  );})}
+                </div>
+                <form onSubmit={handleSend} className="p-4 border-t border-slate-200 flex gap-2">
+                  <input
+                    value={newText}
+                    onChange={e => setNewText(e.target.value)}
+                    placeholder="Type a message..."
+                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-ori-500/50"
+                  />
                   <button
-                    key={key}
-                    onClick={() => setSelected({ recipientId: c.otherUser!._id, postId: c.contextPostId })}
-                    className={`w-full text-left p-4 border-b border-slate-50 hover:bg-slate-50 transition ${isSelected ? 'bg-ori-50 border-l-4 border-l-ori-600' : ''}`}
+                    type="submit"
+                    disabled={!newText.trim() || sending}
+                    className="px-4 py-3 bg-ori-600 text-white rounded-xl font-bold hover:bg-ori-700 disabled:opacity-50"
                   >
-                    <p className="font-bold text-slate-900 truncate">{name}</p>
-                    {c.contextPostTitle && <p className="text-xs text-slate-500 truncate">Re: {c.contextPostTitle}</p>}
-                    <p className="text-sm text-slate-600 truncate mt-0.5">{c.lastMessage}</p>
-                    <p className="text-xs text-slate-400 mt-1">{new Date(c.lastAt).toLocaleDateString()}</p>
+                    <Send className="w-5 h-5" />
                   </button>
-                );
-              })
+                </form>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-slate-500">
+                <div className="text-center">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+                  <p>Select a conversation</p>
+                </div>
+              </div>
             )}
           </div>
-        </div>
-
-        <div className="flex-1 flex flex-col min-h-[300px]">
-          {selected ? (
-            <>
-              <div className="p-4 border-b border-slate-100 bg-slate-50">
-                <p className="font-bold text-slate-900">
-                  {selectedConvo?.otherUser?.profile?.firstName} {selectedConvo?.otherUser?.profile?.lastName}
-                </p>
-                {selectedConvo?.contextPostTitle && (
-                  <p className="text-xs text-slate-500">Re: {selectedConvo.contextPostTitle}</p>
-                )}
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map(m => {
-                  const isFromThem = (m.senderId?._id || m.senderId)?.toString() === selected.recipientId;
-                  return (
-                  <div
-                    key={m._id}
-                    className={`flex ${isFromThem ? 'justify-start' : 'justify-end'}`}
-                  >
-                    <div
-                      className={`max-w-[80%] rounded-xl px-4 py-2 ${
-                        isFromThem
-                          ? 'bg-slate-100 text-slate-900'
-                          : 'bg-ori-600 text-white'
-                      }`}
-                    >
-                      <p className="text-sm">{m.text}</p>
-                      <p className="text-[10px] opacity-70 mt-1">{new Date(m.createdAt).toLocaleTimeString()}</p>
-                    </div>
-                  </div>
-                );})}
-              </div>
-              <form onSubmit={handleSend} className="p-4 border-t border-slate-200 flex gap-2">
-                <input
-                  value={newText}
-                  onChange={e => setNewText(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-ori-500/50"
-                />
-                <button
-                  type="submit"
-                  disabled={!newText.trim() || sending}
-                  className="px-4 py-3 bg-ori-600 text-white rounded-xl font-bold hover:bg-ori-700 disabled:opacity-50"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </form>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-slate-500">
-              <div className="text-center">
-                <MessageSquare className="w-12 h-12 mx-auto mb-2 text-slate-300" />
-                <p>Select a conversation</p>
-              </div>
-            </div>
-          )}
-        </div>
+        ))}
       </div>
     </div>
   );
