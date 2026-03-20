@@ -17,6 +17,8 @@ export const errorHandler = (err, req, res, next) => {
   // Generic errors
   res.status(statusCode).json({
     error: err.message || 'Internal Server Error',
+    ...(err.code && { code: err.code }),
+    ...(err.details && { details: err.details }),
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 };

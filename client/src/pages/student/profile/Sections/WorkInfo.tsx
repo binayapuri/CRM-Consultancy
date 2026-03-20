@@ -40,8 +40,8 @@ export const WorkInfo: React.FC<WorkInfoProps> = ({ items, onAdd, onDelete }) =>
       <div className="space-y-6">
         <div className="space-y-4">
           {items.map((item) => (
-            <div key={item._id} className="relative group bg-slate-50/50 p-5 rounded-lg border border-slate-100 hover:border-indigo-100 hover:bg-white transition-all">
-              <div className="flex justify-between items-start">
+            <div key={item._id} className="relative group bg-slate-50/50 p-4 sm:p-5 rounded-lg border border-slate-100 hover:border-indigo-100 hover:bg-white transition-all">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                 <div className="space-y-1">
                   <h4 className="font-black text-slate-800 text-base">{item.role}</h4>
                   <p className="font-bold text-indigo-600 text-sm flex items-center gap-1.5">
@@ -54,7 +54,7 @@ export const WorkInfo: React.FC<WorkInfoProps> = ({ items, onAdd, onDelete }) =>
                   </div>
                   {item.description && <p className="text-xs text-slate-500 mt-2 font-medium line-clamp-2">{item.description}</p>}
                 </div>
-                <button onClick={() => onDelete(item._id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => onDelete(item._id)} className="self-end sm:self-auto p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
           ))}
@@ -77,7 +77,7 @@ export const WorkInfo: React.FC<WorkInfoProps> = ({ items, onAdd, onDelete }) =>
               <div className="flex items-end pb-1"><label className="flex items-center gap-2 cursor-pointer group"><input type="checkbox" checked={newEntry.isCurrent} onChange={e => setNewEntry({...newEntry, isCurrent: e.target.checked})} className="w-4 h-4 rounded accent-indigo-600" /><span className="text-sm font-bold text-slate-600 group-hover:text-slate-800">Current Role?</span></label></div>
             </div>
             <F label="Responsibilities / Description"><TA value={newEntry.description} onChange={e => setNewEntry({...newEntry, description: e.target.value})} placeholder="Describe your key tasks..." /></F>
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
               <button onClick={() => setShowAddForm(false)} className={btnCancel} disabled={isSaving}>Cancel</button>
               <button onClick={handleAdd} className={btnPrimary} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Role'}</button>
             </div>

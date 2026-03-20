@@ -1,10 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authFetch, safeJson } from '../../store/auth';
 import { 
   ArrowLeft, Trash2, Mail, Pencil, FileText, Download, 
   CheckCircle, StickyNote, ClipboardList, Award, History, 
-  User, GraduationCap, Send, FileSignature, CheckCircle2, Eye, X, Briefcase, ShieldCheck
+  User, GraduationCap, Send, FileSignature, CheckCircle2, Eye, X, Briefcase, ShieldCheck, CircleHelp
 } from 'lucide-react';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { resolveFileUrl } from '../../lib/imageUrl';
@@ -30,6 +30,22 @@ const DEFAULT_SAMPLE_ATTACHMENTS = [
   'sample-list-of-applicants',
   'genuine-position-report',
   'work-reference-sample',
+];
+
+const TITLE_OPTIONS = ['Mr', 'Mrs', 'Ms', 'Miss', 'Mx', 'Dr', 'Prof', 'Other'];
+const GENDER_OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to say', 'Other'];
+const LANGUAGE_OPTIONS = [
+  'English', 'Hindi', 'Nepali', 'Punjabi', 'Urdu', 'Bengali', 'Mandarin', 'Cantonese',
+  'Vietnamese', 'Korean', 'Japanese', 'Thai', 'Sinhala', 'Tamil', 'Arabic', 'Spanish',
+  'French', 'Portuguese', 'German', 'Italian', 'Other',
+];
+const COUNTRY_OPTIONS = [
+  'Afghanistan', 'Argentina', 'Australia', 'Bangladesh', 'Bhutan', 'Brazil', 'Cambodia', 'Canada',
+  'Chile', 'China', 'Colombia', 'Fiji', 'France', 'Germany', 'Ghana', 'Hong Kong', 'India',
+  'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Italy', 'Japan', 'Kenya', 'Korea, South', 'Malaysia',
+  'Maldives', 'Mauritius', 'Myanmar', 'Nepal', 'Netherlands', 'New Zealand', 'Nigeria', 'Pakistan',
+  'Papua New Guinea', 'Philippines', 'Saudi Arabia', 'Singapore', 'South Africa', 'Spain', 'Sri Lanka',
+  'Thailand', 'Turkey', 'United Arab Emirates', 'United Kingdom', 'United States', 'Vietnam', 'Zimbabwe', 'Other',
 ];
 
 export default function ClientDetail() {
@@ -94,10 +110,22 @@ export default function ClientDetail() {
   const [composerKind, setComposerKind] = useState<ComposerKind>('FORM_956');
   const [composerTarget, setComposerTarget] = useState<{ clientId?: string; sponsorId?: string; applicationId?: string }>({});
   const [composerPreview, setComposerPreview] = useState<any>(null);
+  const [workflowHelpOpen, setWorkflowHelpOpen] = useState(false);
   const [composerDraft, setComposerDraft] = useState<any>({
     applicationId: '',
     subject: '',
     customBody: '',
+    form956Profile: {
+      title: '',
+      preferredLanguage: 'English',
+      nationality: '',
+      countryOfBirth: '',
+      passportCountry: '',
+      countryOfResidence: '',
+      gender: '',
+      phone: '',
+      email: '',
+    },
     includeConsumerGuide: true,
     includeForm956Attachment: false,
     feeBlocks: [],
@@ -335,10 +363,22 @@ export default function ClientDetail() {
 
   const buildDraftFromApplication = (app?: any) => {
     const existing = app?.communicationDraft || {};
+    const fallbackForm956Profile = {
+      title: '',
+      preferredLanguage: 'English',
+      nationality: client?.profile?.nationality || '',
+      countryOfBirth: client?.profile?.countryOfBirth || '',
+      passportCountry: client?.profile?.passportCountry || '',
+      countryOfResidence: client?.profile?.address?.country || 'Australia',
+      gender: client?.profile?.gender || '',
+      phone: client?.profile?.phone || app?.sponsorId?.contactPerson?.phone || app?.sponsorId?.phone || '',
+      email: client?.profile?.email || app?.sponsorId?.contactPerson?.email || app?.sponsorId?.email || '',
+    };
     return {
       applicationId: app?._id || '',
       subject: existing.subject || '',
       customBody: existing.body || '',
+      form956Profile: { ...fallbackForm956Profile, ...(existing.form956Profile || {}) },
       includeConsumerGuide: existing.includeConsumerGuide ?? true,
       includeForm956Attachment: existing.includeForm956Attachment ?? false,
       feeBlocks: Array.isArray(existing.feeBlocks) ? existing.feeBlocks : [],
@@ -369,6 +409,20 @@ export default function ClientDetail() {
     return '';
   };
 
+  const getApiErrorMessage = (data: any, fallback: string) => {
+    const base = data?.error || fallback;
+    const details = Array.isArray(data?.details)
+      ? data.details
+          .map((item: any) => item?.message)
+          .filter(Boolean)
+      : [];
+
+    if (!details.length) return base;
+
+    const uniqueDetails = Array.from(new Set(details));
+    return `${base}\n• ${uniqueDetails.join('\n• ')}`;
+  };
+
   const refreshComposerPreview = async (kind: ComposerKind, target: { clientId?: string; sponsorId?: string; applicationId?: string }, draft: any) => {
     const url = getPreviewUrl(kind, target);
     if (!url) return;
@@ -381,8 +435,14 @@ export default function ClientDetail() {
         body: JSON.stringify(draft),
       });
       const data = await safeJson<any>(res);
-      if (!res.ok || data?.error) throw new Error(data?.error || 'Failed to load preview');
+      if (!res.ok || data?.error) throw new Error(getApiErrorMessage(data, 'Failed to load preview'));
       setComposerPreview(data);
+      if (!draft?.subject?.trim() && data?.subject) {
+        setComposerDraft((prev: any) => {
+          if (prev?.subject?.trim()) return prev;
+          return { ...prev, subject: data.subject };
+        });
+      }
     } catch (err: any) {
       setComposerError(err?.message || 'Failed to load preview');
     } finally {
@@ -429,7 +489,7 @@ export default function ClientDetail() {
         body: JSON.stringify(composerDraft),
       });
       const data = await safeJson<any>(res);
-      if (!res.ok || data?.error) throw new Error(data?.error || 'Failed to send');
+      if (!res.ok || data?.error) throw new Error(getApiErrorMessage(data, 'Failed to send'));
       fetchApplications();
       const nextStep = getNextWorkflowStep(composerKind);
       if (nextStep) {
@@ -710,6 +770,10 @@ export default function ClientDetail() {
                          <p className="mt-1 text-xs font-medium text-slate-500">One responsive flow with auto consumer-guide attachment and optional auto-filled Form 956 inside the first email.</p>
                        </div>
                        <div className="flex flex-wrap gap-2">
+                         <button onClick={() => setWorkflowHelpOpen((open) => !open)} className="px-4 py-2 rounded-2xl border border-slate-200 bg-white text-slate-700 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all inline-flex items-center gap-2">
+                           <CircleHelp className="w-4 h-4 text-indigo-600" />
+                           {workflowHelpOpen ? 'Hide Help' : 'Setup Help'}
+                         </button>
                          <button onClick={() => openComposer('INITIAL_ADVICE', a)} className="px-4 py-2 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all">
                            Open Workflow
                          </button>
@@ -720,6 +784,34 @@ export default function ClientDetail() {
                          )}
                        </div>
                      </div>
+                     {workflowHelpOpen && (
+                       <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4">
+                         <p className="text-[10px] font-black uppercase tracking-widest text-indigo-700">Step-by-step setup</p>
+                         <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm text-slate-600">
+                           <div className="flex items-start gap-3">
+                             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white border border-indigo-100 text-indigo-600"><Mail className="w-4 h-4" /></div>
+                             <div><p className="font-bold text-slate-900">1. Configure email first</p><p>Go to Consultancy Settings and add an active default SMTP profile in Email Configuration.</p></div>
+                           </div>
+                           <div className="flex items-start gap-3">
+                             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white border border-indigo-100 text-indigo-600"><FileSignature className="w-4 h-4" /></div>
+                             <div><p className="font-bold text-slate-900">2. Complete Form 956 details</p><p>Upload the agent signature and fill in agent name, MARN, office address, phone, and email in Settings.</p></div>
+                           </div>
+                           <div className="flex items-start gap-3">
+                             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white border border-indigo-100 text-indigo-600"><FileText className="w-4 h-4" /></div>
+                             <div><p className="font-bold text-slate-900">3. Check templates and fees</p><p>Update Initial Advice template text, fee blocks, government fees, checklist items, and bank details if needed.</p></div>
+                           </div>
+                           <div className="flex items-start gap-3">
+                             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white border border-indigo-100 text-indigo-600"><CheckCircle2 className="w-4 h-4" /></div>
+                             <div><p className="font-bold text-slate-900">4. Open the workflow and send in order</p><p>Start with Initial Advice, then Form 956, then MIA. Refresh preview before send and confirm attachments are shown.</p></div>
+                           </div>
+                         </div>
+                         <div className="mt-4">
+                           <Link to={consultancyId ? `/consultancy/settings?consultancyId=${consultancyId}` : '/consultancy/settings'} className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-700 hover:underline">
+                             <CircleHelp className="w-4 h-4" /> Open Settings To Configure
+                           </Link>
+                         </div>
+                       </div>
+                     )}
                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                        <div className="rounded-2xl border border-slate-200 bg-white p-4">
                          <Mail className="w-5 h-5 text-indigo-600 mb-2" />
@@ -859,6 +951,7 @@ function OverviewTab({ client, onCompose, onSaveClient }: any) {
   const p = client.profile || {};
   const privacy = client.privacyConsent || {};
   const retention = client.retention || {};
+  const [showWorkflowHelp, setShowWorkflowHelp] = useState(false);
   const [privacyForm, setPrivacyForm] = useState({
     dataCollection: !!privacy.dataCollection,
     dataSharing: !!privacy.dataSharing,
@@ -926,10 +1019,36 @@ function OverviewTab({ client, onCompose, onSaveClient }: any) {
                  <p className="font-black text-xs uppercase tracking-widest text-slate-800">Communication Workflow</p>
                  <p className="text-[11px] font-bold text-slate-400 mt-1">One responsive send flow: Initial Advice -&gt; Form 956 -&gt; MIA</p>
                </div>
-               <button onClick={() => onCompose('INITIAL_ADVICE')} className="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all">
-                 Open Workflow
-               </button>
+               <div className="flex flex-wrap gap-2">
+                 <button onClick={() => setShowWorkflowHelp((open) => !open)} className="px-4 py-3 border border-slate-200 bg-white text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all inline-flex items-center gap-2">
+                   <CircleHelp className="w-4 h-4 text-indigo-600" />
+                   {showWorkflowHelp ? 'Hide Help' : 'Setup Help'}
+                 </button>
+                 <button onClick={() => onCompose('INITIAL_ADVICE')} className="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all">
+                   Open Workflow
+                 </button>
+               </div>
              </div>
+             {showWorkflowHelp && (
+               <div className="mt-4 rounded-2xl border border-indigo-100 bg-white p-4 space-y-3">
+                 <div className="flex items-start gap-3">
+                   <Mail className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
+                  <p className="text-sm text-slate-600"><span className="font-bold text-slate-900">Step 1:</span> Add an active SMTP profile in Settings / Email Configuration.</p>
+                 </div>
+                 <div className="flex items-start gap-3">
+                   <FileSignature className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
+                  <p className="text-sm text-slate-600"><span className="font-bold text-slate-900">Step 2:</span> Fill Settings / Form 956 &amp; Document Details, especially agent signature and MARN details.</p>
+                 </div>
+                 <div className="flex items-start gap-3">
+                   <FileText className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
+                   <p className="text-sm text-slate-600"><span className="font-bold text-slate-900">Step 3:</span> Update Initial Advice template and bank details if your office uses custom wording or payment instructions.</p>
+                 </div>
+                 <div className="flex items-start gap-3">
+                   <CheckCircle2 className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
+                   <p className="text-sm text-slate-600"><span className="font-bold text-slate-900">Step 4:</span> Return here, open the workflow, refresh preview, then send each step in sequence.</p>
+                 </div>
+               </div>
+             )}
           </div>
         </div>
 
@@ -1067,6 +1186,13 @@ function CommunicationComposer({ kind, draft, preview, loading, sending, error, 
   const isWorkflow = kind !== 'SPONSOR_PACKAGE';
 
   const updateField = (field: string, value: any) => onChange((prev: any) => ({ ...prev, [field]: value }));
+  const updateForm956Field = (field: string, value: string) => onChange((prev: any) => ({
+    ...prev,
+    form956Profile: {
+      ...(prev.form956Profile || {}),
+      [field]: value,
+    },
+  }));
   const updateArrayValue = (field: 'checklistItems' | 'sampleAttachments', index: number, value: string) => onChange((prev: any) => {
     const next = [...(prev[field] || [])];
     next[index] = value;
@@ -1095,19 +1221,19 @@ function CommunicationComposer({ kind, draft, preview, loading, sending, error, 
   }));
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-6xl rounded-3xl shadow-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-4">
+      <div className="bg-white w-full max-w-6xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[96vh] sm:max-h-[90vh] flex flex-col">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-xl font-black text-slate-900">{titleMap[kind]}</h3>
+            <h3 className="text-lg sm:text-xl font-black text-slate-900">{titleMap[kind]}</h3>
             <p className="text-sm text-slate-500 mt-1">{isWorkflow ? 'Edit and send this step, then continue through the sequence.' : 'Review the draft, attachments, and preview before sending.'}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="self-end sm:self-auto p-2 rounded-xl hover:bg-slate-100 text-slate-500"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-0 max-h-[80vh]">
+        <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-0 flex-1 min-h-0">
           <div className="p-4 sm:p-6 overflow-y-auto xl:border-r border-slate-200 space-y-5">
-            {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</div>}
+            {error && <div role="alert" aria-live="assertive" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 whitespace-pre-line">{error}</div>}
             <div>
               <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Subject</label>
               <input value={draft.subject || ''} onChange={(e) => updateField('subject', e.target.value)} className="input" placeholder="Email subject" />
@@ -1120,7 +1246,7 @@ function CommunicationComposer({ kind, draft, preview, loading, sending, error, 
             {isWorkflow && (
               <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
                 <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">Workflow Steps</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   {WORKFLOW_STEPS.map((step) => (
                     <button
                       key={step}
@@ -1158,9 +1284,16 @@ function CommunicationComposer({ kind, draft, preview, loading, sending, error, 
               </div>
             )}
 
+            {kind === 'FORM_956' && (
+              <Form956DetailsEditor
+                profile={draft.form956Profile || {}}
+                onChange={updateForm956Field}
+              />
+            )}
+
             {isDetailed && (
               <>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Occupation</label>
                     <input value={draft.occupation || ''} onChange={(e) => updateField('occupation', e.target.value)} className="input" />
@@ -1192,12 +1325,12 @@ function CommunicationComposer({ kind, draft, preview, loading, sending, error, 
 
           <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-slate-500">Recipient</p>
-                  <p className="text-sm font-bold text-slate-900 mt-1">{preview?.to || '—'}</p>
+                  <p className="text-sm font-bold text-slate-900 mt-1 break-all">{preview?.to || '—'}</p>
                 </div>
-                <button onClick={onRefresh} disabled={loading || sending} className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-black text-xs uppercase hover:bg-slate-50 disabled:opacity-50">
+                <button onClick={onRefresh} disabled={loading || sending} className="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-black text-xs uppercase hover:bg-slate-50 disabled:opacity-50">
                   {loading ? 'Refreshing...' : 'Refresh Preview'}
                 </button>
               </div>
@@ -1217,7 +1350,7 @@ function CommunicationComposer({ kind, draft, preview, loading, sending, error, 
               <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
                 <p className="text-xs font-black uppercase tracking-widest text-slate-500">HTML Preview</p>
               </div>
-              <div className="p-4 max-h-[420px] overflow-y-auto">
+              <div aria-live="polite" className="p-4 max-h-[45vh] xl:max-h-[420px] overflow-y-auto break-words">
                 {preview?.html ? (
                   <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: preview.html }} />
                 ) : (
@@ -1226,9 +1359,9 @@ function CommunicationComposer({ kind, draft, preview, loading, sending, error, 
               </div>
             </div>
 
-            <div className="flex justify-end gap-3">
-              <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50">Close</button>
-              <button onClick={onSend} disabled={loading || sending} className="px-5 py-2 rounded-xl bg-indigo-600 text-white font-black hover:bg-indigo-700 disabled:opacity-50">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+              <button onClick={onClose} className="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50">Close</button>
+              <button onClick={onSend} disabled={loading || sending} className="w-full sm:w-auto px-5 py-2 rounded-xl bg-indigo-600 text-white font-black hover:bg-indigo-700 disabled:opacity-50">
                 {sending ? 'Sending...' : 'Send Now'}
               </button>
             </div>
@@ -1236,6 +1369,74 @@ function CommunicationComposer({ kind, draft, preview, loading, sending, error, 
         </div>
       </div>
     </div>
+  );
+}
+
+function Form956DetailsEditor({ profile, onChange }: { profile: any; onChange: (field: string, value: string) => void }) {
+  const baseId = useId();
+
+  const renderSelect = (field: string, label: string, options: string[], hint: string) => {
+    const id = `${baseId}-${field}`;
+    const hintId = `${id}-hint`;
+    return (
+      <div>
+        <label htmlFor={id} className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">{label}</label>
+        <select
+          id={id}
+          value={profile?.[field] || ''}
+          onChange={(e) => onChange(field, e.target.value)}
+          aria-describedby={hintId}
+          className="input"
+        >
+          <option value="">Select</option>
+          {options.map((option) => <option key={option} value={option}>{option}</option>)}
+        </select>
+        <p id={hintId} className="mt-1 text-xs text-slate-500">{hint}</p>
+      </div>
+    );
+  };
+
+  const renderInput = (field: string, label: string, type = 'text', autoComplete?: string, hint?: string) => {
+    const id = `${baseId}-${field}`;
+    const hintId = `${id}-hint`;
+    return (
+      <div>
+        <label htmlFor={id} className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">{label}</label>
+        <input
+          id={id}
+          type={type}
+          value={profile?.[field] || ''}
+          onChange={(e) => onChange(field, e.target.value)}
+          autoComplete={autoComplete}
+          aria-describedby={hint ? hintId : undefined}
+          className="input"
+        />
+        {hint && <p id={hintId} className="mt-1 text-xs text-slate-500">{hint}</p>}
+      </div>
+    );
+  };
+
+  return (
+    <fieldset className="rounded-2xl border border-slate-200 p-4 space-y-4" aria-describedby={`${baseId}-desc`}>
+      <legend className="px-2 text-xs font-black uppercase tracking-widest text-slate-500">Form 956 Recipient Details</legend>
+      <p id={`${baseId}-desc`} className="text-sm text-slate-600">
+        These fields are auto-filled from the client profile. Update them only if this specific matter needs different details, similar to an ImmiAccount-style form review.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {renderSelect('title', 'Title', TITLE_OPTIONS, 'Used as the recipient title for this Form 956 matter.')}
+        {renderSelect('preferredLanguage', 'Preferred Language', LANGUAGE_OPTIONS, 'Helps staff review what language the client or contact prefers.')}
+        {renderSelect('gender', 'Gender', GENDER_OPTIONS, 'Keeps the matter-specific Form 956 profile aligned with the recipient details.')}
+        {renderSelect('nationality', 'Nationality', COUNTRY_OPTIONS, 'Select the nationality used for this appointment record.')}
+        {renderSelect('countryOfBirth', 'Country of Birth', COUNTRY_OPTIONS, 'Used to review identity details before sending the PDF.')}
+        {renderSelect('passportCountry', 'Passport Country', COUNTRY_OPTIONS, 'Select the issuing country of the passport.')}
+        {renderSelect('countryOfResidence', 'Country of Residence', COUNTRY_OPTIONS, 'Used when confirming the current country for the recipient.')}
+        {renderInput('phone', 'Recipient Phone', 'text', 'tel', 'Override the phone number for this matter if needed.')}
+        <div className="md:col-span-2">
+          {renderInput('email', 'Recipient Email', 'email', 'email', 'Override the recipient email only if the matter should be sent to a different address.')}
+        </div>
+      </div>
+    </fieldset>
   );
 }
 
@@ -1248,11 +1449,11 @@ function ComposerBlocksEditor({ title, blocks, onAdd, onRemove, onChange, showPa
       </div>
       <div className="space-y-3">
         {blocks.map((block: any, index: number) => (
-          <div key={index} className="grid md:grid-cols-4 gap-2">
+          <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2">
             <input value={block.label || ''} onChange={(e) => onChange(index, 'label', e.target.value)} className="input md:col-span-1" placeholder="Label" />
             <input value={block.amount || ''} onChange={(e) => onChange(index, 'amount', e.target.value)} className="input md:col-span-1" placeholder="Amount" />
             <input value={block.description || ''} onChange={(e) => onChange(index, 'description', e.target.value)} className="input md:col-span-1" placeholder="Description" />
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               {showPayer && <input value={block.payer || ''} onChange={(e) => onChange(index, 'payer', e.target.value)} className="input flex-1" placeholder="Payer" />}
               <button type="button" onClick={() => onRemove(index)} className="px-3 rounded-xl border border-rose-200 text-rose-700 font-black text-xs hover:bg-rose-50">Remove</button>
             </div>
@@ -1273,7 +1474,7 @@ function ComposerListEditor({ title, items, onAdd, onRemove, onChange }: any) {
       </div>
       <div className="space-y-2">
         {items.map((item: string, index: number) => (
-          <div key={index} className="flex gap-2">
+          <div key={index} className="flex flex-col sm:flex-row gap-2">
             <input value={item || ''} onChange={(e) => onChange(index, e.target.value)} className="input flex-1" placeholder="Value" />
             <button type="button" onClick={() => onRemove(index)} className="px-3 rounded-xl border border-rose-200 text-rose-700 font-black text-xs hover:bg-rose-50">Remove</button>
           </div>

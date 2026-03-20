@@ -6,7 +6,7 @@ import Client from '../../shared/models/Client.js';
 import Sponsor from '../../shared/models/Sponsor.js';
 import Consultancy from '../../shared/models/Consultancy.js';
 import Application from '../../shared/models/Application.js';
-import { sendEmail } from '../../shared/utils/email.js';
+import { isEmailConfigured, sendEmail } from '../../shared/utils/email.js';
 import { logAudit } from '../../shared/utils/audit.js';
 import { EMAIL_TEMPLATES } from '../../constants.js';
 import { WorkflowAutomationService } from './workflow-automation.service.js';
@@ -56,6 +56,10 @@ const DEFAULT_482_CHECKLIST = [
 ];
 
 export class PortalService {
+  static createHttpError(message, status = 400, details = undefined, code = undefined) {
+    return Object.assign(new Error(message), { status, details, code });
+  }
+
   static getEmailProfile(consultancy, user) {
     const profiles = consultancy.emailProfiles || [];
     const active = profiles.filter((p) => p.active);
@@ -85,6 +89,17 @@ export class PortalService {
     return [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim();
   }
 
+  static renderTemplate(value = '', context = {}) {
+    return String(value || '').replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_match, key) => {
+      const resolved = key.split('.').reduce((acc, part) => (acc == null ? undefined : acc[part]), context);
+      return resolved == null ? '' : String(resolved);
+    });
+  }
+
+  static getMatterLabel(application) {
+    return application?.visaSubclass ? `Subclass ${application.visaSubclass}` : 'Migration Matter';
+  }
+
   static normalizeFeeBlocks(blocks = []) {
     return (Array.isArray(blocks) ? blocks : [])
       .map((item) => ({
@@ -110,6 +125,21 @@ export class PortalService {
     return (Array.isArray(items) ? items : [])
       .map((item) => String(item || '').trim())
       .filter(Boolean);
+  }
+
+  static normalizeForm956Profile(profile = {}, fallback = {}) {
+    const source = { ...fallback, ...(profile || {}) };
+    return {
+      title: String(source.title || '').trim(),
+      preferredLanguage: String(source.preferredLanguage || '').trim(),
+      nationality: String(source.nationality || '').trim(),
+      countryOfBirth: String(source.countryOfBirth || '').trim(),
+      passportCountry: String(source.passportCountry || '').trim(),
+      countryOfResidence: String(source.countryOfResidence || '').trim(),
+      gender: String(source.gender || '').trim(),
+      phone: String(source.phone || '').trim(),
+      email: String(source.email || '').trim(),
+    };
   }
 
   static getConsultancyIdForEntity(entity, user) {
@@ -276,8 +306,122 @@ export class PortalService {
     return email;
   }
 
+  static getCommunicationSetupIssues(consultancy, options = {}) {
+    const f956 = consultancy?.form956Details || {};
+    const issues = [];
+    const requireSignature = !!options.requireSignature;
+    const requireForm956Details = !!options.requireForm956Details;
+
+    if (requireForm956Details) {
+      if (!String(f956.agentName || '').trim()) issues.push('agent name is missing in Settings > Form 956 & Document Details');
+      if (!String(f956.marnNumber || '').trim()) issues.push('MARN number is missing in Settings > Form 956 & Document Details');
+      if (!String(f956.email || consultancy?.email || '').trim()) issues.push('reply-to email is missing in Settings > Form 956 & Document Details');
+    }
+
+    if (requireSignature && !String(f956.signatureUrl || consultancy?.miaAgreementDetails?.signatureUrl || '').trim()) {
+      issues.push('agent signature is missing in Settings > Form 956 & Document Details');
+    }
+
+    return issues;
+  }
+
+  static assertCommunicationReady({ consultancy, user, to, subject, contextLabel, requireSignature = false, requireForm956Details = false }) {
+    const issues = this.getCommunicationSetupIssues(consultancy, { requireSignature, requireForm956Details });
+    if (issues.length) {
+      throw this.createHttpError(
+        `${contextLabel} cannot be sent because the setup is incomplete.`,
+        400,
+        issues.map((message) => ({ path: 'consultancy.settings', message })),
+        'COMMUNICATION_SETUP_INCOMPLETE'
+      );
+    }
+
+    if (!String(to || '').trim()) {
+      throw this.createHttpError(
+        `${contextLabel} cannot be sent because the recipient email is missing.`,
+        400,
+        [{ path: 'recipient.email', message: 'Add an email address to the client or sponsor profile before sending.' }],
+        'RECIPIENT_EMAIL_MISSING'
+      );
+    }
+
+    if (!String(subject || '').trim()) {
+      throw this.createHttpError(
+        `${contextLabel} cannot be sent because the email subject is empty.`,
+        400,
+        [{ path: 'subject', message: 'Enter a subject or refresh the preview to generate one automatically.' }],
+        'SUBJECT_MISSING'
+      );
+    }
+
+    const emailProfile = this.getEmailProfile(consultancy, user);
+    if (!emailProfile && !isEmailConfigured()) {
+      throw this.createHttpError(
+        `${contextLabel} cannot be sent because email delivery is not configured.`,
+        400,
+        [{ path: 'consultancy.emailProfiles', message: 'Add an active SMTP profile in Settings > Email Configuration, or configure SMTP environment variables on the server.' }],
+        'EMAIL_NOT_CONFIGURED'
+      );
+    }
+  }
+
+  static mapEmailSendError(error, contextLabel) {
+    const code = error?.code || error?.responseCode;
+    if (code === 'EAUTH' || error?.responseCode === 535) {
+      return this.createHttpError(
+        `${contextLabel} failed because SMTP authentication was rejected.`,
+        502,
+        [{ path: 'consultancy.emailProfiles', message: 'Check the SMTP username, password, and app password in Settings > Email Configuration.' }],
+        'EMAIL_AUTH_FAILED'
+      );
+    }
+
+    if (code === 'ESOCKET' || code === 'ECONNECTION' || code === 'ETIMEDOUT' || code === 'ENOTFOUND') {
+      return this.createHttpError(
+        `${contextLabel} failed because the SMTP server could not be reached.`,
+        502,
+        [{ path: 'consultancy.emailProfiles', message: 'Check the SMTP host, port, TLS/SSL setting, and network connectivity.' }],
+        'EMAIL_CONNECTION_FAILED'
+      );
+    }
+
+    if (code === 'EENVELOPE') {
+      return this.createHttpError(
+        `${contextLabel} failed because the sender or recipient email address is invalid.`,
+        400,
+        [{ path: 'recipient.email', message: 'Verify the recipient email and From address in the selected SMTP profile.' }],
+        'EMAIL_ADDRESS_INVALID'
+      );
+    }
+
+    return this.createHttpError(
+      `${contextLabel} failed to send.`,
+      502,
+      [{ path: 'email', message: error?.message || 'Unexpected email transport error. Please review email configuration and try again.' }],
+      'EMAIL_SEND_FAILED'
+    );
+  }
+
+  static async sendWorkflowEmail({ contextLabel, consultancy, user, to, subject, html, replyTo, attachments = [], requireSignature = false, requireForm956Details = false }) {
+    this.assertCommunicationReady({ consultancy, user, to, subject, contextLabel, requireSignature, requireForm956Details });
+
+    try {
+      return await sendEmail({
+        to,
+        subject,
+        html,
+        replyTo,
+        attachments,
+        emailProfile: this.getEmailProfile(consultancy, user) || undefined,
+      });
+    } catch (error) {
+      throw this.mapEmailSendError(error, contextLabel);
+    }
+  }
+
   static mergeDraftWithApplication(application, payload = {}) {
     const existing = application?.communicationDraft || {};
+    const baseForm956Profile = this.normalizeForm956Profile(existing.form956Profile || {});
     return {
       subject: payload.subject || existing.subject || '',
       customBody: payload.customBody || existing.body || '',
@@ -292,6 +436,7 @@ export class PortalService {
       positionTitle: payload.positionTitle || existing.positionTitle || '',
       sbsStatus: payload.sbsStatus || existing.sbsStatus || '',
       recipientName: payload.recipientName || '',
+      form956Profile: this.normalizeForm956Profile(payload.form956Profile || {}, baseForm956Profile),
     };
   }
 
@@ -368,7 +513,7 @@ export class PortalService {
     return true;
   }
 
-  static async generateFilledForm956({ consultancy, client = null, sponsor = null, application = null }) {
+  static async generateFilledForm956({ consultancy, client = null, sponsor = null, application = null, draftProfile = null }) {
     if (!fs.existsSync(OFFICIAL_FORM_956_PATH)) return null;
     const pdfBytes = fs.readFileSync(OFFICIAL_FORM_956_PATH);
     const pdfDoc = await PDFDocument.load(pdfBytes);
@@ -393,8 +538,18 @@ export class PortalService {
     const recipientAddress = isClientMatter
       ? [recipientProfile.address?.street, recipientProfile.address?.suburb || recipientProfile.address?.city, recipientProfile.address?.state, recipientProfile.address?.postcode, recipientProfile.address?.country].filter(Boolean).join(', ')
       : [sponsor?.address?.street, sponsor?.address?.suburb || sponsor?.address?.city, sponsor?.address?.state, sponsor?.address?.postcode, sponsor?.address?.country].filter(Boolean).join(', ');
-    const recipientPhone = isClientMatter ? recipientProfile.phone || '' : sponsor?.contactPerson?.phone || sponsor?.phone || '';
-    const recipientEmail = isClientMatter ? recipientProfile.email || '' : sponsor?.contactPerson?.email || sponsor?.email || '';
+    const form956Profile = this.normalizeForm956Profile(draftProfile, {
+      nationality: recipientProfile.nationality || '',
+      countryOfBirth: recipientProfile.countryOfBirth || '',
+      passportCountry: recipientProfile.passportCountry || '',
+      countryOfResidence: recipientProfile.address?.country || sponsor?.address?.country || '',
+      gender: recipientProfile.gender || '',
+      phone: isClientMatter ? recipientProfile.phone || '' : sponsor?.contactPerson?.phone || sponsor?.phone || '',
+      email: isClientMatter ? recipientProfile.email || '' : sponsor?.contactPerson?.email || sponsor?.email || '',
+    });
+    const recipientPhone = form956Profile.phone || '';
+    const recipientEmail = form956Profile.email || '';
+    const recipientAddressWithCountry = recipientAddress || form956Profile.countryOfResidence;
     const matterType = application?.visaSubclass
       ? `Subclass ${application.visaSubclass}${isClientMatter ? ' visa application' : ' sponsorship / nomination matter'}`
       : (isClientMatter ? 'Visa application matter' : 'Sponsorship / nomination matter');
@@ -429,7 +584,7 @@ export class PortalService {
       this.drawPdfText(page4, String(dob.getFullYear()), 175, 449, { font, size: 8 });
     }
     if (!isClientMatter) this.drawPdfText(page4, sponsor?.companyName || '', 90, 546, { font, size: 8, maxWidth: 165 });
-    this.drawPdfText(page4, recipientAddress, 90, 672, { font, size: 8, maxWidth: 170, lineHeight: 11 });
+    this.drawPdfText(page4, recipientAddressWithCountry, 90, 672, { font, size: 8, maxWidth: 170, lineHeight: 11 });
     this.drawPdfText(page4, recipientPhone, 96, 856, { font, size: 8, maxWidth: 165 });
     this.drawPdfText(page4, recipientPhone, 96, 899, { font, size: 8, maxWidth: 165 });
     if (client?._id) this.drawPdfText(page4, String(client._id).slice(-8), 205, 983, { font, size: 8, maxWidth: 75 });
@@ -466,6 +621,66 @@ export class PortalService {
     };
   }
 
+  static async generateMiaAgreementPdf({ consultancy, client = null, sponsor = null, application = null }) {
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([595.28, 841.89]);
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const recipientProfile = client?.profile || {};
+    const recipientName = client
+      ? this.formatName(recipientProfile)
+      : (sponsor?.contactPerson?.name || [sponsor?.contactPerson?.firstName, sponsor?.contactPerson?.lastName].filter(Boolean).join(' ') || sponsor?.companyName || 'Client');
+    const agentName = consultancy.miaAgreementDetails?.agentName || consultancy.form956Details?.agentName || consultancy.name || '';
+    const marn = consultancy.miaAgreementDetails?.marnNumber || consultancy.form956Details?.marnNumber || consultancy.marnNumbers?.[0] || '';
+    const services = application?.visaSubclass ? `Migration assistance for Subclass ${application.visaSubclass}` : 'Migration assistance and advisory services';
+    const issueDate = new Date();
+
+    page.drawText('Migration Agent / Client Agreement', { x: 48, y: 792, font: bold, size: 20, color: rgb(0.09, 0.1, 0.18) });
+    page.drawText(`Prepared for: ${recipientName || 'Client'}`, { x: 48, y: 765, font, size: 11, color: rgb(0.25, 0.29, 0.36) });
+    page.drawText(`Prepared by: ${agentName}${marn ? ` (MARN ${marn})` : ''}`, { x: 48, y: 748, font, size: 11, color: rgb(0.25, 0.29, 0.36) });
+    page.drawText(`Issue date: ${issueDate.toLocaleDateString('en-AU')}`, { x: 48, y: 731, font, size: 11, color: rgb(0.25, 0.29, 0.36) });
+
+    const paragraphs = [
+      'This Migration Agent / Client Agreement is provided in accordance with the MARA Code of Conduct and sets out the engagement between the consultancy and the client named in this document.',
+      `Scope of services: ${services}. Additional work outside this scope must be agreed separately in writing.`,
+      'Professional warranties: We will provide our services with due care, skill, and diligence in accordance with Australian migration law and the Code of Conduct.',
+      'Client responsibilities: The client must provide complete and accurate information, supply documents on time, and notify us immediately of any relevant changes in circumstance.',
+      'Fees and disbursements: Estimated fees and government charges are provided separately or in the accompanying advice/quotation. Government charges are subject to change.',
+      'Termination and complaints: Either party may end this engagement in writing, subject to work already completed. Complaints can be made under the MARA complaints process.',
+    ];
+
+    let cursorY = 690;
+    paragraphs.forEach((paragraph, index) => {
+      this.drawPdfText(page, `${index + 1}. ${paragraph}`, 48, 841.89 - cursorY, {
+        font,
+        size: 11,
+        maxWidth: 500,
+        lineHeight: 16,
+      });
+      cursorY -= 72;
+    });
+
+    page.drawText('Agreement Acknowledgement', { x: 48, y: 250, font: bold, size: 13, color: rgb(0.09, 0.1, 0.18) });
+    page.drawText(`Client / recipient: ${recipientName || 'Client'}`, { x: 48, y: 226, font, size: 11 });
+    page.drawText(`Registered migration agent: ${agentName}${marn ? ` (MARN ${marn})` : ''}`, { x: 48, y: 208, font, size: 11 });
+    page.drawText('By signing, the parties acknowledge the scope, responsibilities, and disclosures described in this agreement.', { x: 48, y: 184, font, size: 10, maxWidth: 500 });
+
+    page.drawLine({ start: { x: 48, y: 136 }, end: { x: 230, y: 136 }, thickness: 1, color: rgb(0.7, 0.73, 0.78) });
+    page.drawText('Agent signature', { x: 48, y: 122, font, size: 10, color: rgb(0.4, 0.45, 0.52) });
+    await this.drawSignatureImage(pdfDoc, page, consultancy.miaAgreementDetails?.signatureUrl || consultancy.form956Details?.signatureUrl, { x: 54, y: 142, width: 120, height: 28 });
+
+    page.drawLine({ start: { x: 320, y: 136 }, end: { x: 500, y: 136 }, thickness: 1, color: rgb(0.7, 0.73, 0.78) });
+    page.drawText('Client signature', { x: 320, y: 122, font, size: 10, color: rgb(0.4, 0.45, 0.52) });
+    page.drawText(`Date: ${issueDate.toLocaleDateString('en-AU')}`, { x: 48, y: 98, font, size: 10 });
+
+    const bytesOut = await pdfDoc.save();
+    return {
+      filename: `MIA-Agreement-${String(recipientName || sponsor?.companyName || 'client').replace(/[^a-z0-9-_]+/gi, '-')}.pdf`,
+      content: Buffer.from(bytesOut),
+      source: 'generated',
+    };
+  }
+
   static async persistApplicationCommunication(applicationId, patch = {}, compliancePatch = {}) {
     if (!applicationId) return;
     const update = {};
@@ -479,7 +694,7 @@ export class PortalService {
     await Application.findByIdAndUpdate(applicationId, { $set: update });
   }
 
-  static buildForm956Draft({ recipientName, to, consultancy, f956, subject, customBody }) {
+  static buildForm956Draft({ recipientName, to, consultancy, f956, subject, customBody, application, form956Profile = {} }) {
     const agentName = f956.agentName || consultancy.name;
     const marn = f956.marnNumber || consultancy.marnNumbers?.[0] || '';
     const companyName = f956.companyName || consultancy.name;
@@ -487,6 +702,18 @@ export class PortalService {
     const phone = f956.phone || consultancy.phone || '';
     const email = f956.email || consultancy.email || '';
     const intro = customBody || EMAIL_TEMPLATES.form956.bodyIntro;
+    const dynamicSubject = subject || `Form 956 - ${recipientName || 'Client'} - ${this.getMatterLabel(application)}`;
+    const recipientMetaRows = [
+      { label: 'Title', value: form956Profile.title },
+      { label: 'Preferred language', value: form956Profile.preferredLanguage },
+      { label: 'Gender', value: form956Profile.gender },
+      { label: 'Nationality', value: form956Profile.nationality },
+      { label: 'Country of birth', value: form956Profile.countryOfBirth },
+      { label: 'Passport country', value: form956Profile.passportCountry },
+      { label: 'Country of residence', value: form956Profile.countryOfResidence },
+      { label: 'Recipient email', value: form956Profile.email || to },
+      { label: 'Recipient phone', value: form956Profile.phone },
+    ].filter((item) => item.value);
     const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#0f172a;">
       <p>Dear ${this.escapeHtml(recipientName || 'Client')},</p>
       <p>${this.nl2br(intro)}</p>
@@ -498,24 +725,30 @@ export class PortalService {
         <li>Phone: ${this.escapeHtml(phone)}</li>
         <li>Email: ${this.escapeHtml(email)}</li>
       </ul>
+      ${recipientMetaRows.length ? `
+        <h3 style="margin:22px 0 10px;font-size:16px;">Recipient details used for Form 956</h3>
+        ${this.tableHtml(recipientMetaRows, [{ key: 'label', label: 'Field' }, { key: 'value', label: 'Value' }])}
+      ` : ''}
       <p>Please review the attached pre-filled official Form 956, sign where required, and return it to us at your earliest convenience.</p>
       <p><strong>Consumer Guide:</strong> The MARA Consumer Guide is attached for your reference. Please reply to this email with: <em>"Copy of consumer guide received."</em></p>
       <p>You can also review the official guide here: <a href="${OFFICIAL_CONSUMER_GUIDE_URL}">${OFFICIAL_CONSUMER_GUIDE_URL}</a></p>
     </body></html>`;
-    return { to, subject: subject || EMAIL_TEMPLATES.form956.subject, html };
+    return { to, subject: dynamicSubject, html };
   }
 
-  static buildMiaDraft({ recipientName, to, consultancy, subject, customBody }) {
+  static buildMiaDraft({ recipientName, to, consultancy, subject, customBody, application }) {
     const agentName = consultancy.miaAgreementDetails?.agentName || consultancy.form956Details?.agentName || consultancy.name;
     const marn = consultancy.miaAgreementDetails?.marnNumber || consultancy.form956Details?.marnNumber || consultancy.marnNumbers?.[0] || '';
     const intro = customBody || EMAIL_TEMPLATES.mia.bodyIntro;
+    const dynamicSubject = subject || `MIA Agreement - ${recipientName || 'Client'} - ${this.getMatterLabel(application)}`;
     const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#0f172a;">
       <p>Dear ${this.escapeHtml(recipientName || 'Client')},</p>
       <p>${this.nl2br(intro)}</p>
       <p><strong>Registered Migration Agent:</strong> ${this.escapeHtml(agentName)}${marn ? ` (${this.escapeHtml(marn)})` : ''}</p>
+      <p>The signed Migration Agent / Client Agreement PDF is attached for your review and signature.</p>
       <p>MARA Code of Conduct: <a href="https://www.mara.gov.au/tools-for-registered-agents/code-of-conduct">https://www.mara.gov.au/tools-for-registered-agents/code-of-conduct</a></p>
     </body></html>`;
-    return { to, subject: subject || EMAIL_TEMPLATES.mia.subject, html };
+    return { to, subject: dynamicSubject, html };
   }
 
   static buildInitialAdviceDraft({ recipientName, to, consultancy, application, client, sponsor, draft }) {
@@ -523,8 +756,21 @@ export class PortalService {
     const bank = consultancy.bankDetails || {};
     const visaSubclass = application?.visaSubclass || client?.profile?.targetVisa || '';
     const is482 = String(visaSubclass) === '482';
+    const nomineeName = this.formatName(client?.profile || {}) || 'Client';
+    const sponsorName = sponsor?.companyName || 'Employer';
+    const subjectContext = {
+      clientName: nomineeName,
+      recipientName: recipientName || nomineeName,
+      companyName: sponsorName,
+      sponsorName,
+      occupation: draft.occupation || draft.positionTitle || client?.profile?.targetOccupation || 'Position',
+      positionTitle: draft.positionTitle || draft.occupation || client?.profile?.targetOccupation || 'Position',
+      anzscoCode: draft.anzscoCode || client?.profile?.anzscoCode || '',
+      visaSubclass: visaSubclass || '',
+      consultancyName: consultancy.displayName || consultancy.name || '',
+    };
     const subject = draft.subject
-      || template.subject
+      || this.renderTemplate(template.subject, subjectContext)
       || (is482 ? `Sponsorship of ${draft.occupation || draft.positionTitle || 'Position'} for Subclass 482 Visa – ${sponsor?.companyName || 'Employer'}` : EMAIL_TEMPLATES.initialAdvice.subject);
 
     const feeBlocks = draft.feeBlocks.length ? draft.feeBlocks : this.normalizeFeeBlocks(template.feeBlocks || EMAIL_TEMPLATES.initialAdvice.defaultFeeBlocks || []);
@@ -534,8 +780,6 @@ export class PortalService {
     let body = draft.customBody || template.body || EMAIL_TEMPLATES.initialAdvice.bodyIntro;
     if (is482 && !draft.customBody) {
       const contactName = sponsor?.contactPerson?.firstName || 'Management Team';
-      const nomineeName = this.formatName(client?.profile || {}) || 'Nominee';
-      const sponsorName = sponsor?.companyName || 'Employer';
       const occupation = draft.occupation || draft.positionTitle || 'Chef';
       const anzsco = draft.anzscoCode || client?.profile?.anzscoCode || '';
       const sbsStatus = draft.sbsStatus || sponsor?.sbsStatus || 'approved';
@@ -612,15 +856,18 @@ export class PortalService {
   static async previewForm956ToClient(clientId, user, payload = {}) {
     const { client, consultancy, application } = await this.loadClientContext(clientId, user, payload.applicationId);
     const f956 = consultancy.form956Details || {};
+    const draftData = this.mergeDraftWithApplication(application, payload);
     const draft = this.buildForm956Draft({
       recipientName: this.formatName(client.profile),
-      to: this.getClientEmail(client),
+      to: draftData.form956Profile.email || this.getClientEmail(client),
       consultancy,
       f956,
-      subject: payload.subject,
-      customBody: payload.customBody,
+      subject: draftData.subject,
+      customBody: draftData.customBody,
+      application,
+      form956Profile: draftData.form956Profile,
     });
-    const generatedForm = await this.generateFilledForm956({ consultancy, client, application });
+    const generatedForm = await this.generateFilledForm956({ consultancy, client, application, draftProfile: draftData.form956Profile });
     const attachments = [
       ...(generatedForm ? [generatedForm] : this.getOfficialForm956Attachment()),
       ...this.getConsumerGuideAttachment(f956.consumerGuideUrl),
@@ -637,21 +884,30 @@ export class PortalService {
     const preview = await this.previewForm956ToClient(clientId, user, payload);
     const { client, consultancy, application, cid } = await this.loadClientContext(clientId, user, payload.applicationId);
     const f956 = consultancy.form956Details || {};
-    const generatedForm = await this.generateFilledForm956({ consultancy, client, application });
+    const draftData = this.mergeDraftWithApplication(application, payload);
+    const generatedForm = await this.generateFilledForm956({ consultancy, client, application, draftProfile: draftData.form956Profile });
     const attachments = [
       ...(generatedForm ? [generatedForm] : this.getOfficialForm956Attachment()),
       ...this.getConsumerGuideAttachment(f956.consumerGuideUrl),
     ];
-    await sendEmail({
+    await this.sendWorkflowEmail({
+      contextLabel: 'Form 956 email',
+      consultancy,
+      user,
       to: preview.to,
       subject: preview.subject,
       html: preview.html,
       replyTo: f956.email || consultancy.email || undefined,
       attachments,
-      emailProfile: this.getEmailProfile(consultancy, user) || undefined,
+      requireSignature: true,
+      requireForm956Details: true,
     });
     if (payload.applicationId) {
-      await this.persistApplicationCommunication(payload.applicationId, {}, {
+      await this.persistApplicationCommunication(payload.applicationId, {
+        subject: preview.subject,
+        body: payload.customBody,
+        form956Profile: draftData.form956Profile,
+      }, {
         form956SentAt: new Date(),
         consumerGuideSentAt: new Date(),
       });
@@ -685,10 +941,14 @@ export class PortalService {
       consultancy,
       subject: payload.subject,
       customBody: payload.customBody,
+      application,
     });
+    const attachments = [
+      await this.generateMiaAgreementPdf({ consultancy, client, application }),
+    ].filter(Boolean);
     return {
       ...draft,
-      attachments: [],
+      attachments: this.getAttachmentSummary(attachments),
       applicationId: application?._id || payload.applicationId || null,
     };
   }
@@ -696,12 +956,20 @@ export class PortalService {
   static async sendMiaToClient(clientId, user, payload = {}) {
     const preview = await this.previewMiaToClient(clientId, user, payload);
     const { client, consultancy, application, cid } = await this.loadClientContext(clientId, user, payload.applicationId);
-    await sendEmail({
+    const attachments = [
+      await this.generateMiaAgreementPdf({ consultancy, client, application }),
+    ].filter(Boolean);
+    await this.sendWorkflowEmail({
+      contextLabel: 'MIA email',
+      consultancy,
+      user,
       to: preview.to,
       subject: preview.subject,
       html: preview.html,
       replyTo: consultancy.form956Details?.email || consultancy.email || undefined,
-      emailProfile: this.getEmailProfile(consultancy, user) || undefined,
+      attachments,
+      requireSignature: true,
+      requireForm956Details: true,
     });
     if (payload.applicationId) {
       await this.persistApplicationCommunication(payload.applicationId, {}, { miaSentAt: new Date() });
@@ -740,7 +1008,7 @@ export class PortalService {
       sponsor,
       draft: draftData,
     });
-    const generatedForm = draftData.includeForm956Attachment ? await this.generateFilledForm956({ consultancy, client, application }) : null;
+    const generatedForm = draftData.includeForm956Attachment ? await this.generateFilledForm956({ consultancy, client, application, draftProfile: draftData.form956Profile }) : null;
     const attachments = [
       ...(draftData.includeConsumerGuide ? this.getConsumerGuideAttachment(consultancy.form956Details?.consumerGuideUrl) : []),
       ...(generatedForm ? [generatedForm] : []),
@@ -757,18 +1025,21 @@ export class PortalService {
     const preview = await this.previewInitialAdvice(clientId, user, payload);
     const { client, consultancy, application, cid } = await this.loadClientContext(clientId, user, payload.applicationId);
     const draftData = this.mergeDraftWithApplication(application, payload);
-    const generatedForm = draftData.includeForm956Attachment ? await this.generateFilledForm956({ consultancy, client, application }) : null;
+    const generatedForm = draftData.includeForm956Attachment ? await this.generateFilledForm956({ consultancy, client, application, draftProfile: draftData.form956Profile }) : null;
     const attachments = [
       ...(draftData.includeConsumerGuide ? this.getConsumerGuideAttachment(consultancy.form956Details?.consumerGuideUrl) : []),
       ...(generatedForm ? [generatedForm] : []),
     ];
-    await sendEmail({
+    await this.sendWorkflowEmail({
+      contextLabel: 'Initial advice email',
+      consultancy,
+      user,
       to: preview.to,
       subject: preview.subject,
       html: preview.html,
       replyTo: consultancy.form956Details?.email || consultancy.email || undefined,
       attachments,
-      emailProfile: this.getEmailProfile(consultancy, user) || undefined,
+      requireForm956Details: true,
     });
     if (payload.applicationId) {
       await this.persistApplicationCommunication(payload.applicationId, {
@@ -784,6 +1055,7 @@ export class PortalService {
         positionTitle: draftData.positionTitle,
         sbsStatus: draftData.sbsStatus,
         sampleAttachments: draftData.sampleAttachments,
+        form956Profile: draftData.form956Profile,
       }, {
         initialAdviceSentAt: new Date(),
         consumerGuideSentAt: draftData.includeConsumerGuide && attachments.length ? new Date() : undefined,
@@ -813,15 +1085,18 @@ export class PortalService {
   static async previewForm956ToSponsor(sponsorId, user, payload = {}) {
     const { sponsor, consultancy, application } = await this.loadSponsorContext(sponsorId, user, payload.applicationId);
     const f956 = consultancy.form956Details || {};
+    const draftData = this.mergeDraftWithApplication(application, payload);
     const draft = this.buildForm956Draft({
       recipientName: sponsor.contactPerson?.firstName || sponsor.companyName,
-      to: this.getSponsorEmail(sponsor),
+      to: draftData.form956Profile.email || this.getSponsorEmail(sponsor),
       consultancy,
       f956,
-      subject: payload.subject || `Form 956 - Migration Agent Appointment - ${consultancy.name}`,
-      customBody: payload.customBody,
+      subject: draftData.subject || payload.subject || `Form 956 - Migration Agent Appointment - ${consultancy.name}`,
+      customBody: draftData.customBody,
+      application,
+      form956Profile: draftData.form956Profile,
     });
-    const generatedForm = await this.generateFilledForm956({ consultancy, sponsor, application });
+    const generatedForm = await this.generateFilledForm956({ consultancy, sponsor, application, draftProfile: draftData.form956Profile });
     const attachments = [
       ...(generatedForm ? [generatedForm] : this.getOfficialForm956Attachment()),
       ...this.getConsumerGuideAttachment(f956.consumerGuideUrl),
@@ -838,22 +1113,31 @@ export class PortalService {
     const preview = await this.previewForm956ToSponsor(sponsorId, user, payload);
     const { sponsor, consultancy, application, cid } = await this.loadSponsorContext(sponsorId, user, payload.applicationId);
     const f956 = consultancy.form956Details || {};
-    const generatedForm = await this.generateFilledForm956({ consultancy, sponsor, application });
+    const draftData = this.mergeDraftWithApplication(application, payload);
+    const generatedForm = await this.generateFilledForm956({ consultancy, sponsor, application, draftProfile: draftData.form956Profile });
     const attachments = [
       ...(generatedForm ? [generatedForm] : this.getOfficialForm956Attachment()),
       ...this.getConsumerGuideAttachment(f956.consumerGuideUrl),
     ];
-    await sendEmail({
+    await this.sendWorkflowEmail({
+      contextLabel: 'Sponsor Form 956 email',
+      consultancy,
+      user,
       to: preview.to,
       subject: preview.subject,
       html: preview.html,
       replyTo: f956.email || consultancy.email || undefined,
       attachments,
-      emailProfile: this.getEmailProfile(consultancy, user) || undefined,
+      requireSignature: true,
+      requireForm956Details: true,
     });
     await Sponsor.findByIdAndUpdate(sponsor._id, { form956Signed: false });
     if (application?._id) {
-      await this.persistApplicationCommunication(application._id, {}, {
+      await this.persistApplicationCommunication(application._id, {
+        subject: preview.subject,
+        body: payload.customBody,
+        form956Profile: draftData.form956Profile,
+      }, {
         form956SentAt: new Date(),
         consumerGuideSentAt: new Date(),
       });
@@ -887,10 +1171,14 @@ export class PortalService {
       consultancy,
       subject: payload.subject || `MIA Agreement - ${consultancy.name}`,
       customBody: payload.customBody,
+      application,
     });
+    const attachments = [
+      await this.generateMiaAgreementPdf({ consultancy, sponsor, application, client: application?.clientId || null }),
+    ].filter(Boolean);
     return {
       ...draft,
-      attachments: [],
+      attachments: this.getAttachmentSummary(attachments),
       applicationId: application?._id || payload.applicationId || null,
     };
   }
@@ -898,12 +1186,20 @@ export class PortalService {
   static async sendMiaToSponsor(sponsorId, user, payload = {}) {
     const preview = await this.previewMiaToSponsor(sponsorId, user, payload);
     const { sponsor, consultancy, application, cid } = await this.loadSponsorContext(sponsorId, user, payload.applicationId);
-    await sendEmail({
+    const attachments = [
+      await this.generateMiaAgreementPdf({ consultancy, sponsor, application, client: application?.clientId || null }),
+    ].filter(Boolean);
+    await this.sendWorkflowEmail({
+      contextLabel: 'Sponsor MIA email',
+      consultancy,
+      user,
       to: preview.to,
       subject: preview.subject,
       html: preview.html,
       replyTo: consultancy.form956Details?.email || consultancy.email || undefined,
-      emailProfile: this.getEmailProfile(consultancy, user) || undefined,
+      attachments,
+      requireSignature: true,
+      requireForm956Details: true,
     });
     await Sponsor.findByIdAndUpdate(sponsor._id, { miaSigned: false });
     if (application?._id) {
@@ -941,7 +1237,7 @@ export class PortalService {
       sponsor,
       draft: draftData,
     });
-    const generatedForm = await this.generateFilledForm956({ consultancy, sponsor, application, client });
+    const generatedForm = await this.generateFilledForm956({ consultancy, sponsor, application, client, draftProfile: draftData.form956Profile });
     const attachments = [
       ...(generatedForm ? [generatedForm] : this.getOfficialForm956Attachment()),
       ...this.getConsumerGuideAttachment(consultancy.form956Details?.consumerGuideUrl),
@@ -961,19 +1257,23 @@ export class PortalService {
     const { sponsor, consultancy, application, cid } = await this.loadSponsorContext(sponsorId, user, payload.applicationId);
     const draftData = this.mergeDraftWithApplication(application, payload);
     const sampleAttachments = draftData.sampleAttachments.length ? draftData.sampleAttachments : Object.keys(SAMPLE_ATTACHMENT_FILES);
-    const generatedForm = await this.generateFilledForm956({ consultancy, sponsor, application, client: application?.clientId || null });
+    const generatedForm = await this.generateFilledForm956({ consultancy, sponsor, application, client: application?.clientId || null, draftProfile: draftData.form956Profile });
     const attachments = [
       ...(generatedForm ? [generatedForm] : this.getOfficialForm956Attachment()),
       ...this.getConsumerGuideAttachment(consultancy.form956Details?.consumerGuideUrl),
       ...this.getSampleAttachments(sampleAttachments),
     ];
-    await sendEmail({
+    await this.sendWorkflowEmail({
+      contextLabel: '482 sponsorship package email',
+      consultancy,
+      user,
       to: preview.to,
       subject: preview.subject,
       html: preview.html,
       replyTo: consultancy.form956Details?.email || consultancy.email || undefined,
       attachments,
-      emailProfile: this.getEmailProfile(consultancy, user) || undefined,
+      requireSignature: true,
+      requireForm956Details: true,
     });
     if (application?._id) {
       await this.persistApplicationCommunication(application._id, {
@@ -987,6 +1287,7 @@ export class PortalService {
         positionTitle: draftData.positionTitle,
         sbsStatus: draftData.sbsStatus,
         sampleAttachments,
+        form956Profile: draftData.form956Profile,
       }, {
         sponsorshipPackageSentAt: new Date(),
         consumerGuideSentAt: attachments.length ? new Date() : undefined,

@@ -46,8 +46,8 @@ export const EducationInfo: React.FC<EducationInfoProps> = ({ items, onAdd, onDe
         {/* List of existing items */}
         <div className="space-y-4">
           {items.map((item) => (
-            <div key={item._id} className="relative group bg-slate-50/50 p-5 rounded-lg border border-slate-100 hover:border-indigo-100 hover:bg-white transition-all">
-              <div className="flex justify-between items-start">
+            <div key={item._id} className="relative group bg-slate-50/50 p-4 sm:p-5 rounded-lg border border-slate-100 hover:border-indigo-100 hover:bg-white transition-all">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                 <div className="space-y-1">
                   <h4 className="font-black text-slate-800 text-base">{item.qualification}</h4>
                   <p className="font-bold text-indigo-600 text-sm flex items-center gap-1.5">
@@ -64,7 +64,7 @@ export const EducationInfo: React.FC<EducationInfoProps> = ({ items, onAdd, onDe
                 </div>
                 <button 
                   onClick={() => onDelete(item._id)}
-                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                  className="self-end sm:self-auto p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -102,7 +102,7 @@ export const EducationInfo: React.FC<EducationInfoProps> = ({ items, onAdd, onDe
                 </label>
               </div>
             </div>
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
               <button onClick={() => setShowAddForm(false)} className={btnCancel} disabled={isSaving}>Cancel</button>
               <button onClick={handleAdd} className={btnPrimary} disabled={isSaving}>{isSaving ? 'Processing...' : 'Add Opportunity'}</button>
             </div>
