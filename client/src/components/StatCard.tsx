@@ -1,9 +1,10 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { LucideIcon } from 'lucide-react';
 
 type StatCardProps = {
   label: string;
-  value: number | string;
+  value: number | string | ReactNode;
   icon: LucideIcon;
   color: string;
   to?: string;

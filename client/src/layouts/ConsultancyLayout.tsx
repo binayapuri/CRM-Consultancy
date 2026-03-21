@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, Kanban, Users, FileText, Target, Calendar, GraduationCap, Shield, Wallet, User, LogOut, UsersRound, History, Settings, PanelLeftClose, PanelLeft, Building2, Clock } from 'lucide-react';
+import { LayoutDashboard, Kanban, Users, FileText, Target, Calendar, GraduationCap, Shield, Wallet, User, LogOut, UsersRound, History, Settings, PanelLeftClose, PanelLeft, Building2, Clock, ReceiptText, Search } from 'lucide-react';
 import Notifications from '../components/Notifications';
 import TeamMessages from '../components/TeamMessages';
+import ConsultancyGlobalSearch from '../components/ConsultancyGlobalSearch';
 import { useAuthStore } from '../store/auth';
+import { resolveFileUrl } from '../lib/imageUrl';
 import { authFetch, safeJson } from '../store/auth';
 
 const SIDEBAR_KEY = 'orivisa-sidebar-collapsed';
@@ -16,11 +18,13 @@ const nav = [
   { to: 'trace-history', icon: History, label: 'Trace History', adminOnly: true, perm: 'traceHistory' },
   { to: 'documents', icon: FileText, label: 'Documents & Templates', perm: 'documents' },
   { to: 'leads', icon: Target, label: 'Leads', perm: 'leads' },
+  { to: 'calendar', icon: Calendar, label: 'Calendar View', perm: 'tasks' },
   { to: 'daily-tasks', icon: Calendar, label: 'Daily Tasks', perm: 'tasks' },
   { to: 'attendance', icon: Clock, label: 'Attendance', perm: 'tasks' },
   { to: 'colleges', icon: GraduationCap, label: 'Colleges', perm: 'colleges' },
   { to: 'oshc', icon: Shield, label: 'OSHC', perm: 'oshc' },
   { to: 'trust', icon: Wallet, label: 'Trust Ledger', adminOnly: true, perm: 'trustLedger' },
+  { to: 'billing', icon: ReceiptText, label: 'Billing & Quotes', perm: 'billing' },
   { to: 'sponsors', icon: Building2, label: 'Sponsors', perm: 'sponsors' },
   { to: 'profile', icon: User, label: 'Profile', perm: null },
   { to: 'settings', icon: Settings, label: 'Settings', adminOnly: true, perm: 'settings' },
@@ -38,6 +42,7 @@ export default function ConsultancyLayout() {
     try { return localStorage.getItem(SIDEBAR_KEY) === 'true'; } catch { return false; }
   });
   const [profileOpen, setProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     try { localStorage.setItem(SIDEBAR_KEY, String(sidebarCollapsed)); } catch {}
@@ -70,13 +75,28 @@ export default function ConsultancyLayout() {
     navigate('/login');
   };
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   const initials = user?.profile?.firstName?.[0] && user?.profile?.lastName?.[0]
     ? `${user.profile.firstName[0]}${user.profile.lastName[0]}`
     : user?.email?.[0]?.toUpperCase() || '?';
 
   return (
     <div className="min-h-screen flex bg-slate-50">
-      <aside className={`${sidebarCollapsed ? 'w-0 -translate-x-full overflow-hidden' : 'w-64 translate-x-0'} bg-slate-900 text-white flex flex-col fixed h-full z-40 transition-all duration-300 ease-in-out`}>
+      {/* Mobile backdrop */}
+      {!sidebarCollapsed && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarCollapsed(true)} aria-hidden />
+      )}
+      <aside className={`${sidebarCollapsed ? 'w-0 -translate-x-full overflow-hidden' : 'w-64 translate-x-0'} bg-slate-900 text-white flex flex-col fixed h-full z-50 lg:z-40 transition-all duration-300 ease-in-out min-w-0`}>
         <div className="p-5 border-b border-slate-700 min-w-[256px]">
           <h1 className="text-xl font-display font-bold text-ori-400 truncate">
             {consultancy?.displayName || consultancy?.name || 'BIGFEW'}
@@ -114,16 +134,33 @@ export default function ConsultancyLayout() {
         </div>
       </aside>
 
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'ml-0' : 'ml-64'}`}>
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ml-0 ${!sidebarCollapsed ? 'lg:ml-64' : ''}`}>
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition"
+            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
             title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+            aria-label={sidebarCollapsed ? 'Open menu' : 'Close menu'}
           >
             {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
           </button>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="hidden md:flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 hover:bg-slate-100 transition min-w-[280px]"
+            >
+              <Search className="w-4 h-4" />
+              <span className="truncate">Search clients, leads, billing...</span>
+              <span className="ml-auto rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] text-slate-400">Cmd/Ctrl K</span>
+            </button>
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Open global search"
+              title="Search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
             <Notifications />
             <TeamMessages />
             {/* Profile dropdown */}
@@ -133,7 +170,7 @@ export default function ConsultancyLayout() {
                 className="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-100 transition"
               >
                 {user?.profile?.avatar ? (
-                  <img src={user.profile.avatar} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-slate-200" />
+                  <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-slate-200" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-ori-500 text-white flex items-center justify-center font-semibold text-sm">
                     {initials}
@@ -176,6 +213,7 @@ export default function ConsultancyLayout() {
           <Outlet />
         </main>
       </div>
+      <ConsultancyGlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} consultancyId={viewConsultancyId} />
     </div>
   );
 }

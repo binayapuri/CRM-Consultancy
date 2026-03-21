@@ -30,6 +30,7 @@ export default function Login() {
       if (user?.role === 'SUPER_ADMIN') navigate('/admin/dashboard');
       else if (user?.role === 'STUDENT') navigate('/student/dashboard');
       else if (user?.role === 'SPONSOR') navigate('/sponsor/dashboard');
+      else if (['UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER', 'RECRUITER'].includes(user?.role || '')) navigate('/partner/dashboard');
       else navigate('/consultancy/dashboard');
     } catch (err: unknown) {
       setError((err as Error).message);
@@ -81,6 +82,7 @@ export default function Login() {
       if (user?.role === 'SUPER_ADMIN') navigate('/admin/dashboard');
       else if (user?.role === 'STUDENT') navigate('/student/dashboard');
       else if (user?.role === 'SPONSOR') navigate('/sponsor/dashboard');
+      else if (['UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER', 'RECRUITER'].includes(user?.role || '')) navigate('/partner/dashboard');
       else navigate('/consultancy/dashboard');
     } catch (err: unknown) {
       setError((err as Error).message);
@@ -281,6 +283,10 @@ export default function Login() {
           <Link to="/register" className="text-ori-600 hover:underline">Student</Link>
           {' · '}
           <Link to="/register-consultancy" className="text-ori-600 hover:underline">Consultancy</Link>
+          {' · '}
+          <Link to="/register-university" className="text-ori-600 hover:underline">University</Link>
+          {' · '}
+          <Link to="/register-employer" className="text-ori-600 hover:underline">Employer</Link>
         </p>
       </div>
     </div>

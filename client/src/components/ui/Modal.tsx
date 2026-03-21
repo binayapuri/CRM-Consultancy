@@ -19,7 +19,7 @@ export default function Modal() {
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] flex items-center justify-center p-4"
+      className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] flex items-start sm:items-center justify-center p-2 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && closeModal()}
       role="dialog"
       aria-modal="true"
@@ -27,10 +27,10 @@ export default function Modal() {
     >
       <div
         ref={panelRef}
-        className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl animate-fade-in-up flex flex-col"
+        className={`bg-white rounded-xl w-full max-h-[96vh] sm:max-h-[90vh] overflow-hidden shadow-2xl animate-fade-in-up flex flex-col ${modal.size === 'large' ? 'max-w-4xl' : 'max-w-2xl'}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex justify-between items-center gap-3 bg-slate-50/50 shrink-0">
           {modal.title && (
             <h2 id="modal-title" className="text-lg font-bold text-slate-900">
               {modal.title}
@@ -46,7 +46,7 @@ export default function Modal() {
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {modalContentGetter?.() ?? (typeof modal.content === 'function' ? modal.content() : modal.content)}
         </div>
       </div>

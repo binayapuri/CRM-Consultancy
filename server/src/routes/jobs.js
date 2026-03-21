@@ -1,117 +1,57 @@
 import express from 'express';
-import { authenticate, authorize, requireRole } from '../middleware/auth.js';
-import Job from '../models/Job.js';
-import JobApplication from '../models/JobApplication.js';
+import { authenticate, authorize, requireRole } from '../shared/middleware/auth.js';
+import { validate } from '../shared/middleware/validate.js';
+import { asyncHandler } from '../shared/utils/asyncHandler.js';
+
+import { JobController } from '../shared/controllers/job.controller.js';
+import * as schemas from '../shared/schemas/job.schema.js';
 
 const router = express.Router();
 
-// Get active jobs, sorted by ANZSCO match if student
-router.get('/', authenticate, async (req, res) => {
-  try {
-    let jobs = await Job.find({ isActive: true }).sort({ createdAt: -1 }).lean();
-    
-    // If student, prioritize ANZSCO matches
-    if (req.user.role === 'STUDENT' && req.user.profile?.anzscoCode) {
-      jobs = jobs.sort((a, b) => {
-        const aMatch = a.anzscoCode === req.user.profile.anzscoCode ? 1 : 0;
-        const bMatch = b.anzscoCode === req.user.profile.anzscoCode ? 1 : 0;
-        return bMatch - aMatch;
-      });
-    }
+// Public jobs - no auth (for landing, public /jobs page)
+router.get('/public', asyncHandler(JobController.getPublicJobs));
 
-    res.json(jobs);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Get active jobs, sorted by ANZSCO match if student
+router.get('/', authenticate, asyncHandler(JobController.getActiveJobs));
 
 // Employer Dashboard: Get Jobs + Applications
-router.get('/employer/dashboard', authenticate, requireRole('EMPLOYER', 'SUPER_ADMIN'), async (req, res) => {
-  try {
-    let filter = {};
-    if (req.user.role === 'EMPLOYER') {
-      filter = { postedBy: req.user._id };
-    }
-    const jobs = await Job.find(filter).lean();
-    
-    // Attach applications to each job
-    for (let job of jobs) {
-      const apps = await JobApplication.find({ jobId: job._id })
-        .populate('studentId', 'profile.firstName profile.lastName email')
-        .sort({ createdAt: -1 });
-      job.applications = apps;
-    }
-    
-    res.json(jobs);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get('/employer/dashboard', authenticate, requireRole('EMPLOYER', 'RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.getEmployerDashboard));
+
+// Recruiter employer profiles (multi-company management)
+router.get('/recruiter/employers', authenticate, requireRole('RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.listRecruiterEmployers));
+router.post('/recruiter/employers', authenticate, requireRole('RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.createRecruiterEmployer));
+router.patch('/recruiter/employers/:id', authenticate, requireRole('RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.updateRecruiterEmployer));
+router.delete('/recruiter/employers/:id', authenticate, requireRole('RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.deleteRecruiterEmployer));
 
 // update application status
-router.patch('/applications/:id/status', authenticate, requireRole('EMPLOYER', 'SUPER_ADMIN'), async (req, res) => {
-  try {
-    const app = await JobApplication.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
-    res.json(app);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+router.patch('/applications/:id/status', authenticate, requireRole('EMPLOYER', 'RECRUITER', 'SUPER_ADMIN'), validate(schemas.updateApplicationStatusSchema), asyncHandler(JobController.updateApplicationStatus));
 
 // Student: Get my applications
-router.get('/my-applications', authenticate, requireRole('STUDENT'), async (req, res) => {
-  try {
-    const apps = await JobApplication.find({ studentId: req.user._id })
-      .populate('jobId')
-      .sort({ createdAt: -1 });
-    res.json(apps);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get('/my-applications', authenticate, requireRole('STUDENT'), asyncHandler(JobController.getMyApplications));
+
+// Student: Saved jobs
+router.get('/saved', authenticate, requireRole('STUDENT'), asyncHandler(JobController.getSavedJobs));
+router.post('/:id/save', authenticate, requireRole('STUDENT'), asyncHandler(JobController.saveJob));
+router.delete('/:id/save', authenticate, requireRole('STUDENT'), asyncHandler(JobController.unsaveJob));
+
+// Student: Job alerts
+router.get('/alerts', authenticate, requireRole('STUDENT'), asyncHandler(JobController.getJobAlerts));
+router.post('/alerts', authenticate, requireRole('STUDENT'), asyncHandler(JobController.createJobAlert));
+router.delete('/alerts/:id', authenticate, requireRole('STUDENT'), asyncHandler(JobController.deleteJobAlert));
 
 // Student: Apply to a job
-router.post('/:id/apply', authenticate, requireRole('STUDENT'), async (req, res) => {
-  try {
-    const { resumeUrl, coverLetterUrl } = req.body;
-    const job = await Job.findById(req.params.id);
-    if (!job) return res.status(404).json({ error: 'Job not found' });
-
-    const exists = await JobApplication.findOne({ studentId: req.user._id, jobId: job._id });
-    if (exists) return res.status(400).json({ error: 'Already applied for this job' });
-
-    const app = await JobApplication.create({
-      jobId: job._id,
-      studentId: req.user._id,
-      resumeUrl,
-      coverLetterUrl
-    });
-    res.status(201).json(app);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+router.post('/:id/apply', authenticate, requireRole('STUDENT'), validate(schemas.applyJobSchema), asyncHandler(JobController.applyToJob));
 
 // Get single job
-router.get('/:id', authenticate, async (req, res) => {
-  try {
-    const job = await Job.findById(req.params.id);
-    if (!job) return res.status(404).json({ error: 'Job not found' });
-    res.json(job);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+router.get('/:id', authenticate, asyncHandler(JobController.getJobById));
+
+// Close job (must be before :id to match /:id/close)
+router.patch('/:id/close', authenticate, authorize('SUPER_ADMIN', 'EMPLOYER', 'RECRUITER'), asyncHandler(JobController.closeJob));
+
+// Update job (Employer/Recruiter/Admin)
+router.patch('/:id', authenticate, authorize('SUPER_ADMIN', 'EMPLOYER', 'RECRUITER'), validate(schemas.updateJobSchema), asyncHandler(JobController.updateJob));
 
 // Create job (Admin/Agent/Employer)
-router.post('/', authenticate, authorize('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER'), async (req, res) => {
-  try {
-    const job = new Job({ ...req.body, postedBy: req.user.id });
-    await job.save();
-    res.status(201).json(job);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.post('/', authenticate, authorize('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'), validate(schemas.createJobSchema), asyncHandler(JobController.createJob));
 
 export default router;

@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MessageSquare, ThumbsUp, MapPin, GraduationCap, Plus, Search, Eye } from 'lucide-react';
 import { useAuthStore } from '../../store/auth';
+import { authFetch } from '../../store/auth';
 
 interface Post {
   _id: string;
@@ -9,6 +11,7 @@ interface Post {
   views: number;
   upvotes: string[];
   tags: string[];
+  category?: string;
   location?: string;
   university?: string;
   createdAt: string;
@@ -21,46 +24,78 @@ interface Post {
   }
 }
 
+const LOCATIONS = ['', 'Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Canberra', 'Gold Coast'];
+const CATEGORIES = [
+  { value: '', label: 'All Topics' },
+  { value: 'ROOM_RENT', label: 'Room Rent' },
+  { value: 'JOB_HELP', label: 'Job Help' },
+  { value: 'COMMUNITY_SUPPORT', label: 'Community Support' },
+  { value: 'STUDY_HELP', label: 'Study Help' },
+  { value: 'GENERAL', label: 'General' },
+];
+
 export default function Community() {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [newPost, setNewPost] = useState({ title: '', content: '', tags: '', location: '', university: '' });
+  const [newPost, setNewPost] = useState({ title: '', content: '', tags: '', location: '', university: '', category: 'GENERAL' });
+  const [filters, setFilters] = useState({ search: '', location: '', category: '' });
+  const [searchInput, setSearchInput] = useState('');
   const { user } = useAuthStore();
 
-  const fetchPosts = async () => {
+  // Debounce search - sync searchInput to filters.search after 400ms
+  useEffect(() => {
+    const t = setTimeout(() => setFilters(f => ({ ...f, search: searchInput })), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const fetchPosts = useCallback(async () => {
     try {
-      const res = await fetch('/api/community/posts');
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (filters.search) params.set('search', filters.search);
+      if (filters.location) params.set('location', filters.location);
+      if (filters.category) params.set('category', filters.category);
+      const qs = params.toString();
+      const res = await authFetch(`/api/community/posts${qs ? `?${qs}` : ''}`);
       if (res.ok) {
         const data = await res.json();
-        setPosts(data);
+        setPosts(Array.isArray(data) ? data : []);
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.search, filters.location, filters.category]);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/community/posts', {
+      const res = await authFetch('/api/community/posts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...newPost,
-          tags: newPost.tags.split(',').map(t => t.trim()).filter(Boolean)
-        })
+          title: newPost.title,
+          content: newPost.content,
+          tags: newPost.tags.split(',').map(t => t.trim()).filter(Boolean),
+          location: newPost.location || undefined,
+          university: newPost.university || undefined,
+          category: newPost.category || 'GENERAL',
+        }),
       });
       if (res.ok) {
         setShowCreate(false);
-        setNewPost({ title: '', content: '', tags: '', location: '', university: '' });
+        setNewPost({ title: '', content: '', tags: '', location: '', university: '', category: 'GENERAL' });
         fetchPosts();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Failed to create post');
       }
     } catch (e) {
       console.error(e);
@@ -69,17 +104,14 @@ export default function Community() {
 
   const handleUpvote = async (id: string) => {
     try {
-      const res = await fetch(`/api/community/posts/${id}/upvote`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (res.ok) {
-        fetchPosts();
-      }
+      const res = await authFetch(`/api/community/posts/${id}/upvote`, { method: 'POST' });
+      if (res.ok) fetchPosts();
     } catch (e) {
       console.error(e);
     }
   };
+
+  const userId = user?._id || user?.id || '';
 
   return (
     <div className="w-full animate-fade-in-up">
@@ -96,22 +128,35 @@ export default function Community() {
         </button>
       </div>
 
-      <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
-        <div className="flex-1 min-w-[300px] relative">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 mb-8">
+        <div className="flex-1 min-w-0 sm:min-w-[200px] relative">
           <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-          <input type="text" placeholder="Search discussions..." className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 focus:border-ori-500 transition" />
+          <input
+            type="text"
+            placeholder="Search discussions..."
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 focus:border-ori-500 transition"
+          />
         </div>
-        <select className="px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 font-medium text-slate-700">
-          <option>All Locations</option>
-          <option>Sydney</option>
-          <option>Melbourne</option>
-          <option>Brisbane</option>
+        <select
+          value={filters.location}
+          onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
+          className="w-full sm:w-auto px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 font-medium text-slate-700 shrink-0"
+        >
+          <option value="">All Locations</option>
+          {LOCATIONS.filter(Boolean).map(loc => (
+            <option key={loc} value={loc}>{loc}</option>
+          ))}
         </select>
-        <select className="px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 font-medium text-slate-700">
-          <option>All Topics</option>
-          <option>Visa</option>
-          <option>University</option>
-          <option>Accommodation</option>
+        <select
+          value={filters.category}
+          onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+          className="w-full sm:w-auto px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-ori-500/50 font-medium text-slate-700 shrink-0"
+        >
+          {CATEGORIES.map(c => (
+            <option key={c.value || 'all'} value={c.value}>{c.label}</option>
+          ))}
         </select>
       </div>
 
@@ -125,13 +170,17 @@ export default function Community() {
           </div>
         ) : (
           posts.map(post => (
-            <div key={post._id} className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition group cursor-pointer">
+            <div
+              key={post._id}
+              onClick={() => navigate(`/student/community/${post._id}`)}
+              className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition group cursor-pointer"
+            >
               <div className="flex gap-4 items-start">
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleUpvote(post._id); }}
-                  className={`flex flex-col items-center p-2 rounded-lg transition-colors ${post.upvotes.includes(user?.id || '') ? 'text-ori-600 bg-ori-50' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+                  className={`flex flex-col items-center p-2 rounded-lg transition-colors min-h-[44px] ${post.upvotes.includes(userId) ? 'text-ori-600 bg-ori-50' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
                 >
-                  <ThumbsUp className={`w-5 h-5 ${post.upvotes.includes(user?.id || '') ? 'fill-current' : ''}`} />
+                  <ThumbsUp className={`w-5 h-5 ${post.upvotes.includes(userId) ? 'fill-current' : ''}`} />
                   <span className="text-sm font-bold mt-1">{post.upvotes.length}</span>
                 </button>
                 <div className="flex-1">
@@ -149,7 +198,7 @@ export default function Community() {
                     
                     {post.location && <span className="flex items-center gap-1 text-sky-600 bg-sky-50 px-2 py-1 rounded-md"><MapPin className="w-3.5 h-3.5" /> {post.location}</span>}
                     {post.university && <span className="flex items-center gap-1 text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md"><GraduationCap className="w-3.5 h-3.5" /> {post.university}</span>}
-                    {post.tags.map(tag => (
+                    {(post.tags || []).map(tag => (
                       <span key={tag} className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md">#{tag}</span>
                     ))}
                   </div>
@@ -177,7 +226,7 @@ export default function Community() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Content</label>
                 <textarea required rows={5} value={newPost.content} onChange={e => setNewPost({...newPost, content: e.target.value})} className="input resize-none" placeholder="Provide details..." />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Location</label>
                   <input value={newPost.location} onChange={e => setNewPost({...newPost, location: e.target.value})} className="input" placeholder="e.g. Sydney" />
@@ -186,6 +235,14 @@ export default function Community() {
                   <label className="block text-sm font-semibold text-slate-700 mb-1">University</label>
                   <input value={newPost.university} onChange={e => setNewPost({...newPost, university: e.target.value})} className="input" placeholder="e.g. UNSW" />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Category</label>
+                <select value={newPost.category} onChange={e => setNewPost({...newPost, category: e.target.value})} className="input">
+                  {CATEGORIES.filter(c => c.value).map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Tags (comma separated)</label>

@@ -42,7 +42,7 @@ export default function Verifications() {
   const allItems = [...data.consultancies, ...data.employers, ...data.insurers].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in-up">
+    <div className="w-full animate-fade-in-up">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">Verification Queue</h1>
@@ -71,10 +71,11 @@ export default function Verifications() {
                     }`}>{item.type}</span>
                     <h3 className="text-lg font-bold text-slate-900">{item.name}</h3>
                   </div>
-                  <div className="text-sm text-slate-500 flex items-center gap-4">
+                  <div className="text-sm text-slate-500 flex items-center gap-4 flex-wrap">
                     {item.email && <span>Email: {item.email}</span>}
                     {item.abn && <span>ABN: {item.abn}</span>}
                     {item.marn && <span>MARN: {item.marn}</span>}
+                    {item.type === 'EMPLOYER' && item.industry && <span>Industry: {item.industry}</span>}
                   </div>
                 </div>
                 

@@ -11,9 +11,13 @@ export function getDashboardPathForRole(role: string): string {
     case 'SPONSOR':
       return '/sponsor/dashboard';
     case 'UNIVERSITY_PARTNER':
+      return '/partner/profile';
     case 'INSURANCE_PARTNER':
+      return '/partner/insurance';
     case 'EMPLOYER':
-      return '/partner/applications';
+      return '/partner/jobs';
+    case 'RECRUITER':
+      return '/partner/jobs';
     default:
       return '/consultancy/dashboard';
   }

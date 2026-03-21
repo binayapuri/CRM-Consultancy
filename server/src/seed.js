@@ -1,15 +1,23 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import User from './models/User.js';
-import Consultancy from './models/Consultancy.js';
-import Client from './models/Client.js';
-import Application from './models/Application.js';
-import Lead from './models/Lead.js';
-import College from './models/College.js';
-import OSHC from './models/OSHC.js';
-import Task from './models/Task.js';
-import AuditLog from './models/AuditLog.js';
-import Notification from './models/Notification.js';
+import User from './shared/models/User.js';
+import Consultancy from './shared/models/Consultancy.js';
+import Client from './shared/models/Client.js';
+import Application from './shared/models/Application.js';
+import Lead from './shared/models/Lead.js';
+import College from './shared/models/College.js';
+import OSHC from './shared/models/OSHC.js';
+import Task from './shared/models/Task.js';
+import AuditLog from './shared/models/AuditLog.js';
+import Notification from './shared/models/Notification.js';
+import Employer from './shared/models/Employer.js';
+import Job from './shared/models/Job.js';
+import JobApplication from './shared/models/JobApplication.js';
+import RecruiterEmployerProfile from './shared/models/RecruiterEmployerProfile.js';
+import University from './shared/models/University.js';
+import UniversityRequest from './shared/models/UniversityRequest.js';
+import Course from './shared/models/Course.js';
+import OfferLetterApplication from './shared/models/OfferLetterApplication.js';
 
 dotenv.config();
 
@@ -25,6 +33,14 @@ async function seed() {
   await College.deleteMany({});
   await OSHC.deleteMany({});
   await Task.deleteMany({});
+  await Employer.deleteMany({});
+  await Job.deleteMany({});
+  await JobApplication.deleteMany({});
+  await RecruiterEmployerProfile.deleteMany({});
+  await University.deleteMany({});
+  await UniversityRequest.deleteMany({});
+  await Course.deleteMany({});
+  await OfferLetterApplication.deleteMany({});
 
   const superAdmin = await User.create({
     email: 'admin@orivisa.com',
@@ -63,10 +79,10 @@ async function seed() {
       accountNumber: '12345678',
     },
     rolePermissions: [
-      { role: 'CONSULTANCY_ADMIN', permissions: { clients: { view: true, create: true, edit: true, delete: true }, applications: { view: true, create: true, edit: true, delete: true }, tasks: { view: true, create: true, edit: true, delete: true }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: true }, documents: { view: true, upload: true, delete: true }, trustLedger: { view: true, edit: true }, employees: { view: true, manage: true }, traceHistory: { view: true }, settings: { view: true, edit: true }, colleges: { view: true, manage: true }, oshc: { view: true, manage: true }, sponsors: { view: true, create: true, edit: true, delete: true }, sendDocuments: true, sendAdvice: true } },
-      { role: 'MANAGER', permissions: { clients: { view: true, create: true, edit: true, delete: true }, applications: { view: true, create: true, edit: true, delete: true }, tasks: { view: true, create: true, edit: true, delete: true }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: true }, documents: { view: true, upload: true, delete: true }, trustLedger: { view: true, edit: true }, employees: { view: true, manage: true }, traceHistory: { view: true }, settings: { view: true, edit: true }, colleges: { view: true, manage: true }, oshc: { view: true, manage: true }, sponsors: { view: true, create: true, edit: true, delete: true }, sendDocuments: true, sendAdvice: true } },
-      { role: 'AGENT', permissions: { clients: { view: true, create: true, edit: true, delete: false }, applications: { view: true, create: true, edit: true, delete: false }, tasks: { view: true, create: true, edit: true, delete: false }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: false }, documents: { view: true, upload: true, delete: false }, trustLedger: { view: false, edit: false }, employees: { view: true, manage: false }, traceHistory: { view: false }, settings: { view: false, edit: false }, colleges: { view: true, manage: false }, oshc: { view: true, manage: false }, sponsors: { view: true, create: true, edit: true, delete: false }, sendDocuments: true, sendAdvice: true } },
-      { role: 'SUPPORT', permissions: { clients: { view: true, create: false, edit: true, delete: false }, applications: { view: true, create: false, edit: true, delete: false }, tasks: { view: true, create: true, edit: true, delete: false }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: false }, documents: { view: true, upload: true, delete: false }, trustLedger: { view: false, edit: false }, employees: { view: false, manage: false }, traceHistory: { view: false }, settings: { view: false, edit: false }, colleges: { view: true, manage: false }, oshc: { view: true, manage: false }, sponsors: { view: true, create: false, edit: true, delete: false }, sendDocuments: true, sendAdvice: false } },
+      { role: 'CONSULTANCY_ADMIN', permissions: { clients: { view: true, create: true, edit: true, delete: true }, applications: { view: true, create: true, edit: true, delete: true }, tasks: { view: true, create: true, edit: true, delete: true }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: true }, documents: { view: true, upload: true, delete: true }, trustLedger: { view: true, edit: true }, billing: { view: true, create: true, edit: true, delete: true }, employees: { view: true, manage: true }, traceHistory: { view: true }, settings: { view: true, edit: true }, colleges: { view: true, manage: true }, oshc: { view: true, manage: true }, sponsors: { view: true, create: true, edit: true, delete: true }, sendDocuments: true, sendAdvice: true } },
+      { role: 'MANAGER', permissions: { clients: { view: true, create: true, edit: true, delete: true }, applications: { view: true, create: true, edit: true, delete: true }, tasks: { view: true, create: true, edit: true, delete: true }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: true }, documents: { view: true, upload: true, delete: true }, trustLedger: { view: true, edit: true }, billing: { view: true, create: true, edit: true, delete: false }, employees: { view: true, manage: true }, traceHistory: { view: true }, settings: { view: true, edit: true }, colleges: { view: true, manage: true }, oshc: { view: true, manage: true }, sponsors: { view: true, create: true, edit: true, delete: true }, sendDocuments: true, sendAdvice: true } },
+      { role: 'AGENT', permissions: { clients: { view: true, create: true, edit: true, delete: false }, applications: { view: true, create: true, edit: true, delete: false }, tasks: { view: true, create: true, edit: true, delete: false }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: false }, documents: { view: true, upload: true, delete: false }, trustLedger: { view: false, edit: false }, billing: { view: true, create: true, edit: true, delete: false }, employees: { view: true, manage: false }, traceHistory: { view: false }, settings: { view: false, edit: false }, colleges: { view: true, manage: false }, oshc: { view: true, manage: false }, sponsors: { view: true, create: true, edit: true, delete: false }, sendDocuments: true, sendAdvice: true } },
+      { role: 'SUPPORT', permissions: { clients: { view: true, create: false, edit: true, delete: false }, applications: { view: true, create: false, edit: true, delete: false }, tasks: { view: true, create: true, edit: true, delete: false }, kanban: { view: true, edit: true }, leads: { view: true, create: true, edit: true, delete: false }, documents: { view: true, upload: true, delete: false }, trustLedger: { view: false, edit: false }, billing: { view: true, create: false, edit: false, delete: false }, employees: { view: false, manage: false }, traceHistory: { view: false }, settings: { view: false, edit: false }, colleges: { view: true, manage: false }, oshc: { view: true, manage: false }, sponsors: { view: true, create: false, edit: true, delete: false }, sendDocuments: true, sendAdvice: false } },
     ],
     initialAdviceTemplate: {
       subject: 'Initial Advice & Fee Estimation',
@@ -135,7 +151,7 @@ If you have any questions or wish to proceed, please contact us.`,
       { employer: 'Tech Solutions Pty Ltd', role: 'Software Developer', country: 'Australia', startDate: new Date('2024-01-15'), endDate: null, isCurrent: true, description: 'Full-stack development', fullTime: true },
       { employer: 'Infosys', role: 'Junior Developer', country: 'India', startDate: new Date('2016-07-01'), endDate: new Date('2022-06-30'), isCurrent: false, description: 'Backend development', fullTime: true },
     ],
-    englishTest: { testType: 'IELTS', score: '7.0', testDate: new Date('2022-08-15'), expiryDate: new Date('2025-08-15') },
+    englishTest: { testType: 'IELTS_AC', score: '7.0', testDate: new Date('2022-08-15'), expiryDate: new Date('2025-08-15') },
     visaType: 'Skilled Migration (189/190/491)',
     services: [{ serviceType: 'SKILLED_MIGRATION', visaSubclass: '485', status: 'IN_PROGRESS', startedAt: new Date('2024-11-01'), notes: 'Graduate visa pathway to PR' }],
     skillAssessments: [
@@ -186,11 +202,124 @@ If you have any questions or wish to proceed, please contact us.`,
     dailyTaskDate: new Date(),
   });
 
+  // Employer + Jobs
+  const employerUser = await User.create({
+    email: 'employer@orivisa.com',
+    password: 'employer123',
+    role: 'EMPLOYER',
+    profile: { firstName: 'Employer', lastName: 'Demo' },
+  });
+  const employer = await Employer.create({
+    companyName: 'Acme Corp',
+    abn: '98 765 432 109',
+    website: 'https://acmecorp.example.com',
+    industry: 'Technology',
+    userId: employerUser._id,
+    verificationStatus: 'PENDING',
+  });
+  await User.findByIdAndUpdate(employerUser._id, { 'profile.employerId': employer._id });
+
+  const [job1, job2, job3] = await Job.create([
+    { title: 'Software Developer (Graduate)', company: 'Acme Corp', location: 'Sydney, NSW', type: 'FULL_TIME', description: 'Join our team as a graduate developer. Great for 485 visa holders.', requirements: ['Computer Science degree', '1+ years experience'], salaryRange: '$65k - $80k', visaSponsorshipAvailable: true, partTimeAllowed: false, postedBy: employerUser._id, postedByRole: 'EMPLOYER' },
+    { title: 'Part-time Retail Assistant', company: 'Acme Corp', location: 'Melbourne, VIC', type: 'PART_TIME', description: 'Student-friendly hours. 20-24 hours per week.', requirements: ['Customer service'], salaryRange: '$25 - $28/hr', visaSponsorshipAvailable: false, partTimeAllowed: true, postedBy: employerUser._id, postedByRole: 'EMPLOYER' },
+    { title: 'Marketing Intern', company: 'Acme Corp', location: 'Brisbane, QLD', type: 'INTERNSHIP', description: 'Internship for marketing students.', requirements: ['Marketing or related degree'], salaryRange: 'Unpaid', visaSponsorshipAvailable: false, partTimeAllowed: true, postedBy: employerUser._id, postedByRole: 'EMPLOYER' },
+  ]);
+
+  await JobApplication.create([
+    { jobId: job1._id, studentId: student._id, status: 'APPLIED', resumeUrl: 'vault/resume.pdf' },
+    { jobId: job2._id, studentId: student._id, status: 'REVIEWING' },
+  ]);
+
+  // Recruiter
+  const recruiter = await User.create({
+    email: 'recruiter@orivisa.com',
+    password: 'recruiter123',
+    role: 'RECRUITER',
+    profile: { firstName: 'Recruiter', lastName: 'Demo' },
+  });
+  await RecruiterEmployerProfile.create({
+    recruiterId: recruiter._id,
+    companyName: 'Acme Corp',
+    abn: '98 765 432 109',
+    contactName: 'Recruiter Demo',
+    contactEmail: 'recruiter@orivisa.com',
+    isActive: true,
+  });
+
+  // University Request (PENDING - for Super Admin to review)
+  const pendingUniUser = await User.create({
+    email: 'pending-university@orivisa.com',
+    password: 'university123',
+    role: 'UNIVERSITY_PARTNER',
+    isActive: false,
+    profile: { firstName: 'Pending', lastName: 'University' },
+  });
+  await UniversityRequest.create({
+    institutionName: 'Melbourne Institute of Technology',
+    website: 'https://www.mit.edu.au',
+    cricosProviderCode: '03245A',
+    contactName: 'Jane Smith',
+    email: 'pending-university@orivisa.com',
+    phone: '+61 3 9662 0000',
+    campuses: [{ city: 'Melbourne', state: 'VIC', country: 'Australia' }],
+    courseSummary: ['IT', 'Business', 'Cookery'],
+    intakeMonths: ['Feb', 'Jul'],
+    tuitionRange: '$25,000 - $35,000',
+    notes: 'Awaiting super admin verification.',
+    requestedByUserId: pendingUniUser._id,
+    status: 'PENDING',
+  });
+
+  // University + Courses (already approved) with branches, email, discounts
+  const university = await University.create({
+    name: 'UNSW',
+    location: { city: 'Sydney', state: 'NSW', country: 'Australia' },
+    description: 'University of New South Wales',
+    website: 'https://www.unsw.edu.au',
+    cricosProviderCode: '00098G',
+    contactEmail: 'international@unsw.edu.au',
+    contactPhone: '+61 2 9385 6996',
+    tuitionRange: '$40,000 - $55,000',
+    intakeMonths: ['Feb', 'Jun', 'Sep'],
+    partnerStatus: 'VERIFIED',
+    branches: [
+      { name: 'Kensington Campus', city: 'Sydney', state: 'NSW', country: 'Australia', address: 'High St', postcode: '2052', isActive: true },
+      { name: 'Paddington Campus', city: 'Sydney', state: 'NSW', country: 'Australia', isActive: true },
+    ],
+    emailProfiles: [
+      { name: 'Main', host: 'smtp.example.com', port: 587, secure: false, user: 'offers@unsw.edu.au', from: 'UNSW International <offers@unsw.edu.au>', isDefault: true, active: true },
+    ],
+    settings: { timezone: 'Australia/Sydney', currency: 'AUD' },
+    discountRules: [
+      { name: 'Early Bird 10%', type: 'PERCENTAGE', value: 10, applicableTo: 'ALL', isActive: true },
+      { name: 'Partner Scholarship $2000', type: 'FIXED', value: 2000, applicableTo: 'ALL', isActive: true },
+    ],
+  });
+  const universityUser = await User.create({
+    email: 'university@orivisa.com',
+    password: 'university123',
+    role: 'UNIVERSITY_PARTNER',
+    profile: { firstName: 'University', lastName: 'Partner', universityId: university._id },
+  });
+  const branchIds = university.branches.map((b) => b._id);
+  const [course1, course2] = await Course.create([
+    { universityId: university._id, name: 'Master of Information Technology', faculty: 'Engineering', level: 'MASTERS', duration: '2 years', tuitionFee: 48000, prPathwayPotential: true, branchIds, fees: branchIds.map((bid, i) => ({ branchId: bid, amount: 48000 + (i * 1000) })) },
+    { universityId: university._id, name: 'Bachelor of Commerce', faculty: 'Business', level: 'BACHELORS', duration: '3 years', tuitionFee: 42000, prPathwayPotential: true, branchIds, fees: branchIds.map((bid, i) => ({ branchId: bid, amount: 42000 + (i * 500) })) },
+  ]);
+  await OfferLetterApplication.create([
+    { studentId: student._id, courseId: course1._id, universityId: university._id, status: 'UNDER_REVIEW' },
+    { studentId: student._id, courseId: course2._id, universityId: university._id, status: 'PENDING' },
+  ]);
+
   console.log('✓ Seed complete');
   console.log('  Super Admin: admin@orivisa.com / admin123');
   console.log('  Consultancy Admin: consultancy@orivisa.com / admin123');
   console.log('  Agent: agent@orivisa.com / agent123');
   console.log('  Student: student@orivisa.com / student123');
+  console.log('  Employer: employer@orivisa.com / employer123');
+  console.log('  Recruiter: recruiter@orivisa.com / recruiter123');
+  console.log('  University: university@orivisa.com / university123');
+  console.log('  Pending University (review in University Requests): pending-university@orivisa.com / university123');
   process.exit(0);
 }
 

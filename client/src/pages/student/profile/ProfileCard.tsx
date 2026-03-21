@@ -42,17 +42,17 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   const isListSection = editForm == null;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 mb-6">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden min-w-0 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 mb-6">
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-slate-50 bg-slate-50/50">
-        <div className="flex items-center gap-3">
+      <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-50 bg-slate-50/50">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 text-indigo-600">
             {icon}
           </div>
-          <h3 className="font-black text-slate-800 tracking-tight">{title}</h3>
+          <h3 className="font-black text-slate-800 tracking-tight break-words">{title}</h3>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           {!isListSection && !isEditing ? (
             <>
               <button
@@ -89,7 +89,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 
       {/* Content */}
       {isExpanded && (
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {isListSection ? (
             <div className="animate-in fade-in duration-300">
               {children}
@@ -99,7 +99,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
               <div className={formCardClass}>
                 {editForm}
               </div>
-              <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3">
+              <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
                 <button
                   onClick={handleCancel}
                   className={btnCancel}

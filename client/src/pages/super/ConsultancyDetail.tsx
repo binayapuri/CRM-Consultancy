@@ -4,6 +4,7 @@ import { authFetch } from '../../store/auth';
 import { format } from 'date-fns';
 import {
   ArrowLeft,
+  ArrowRight,
   Building2,
   Users,
   FileText,
@@ -22,6 +23,10 @@ import {
   ExternalLink,
   Clock,
   History,
+  AlertTriangle,
+  ShieldCheck,
+  CalendarClock,
+  Archive,
 } from 'lucide-react';
 import StatCard from '../../components/StatCard';
 
@@ -43,6 +48,10 @@ export default function ConsultancyDetail() {
   if (!data?.consultancy) return <div className="text-red-600">Consultancy not found</div>;
 
   const { consultancy, stats, recentClients, recentApplications, employeesList, appStatusBreakdown } = data;
+  const complianceSummary = data.complianceSummary || {};
+  const deadlineTracker = data.deadlineTracker || { items: [] };
+  const operationalInsights = data.operationalInsights || { retentionCandidates: [] };
+  const recentAudit = data.recentAudit || [];
 
   const statCards = [
     { label: 'Clients', value: stats.clients ?? 0, icon: Users, color: 'bg-blue-100 text-blue-600', to: `/consultancy/clients?consultancyId=${id}` },
@@ -56,7 +65,7 @@ export default function ConsultancyDetail() {
     { label: 'Colleges', value: stats.colleges ?? 0, icon: GraduationCap, color: 'bg-indigo-100 text-indigo-600', to: `/consultancy/colleges?consultancyId=${id}` },
     { label: 'OSHC', value: stats.oshc ?? 0, icon: Shield, color: 'bg-teal-100 text-teal-600', to: `/consultancy/oshc?consultancyId=${id}` },
     { label: 'Checked In Today', value: stats.attendanceToday ?? 0, icon: Clock, color: 'bg-slate-100 text-slate-600', to: `/consultancy/attendance?consultancyId=${id}` },
-    { label: 'Trace History', value: '→', icon: History, color: 'bg-slate-100 text-slate-600', to: `/consultancy/trace-history?consultancyId=${id}` },
+    { label: 'Trace History', value: <ArrowRight className="w-6 h-6 text-slate-600" aria-hidden />, icon: History, color: 'bg-slate-100 text-slate-600', to: `/consultancy/trace-history?consultancyId=${id}` },
   ];
 
   return (
@@ -153,6 +162,68 @@ export default function ConsultancyDetail() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
+        <div className="card">
+          <h2 className="font-display font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-600" /> Compliance Snapshot
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3">
+              <p className="text-xs uppercase font-bold text-emerald-700">Form 956 Sent</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{complianceSummary.form956Sent || 0}</p>
+            </div>
+            <div className="rounded-xl bg-blue-50 border border-blue-100 p-3">
+              <p className="text-xs uppercase font-bold text-blue-700">Initial Advice</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{complianceSummary.initialAdviceSent || 0}</p>
+            </div>
+            <div className="rounded-xl bg-amber-50 border border-amber-100 p-3">
+              <p className="text-xs uppercase font-bold text-amber-700">MIA Sent</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{complianceSummary.miaSent || 0}</p>
+            </div>
+            <div className="rounded-xl bg-violet-50 border border-violet-100 p-3">
+              <p className="text-xs uppercase font-bold text-violet-700">Guide Ack.</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{complianceSummary.consumerGuideAcknowledged || 0}</p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2 text-sm">
+            <div className="flex items-center justify-between"><span className="text-slate-500">Client notes coverage</span><span className="font-semibold text-slate-900">{complianceSummary.clientNotesCoverage || 0}%</span></div>
+            <div className="flex items-center justify-between"><span className="text-slate-500">Application notes coverage</span><span className="font-semibold text-slate-900">{complianceSummary.applicationNotesCoverage || 0}%</span></div>
+            <div className="flex items-center justify-between"><span className="text-slate-500">Communication coverage</span><span className="font-semibold text-slate-900">{complianceSummary.communicationCoverage || 0}%</span></div>
+            <div className="flex items-center justify-between"><span className="text-slate-500">Apps missing docs</span><span className="font-semibold text-rose-600">{complianceSummary.missingDocumentApplications || 0}</span></div>
+          </div>
+        </div>
+
+        <div className="card">
+          <h2 className="font-display font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <CalendarClock className="w-5 h-5 text-amber-600" /> Deadline Tracker
+          </h2>
+          <div className="flex gap-3 mb-4 text-sm">
+            <div className="px-3 py-2 rounded-xl bg-rose-50 border border-rose-100">
+              <span className="font-semibold text-rose-700">{deadlineTracker.overdueCount || 0}</span>
+              <span className="text-slate-600 ml-2">overdue</span>
+            </div>
+            <div className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-100">
+              <span className="font-semibold text-amber-700">{deadlineTracker.nextSevenDays || 0}</span>
+              <span className="text-slate-600 ml-2">due in 7 days</span>
+            </div>
+          </div>
+          <div className="space-y-3 max-h-72 overflow-y-auto">
+            {(deadlineTracker.items || []).length ? deadlineTracker.items.slice(0, 8).map((item: any, idx: number) => (
+              <Link key={`${item.type}-${idx}`} to={item.clientId ? `/consultancy/clients/${item.clientId}?consultancyId=${id}` : `/consultancy/dashboard?consultancyId=${id}`} className="block p-3 rounded-xl bg-slate-50 hover:bg-amber-50 transition">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-slate-900">{item.title}</p>
+                    <p className="text-sm text-slate-500">{item.clientName || 'Consultancy matter'}{item.subtitle ? ` • ${item.subtitle}` : ''}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-900">{item.dueDate ? format(new Date(item.dueDate), 'dd MMM yyyy') : '-'}</p>
+                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full ${item.severity === 'OVERDUE' ? 'bg-rose-100 text-rose-700' : item.severity === 'HIGH' ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-600'}`}>{item.severity}</span>
+                  </div>
+                </div>
+              </Link>
+            )) : <p className="text-slate-500 text-sm py-4 text-center">No urgent deadlines.</p>}
+          </div>
+        </div>
+
         {/* Employees */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
@@ -200,6 +271,58 @@ export default function ConsultancyDetail() {
             ) : (
               <p className="text-slate-500 text-sm py-4 text-center">No applications</p>
             )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="card">
+          <h2 className="font-display font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <History className="w-5 h-5 text-slate-600" /> Recent Audit Activity
+          </h2>
+          <div className="space-y-3 max-h-72 overflow-y-auto">
+            {recentAudit.length ? recentAudit.map((log: any) => (
+              <div key={log._id} className="p-3 rounded-xl bg-slate-50">
+                <p className="font-medium text-slate-900">{log.changedBy?.profile?.firstName} {log.changedBy?.profile?.lastName}</p>
+                <p className="text-sm text-slate-600">{log.description}</p>
+                <p className="text-xs text-slate-400 mt-1">{format(new Date(log.changedAt), 'dd MMM yyyy HH:mm')}</p>
+              </div>
+            )) : <p className="text-slate-500 text-sm py-4 text-center">No recent audit activity.</p>}
+          </div>
+        </div>
+
+        <div className="card">
+          <h2 className="font-display font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Archive className="w-5 h-5 text-slate-600" /> Retention Watch
+          </h2>
+          <div className="space-y-3 max-h-72 overflow-y-auto">
+            {operationalInsights.retentionCandidates?.length ? operationalInsights.retentionCandidates.map((client: any) => (
+              <Link key={client._id} to={`/consultancy/clients/${client._id}?consultancyId=${id}`} className="block p-3 rounded-xl bg-slate-50 hover:bg-slate-100">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-slate-900">{client.name}</p>
+                    <p className="text-sm text-slate-500">{client.email || client.status}</p>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-slate-100 text-slate-600">{client.archiveStatus || client.status}</span>
+                      {!client.privacyComplete && <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-amber-100 text-amber-700">Consent gap</span>}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-400">{client.lastActivityAt ? format(new Date(client.lastActivityAt), 'dd MMM yyyy') : '-'}</p>
+                    {client.archiveEligibleAt && <p className="text-[11px] text-slate-400 mt-1">Archive after {format(new Date(client.archiveEligibleAt), 'dd MMM yyyy')}</p>}
+                  </div>
+                </div>
+              </Link>
+            )) : (
+              <p className="text-slate-500 text-sm py-4 text-center">No retention-risk records detected.</p>
+            )}
+          </div>
+          <div className="mt-4 p-3 rounded-xl bg-slate-50 text-sm">
+            <p className="font-medium text-slate-900">Operational Watch</p>
+            <div className="mt-2 flex items-center justify-between"><span className="text-slate-500">Overdue tasks</span><span className="font-semibold text-rose-600">{operationalInsights.overdueTasks || 0}</span></div>
+            <div className="mt-1 flex items-center justify-between"><span className="text-slate-500">Expiring documents</span><span className="font-semibold text-amber-700">{operationalInsights.expiringDocuments || 0}</span></div>
+            <div className="mt-1 flex items-center justify-between"><span className="text-slate-500">Privacy consent gaps</span><span className="font-semibold text-cyan-700">{operationalInsights.privacyMissingCount || 0}</span></div>
+            <div className="mt-1 flex items-center justify-between"><span className="text-slate-500">Archived clients</span><span className="font-semibold text-slate-900">{operationalInsights.archivedClients || 0}</span></div>
           </div>
         </div>
       </div>

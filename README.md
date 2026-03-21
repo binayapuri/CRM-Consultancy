@@ -1,4 +1,4 @@
-# ORIVISA - Australian Migration & Education Platform
+# BIGFEW (formerly ORIVISA) - Australian Migration & Education Platform
 
 A full-stack application bridging **students** and **consultancies** in the Australian migration ecosystem. Built with Node.js, Express, MongoDB, and React.
 
@@ -62,13 +62,40 @@ Create `server/.env`:
 MONGODB_URI=mongodb://localhost:27017/orivisa
 JWT_SECRET=your-secret-key
 PORT=5000
+STUDENT_SMTP_ENC_KEY=replace_with_32+_char_random_secret
 ```
 
-## Dev deployment (GitHub Actions)
+## Dev deployment (GitHub Actions) and deploy
 
 - Push to the `dev` branch to trigger the **Deploy (dev)** workflow and update the VPS environment.
+
+### Student SMTP (encrypted) — required in production
+
+Student SMTP passwords are stored encrypted (AES-256-GCM). The backend requires a stable encryption key:
+
+- `STUDENT_SMTP_ENC_KEY` (**32+ characters**, keep stable)
+
+Generate a key once:
+
+```bash
+openssl rand -hex 32
+# or
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**Important:** Do not rotate this key after students have saved SMTP passwords, otherwise old passwords can’t be decrypted (students would need to re-save SMTP).
+
+#### Deploy with GitHub Secrets (recommended)
+
+If your deployment workflow builds the server `.env` from a single secret (e.g. `DEV_ENV`), add:
+
+```
+STUDENT_SMTP_ENC_KEY=<your generated key>
+```
+
+Then re-run the deploy (push to `dev`).
 
 ## Data Sovereignty
 
 Designed for Australian deployment. Configure MongoDB and hosting in `ap-southeast-2` (Sydney) for data residency.
-# CRM-Consultancy
+# CRM-Consultancy (monorepo root)

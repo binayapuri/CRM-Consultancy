@@ -12,11 +12,14 @@ export type Toast = {
 
 export type ModalContent = ReactNode | (() => ReactNode);
 
+export type ModalSize = 'default' | 'large';
+
 export type ModalState = {
   open: boolean;
   title?: string;
   content: ModalContent | null;
   contentKey?: number;
+  size?: ModalSize;
 };
 
 export type ConfirmState = {
@@ -41,7 +44,7 @@ type UiState = {
   confirm: ConfirmState;
   showToast: (message: string, type?: ToastType, duration?: number) => void;
   removeToast: (id: string) => void;
-  openModal: (title?: string, content?: ModalContent | null) => void;
+  openModal: (title?: string, content?: ModalContent | null, options?: { size?: ModalSize }) => void;
   closeModal: () => void;
   setModalContentGetter: (getter: ModalContentGetter) => void;
   bumpModalContentKey: () => void;
@@ -51,7 +54,7 @@ type UiState = {
 
 export const useUiStore = create<UiState>((set, get) => ({
   toasts: [],
-  modal: { open: false, title: undefined, content: null },
+  modal: { open: false, title: undefined, content: null, size: 'default' },
   modalContentGetter: null,
   confirm: {
     open: false,
@@ -73,12 +76,12 @@ export const useUiStore = create<UiState>((set, get) => ({
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
   },
 
-  openModal: (title?: string, content?: ModalContent | null) => {
-    set({ modal: { open: true, title, content: content ?? null, contentKey: Date.now() } });
+  openModal: (title?: string, content?: ModalContent | null, options?: { size?: ModalSize }) => {
+    set({ modal: { open: true, title, content: content ?? null, contentKey: Date.now(), size: options?.size ?? 'default' } });
   },
 
   closeModal: () => {
-    set({ modal: { open: false, title: undefined, content: null }, modalContentGetter: null });
+    set({ modal: { open: false, title: undefined, content: null, size: 'default' }, modalContentGetter: null });
   },
 
   setModalContentGetter: (getter) => {

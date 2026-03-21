@@ -30,6 +30,15 @@ export default function Clients() {
   const [requestEmail, setRequestEmail] = useState('');
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestMessage, setRequestMessage] = useState({ text: '', type: '' });
+  const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
+  const [showBulkEmail, setShowBulkEmail] = useState(false);
+  const [bulkEmail, setBulkEmail] = useState({
+    subject: 'Important update for {{firstName}}',
+    body: 'Hi {{firstName}},\n\nThis is an update regarding your visa matter with {{consultancyName}}.\n\nKind regards,\n{{agentName}}',
+  });
+  const [bulkPreview, setBulkPreview] = useState<any | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [sendLoading, setSendLoading] = useState(false);
 
   const fetchData = () => {
     setLoading(true);
@@ -90,15 +99,87 @@ export default function Clients() {
     return matchSearch && matchStatus && matchAgent;
   });
 
+  useEffect(() => {
+    setSelectedClientIds((current) => current.filter((id) => filtered.some((client: any) => client._id === id)));
+  }, [q, filterStatus, filterAgent, clients.length]);
+
+  const toggleClientSelection = (clientId: string) => {
+    setSelectedClientIds((current) => current.includes(clientId) ? current.filter((id) => id !== clientId) : [...current, clientId]);
+  };
+
+  const allFilteredSelected = !!filtered.length && filtered.every((client: any) => selectedClientIds.includes(client._id));
+
+  const toggleSelectAllFiltered = () => {
+    if (allFilteredSelected) {
+      setSelectedClientIds((current) => current.filter((id) => !filtered.some((client: any) => client._id === id)));
+      return;
+    }
+    setSelectedClientIds((current) => Array.from(new Set([...current, ...filtered.map((client: any) => client._id)])));
+  };
+
+  const loadBulkPreview = async () => {
+    if (!selectedClientIds.length) return;
+    setPreviewLoading(true);
+    try {
+      const res = await authFetch('/api/clients/bulk-email-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          consultancyId: consultancyId || undefined,
+          clientIds: selectedClientIds,
+          subject: bulkEmail.subject,
+          body: bulkEmail.body,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to preview');
+      setBulkPreview(data);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleSendBulkEmail = async () => {
+    if (!selectedClientIds.length) return;
+    setSendLoading(true);
+    try {
+      const res = await authFetch('/api/clients/bulk-email-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          consultancyId: consultancyId || undefined,
+          clientIds: selectedClientIds,
+          subject: bulkEmail.subject,
+          body: bulkEmail.body,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send');
+      alert(`Bulk email sent to ${data.sent} clients.`);
+      setShowBulkEmail(false);
+      setBulkPreview(null);
+      setSelectedClientIds([]);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSendLoading(false);
+    }
+  };
+
   return (
-    <div>
-      <div className="flex items-center justify-between">
+    <div className="w-full min-w-0 max-w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-slate-900">Clients</h1>
+          <h1 className="text-xl sm:text-2xl font-display font-bold text-slate-900">Clients</h1>
           <p className="text-slate-500 mt-1">Manage your client profiles</p>
         </div>
-        <div className="flex gap-3">
-          <button onClick={() => setShowRequestAccess(true)} className="btn-secondary flex items-center gap-2 border-ori-200 text-ori-700 hover:bg-ori-50">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <button onClick={() => setShowBulkEmail(true)} disabled={!selectedClientIds.length} className="btn-secondary flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            <Mail className="w-4 h-4" /> Bulk Email{selectedClientIds.length ? ` (${selectedClientIds.length})` : ''}
+          </button>
+          <button onClick={() => setShowRequestAccess(true)} className="btn-secondary flex items-center gap-2 border-ori-200 text-ori-700 hover:bg-ori-50 text-sm">
             <Mail className="w-4 h-4" /> Request Access
           </button>
           <Link to={consultancyId ? `enroll?consultancyId=${consultancyId}` : 'enroll'} className="btn-primary flex items-center gap-2">
@@ -107,7 +188,7 @@ export default function Clients() {
         </div>
       </div>
       <div className="mt-6 flex flex-wrap gap-4">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input placeholder="Search by name, email, visa..." value={q} onChange={e => setQ(e.target.value)} className="input pl-10" />
         </div>
@@ -125,13 +206,16 @@ export default function Clients() {
           </div>
         )}
       </div>
-      <div className="card mt-6 overflow-hidden">
+      <div className="card mt-6 overflow-x-auto overflow-y-visible">
         {loading ? (
           <div className="p-6"><TableSkeleton rows={8} /></div>
         ) : (
-        <table className="w-full">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
+              <th className="text-left px-4 py-3 font-medium text-slate-700 w-10">
+                <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAllFiltered} />
+              </th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Name</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Email</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Visa</th>
@@ -143,6 +227,9 @@ export default function Clients() {
           <tbody>
             {filtered.map((c: any) => (
               <tr key={c._id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                <td className="px-4 py-3">
+                  <input type="checkbox" checked={selectedClientIds.includes(c._id)} onChange={() => toggleClientSelection(c._id)} />
+                </td>
                 <td className="px-4 py-3">
                   <Link to={consultancyId ? `/consultancy/clients/${c._id}?consultancyId=${consultancyId}` : `/consultancy/clients/${c._id}`} className="font-medium text-ori-600 hover:text-ori-700 hover:underline">
                     {c.profile?.firstName} {c.profile?.lastName}
@@ -200,6 +287,68 @@ export default function Clients() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulkEmail && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h2 className="font-bold text-slate-900 flex items-center gap-2"><Mail className="w-5 h-5 text-ori-600" /> Bulk Email Clients</h2>
+                <p className="text-sm text-slate-500 mt-1">Send individualized emails using merge fields to the selected clients.</p>
+              </div>
+              <button onClick={() => setShowBulkEmail(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="p-6 space-y-4 border-b lg:border-b-0 lg:border-r border-slate-100">
+                <div className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                  Sending to <span className="font-bold text-slate-900">{selectedClientIds.length}</span> selected client{selectedClientIds.length === 1 ? '' : 's'}.
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Subject</label>
+                  <input value={bulkEmail.subject} onChange={(e) => setBulkEmail((current) => ({ ...current, subject: e.target.value }))} className="input" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Body</label>
+                  <textarea value={bulkEmail.body} onChange={(e) => setBulkEmail((current) => ({ ...current, body: e.target.value }))} className="input min-h-[220px]" />
+                </div>
+                <div className="rounded-xl bg-indigo-50 p-4 text-sm text-indigo-700">
+                  <p className="font-semibold mb-2">Supported merge fields</p>
+                  <p>{'{{firstName}} {{lastName}} {{fullName}} {{email}} {{currentVisa}} {{targetVisa}} {{agentName}} {{consultancyName}}'}</p>
+                </div>
+                <div className="flex flex-wrap gap-3 justify-end">
+                  <button type="button" onClick={loadBulkPreview} disabled={previewLoading || !selectedClientIds.length} className="btn-secondary">
+                    {previewLoading ? 'Loading Preview...' : 'Preview'}
+                  </button>
+                  <button type="button" onClick={handleSendBulkEmail} disabled={sendLoading || !selectedClientIds.length} className="btn-primary">
+                    {sendLoading ? 'Sending...' : 'Send Bulk Email'}
+                  </button>
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50/70">
+                <h3 className="font-semibold text-slate-900 mb-4">Preview</h3>
+                {bulkPreview?.previewRecipients?.length ? (
+                  <div className="space-y-4">
+                    {bulkPreview.previewRecipients.map((recipient: any) => (
+                      <div key={recipient.clientId} className="rounded-xl border border-slate-200 bg-white p-4">
+                        <p className="text-xs uppercase font-bold tracking-widest text-slate-400">{recipient.name} • {recipient.email}</p>
+                        <p className="mt-3 text-sm font-semibold text-slate-900">{recipient.subject}</p>
+                        <div className="mt-3 text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{recipient.body}</div>
+                      </div>
+                    ))}
+                    {bulkPreview.totalRecipients > bulkPreview.previewRecipients.length && (
+                      <p className="text-xs font-medium text-slate-400">Showing {bulkPreview.previewRecipients.length} preview recipients out of {bulkPreview.totalRecipients} selected.</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-400">
+                    Generate a preview to see how merge fields render for selected clients.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

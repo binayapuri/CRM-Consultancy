@@ -1,47 +1,18 @@
 import express from 'express';
-import { authenticate } from '../middleware/auth.js';
-import Appointment from '../models/Appointment.js';
+import { authenticate } from '../shared/middleware/auth.js';
+import { validate } from '../shared/middleware/validate.js';
+import { asyncHandler } from '../shared/utils/asyncHandler.js';
+
+import { AppointmentController } from '../shared/controllers/appointment.controller.js';
+import * as schemas from '../shared/schemas/appointment.schema.js';
 
 const router = express.Router();
 
 // Get user appointments (student or agent)
-router.get('/', authenticate, async (req, res) => {
-  try {
-    const query = req.user.role === 'STUDENT' ? { studentId: req.user.id } : { agentId: req.user.id };
-    const appointments = await Appointment.find(query)
-      .populate('studentId', 'profile.firstName profile.lastName')
-      .populate('agentId', 'profile.firstName profile.lastName avatar')
-      .populate('consultancyId', 'name displayName logo');
-    res.json(appointments);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+router.get('/', authenticate, asyncHandler(AppointmentController.getUserAppointments));
 
 // Book an appointment (Student)
-router.post('/', authenticate, async (req, res) => {
-  try {
-    // Basic valid booking block, checks for overlaps could go here
-    const { agentId, consultancyId, startTime, topic, notes } = req.body;
-    const end = new Date(startTime);
-    end.setMinutes(end.getMinutes() + 30); // 30 min duration
-
-    const appointment = new Appointment({
-      studentId: req.user.id,
-      agentId,
-      consultancyId,
-      startTime,
-      endTime: end,
-      topic,
-      notes,
-      meetingLink: 'https://meet.google.com/new' // mock link
-    });
-    
-    await appointment.save();
-    res.status(201).json(appointment);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.post('/', authenticate, validate(schemas.createAppointmentSchema), asyncHandler(AppointmentController.bookAppointment));
+router.patch('/:id', authenticate, validate(schemas.updateAppointmentSchema), asyncHandler(AppointmentController.updateAppointment));
 
 export default router;

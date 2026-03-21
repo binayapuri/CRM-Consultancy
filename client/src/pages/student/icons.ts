@@ -42,6 +42,7 @@ import {
   Image,
   Shield,
   Circle,
+  Newspaper,
 } from 'lucide-react';
 
 export const STAGE_ICONS: Record<string, LucideIcon> = {
@@ -81,6 +82,7 @@ export const QUICK_TOOL_ICONS: Record<string, LucideIcon> = {
   jobs: Briefcase,
   compass: Bot,
   consultancies: Link,
+  news: Newspaper,
 };
 
 export const DOC_TYPE_ICONS: Record<string, LucideIcon> = {

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { GraduationCap, Building2, Calculator, Compass, Shield, Users, Send, ArrowRight } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { GraduationCap, Building2, Calculator, Compass, Shield, Users, Send, ArrowRight, Briefcase, BookOpen } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
+import { resolveFileUrl } from '../lib/imageUrl';
 import { getDashboardPathForRole } from '../lib/authHelpers';
 
 const INTERESTS = ['Student Visa (500)', 'Graduate Visa (485)', 'Skilled Migration (189/190/491)', 'Partner Visa', 'Visitor Visa', 'Other'];
@@ -54,6 +56,13 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-[#020617] selection:bg-emerald-500/30">
+      <Helmet>
+        <title>Big Few | Australian Migration CRM & Student Hub</title>
+        <meta name="description" content="Experience the future of Australian migration. Manage student visas, PR pathways, and consultancy operations seamlessly." />
+        <meta name="keywords" content="Australia, Visa, Student Visa, PR Pathways, Migration CRM, 189 Visa, 190 Visa, 485 Visa" />
+        <meta property="og:title" content="Big Few | Australian Migration CRM" />
+        <meta property="og:description" content="Manage student visas, PR pathways, and consultancy operations seamlessly." />
+      </Helmet>
       
       {/* Background Orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -77,6 +86,8 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#about" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Our Vision</a>
             <a href="#pathways" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Pathways</a>
+            <Link to="/jobs" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Jobs</Link>
+            <a href="#news" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">News</a>
             <a href="#enquiry" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Contact</a>
           </div>
           <div className="flex items-center gap-4">
@@ -86,7 +97,7 @@ export default function Landing() {
                 className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 border border-white/10 hover:bg-white/15 hover:border-white/20 transition-all"
               >
                 {user.profile?.avatar ? (
-                  <img src={user.profile.avatar} alt="" className="w-8 h-8 rounded-full object-cover border border-white/20" />
+                  <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-8 h-8 rounded-full object-cover border border-white/20" />
                 ) : (
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 bg-gradient-to-br from-emerald-500 to-teal-500">
                     {initials}
@@ -131,7 +142,7 @@ export default function Landing() {
               Students self-manage their documents and PR pathways using AI, while consultancies power their business with our state-of-the-art CRM.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-5 pt-4">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 pt-4">
               <Link to="/register" className="group relative flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-bold text-lg overflow-hidden transition-transform hover:scale-105 shadow-[0_0_40px_rgba(16,185,129,0.3)]">
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
                 <GraduationCap className="w-6 h-6 relative z-10" />
@@ -140,6 +151,14 @@ export default function Landing() {
               <Link to="/login" className="group flex items-center justify-center gap-3 px-8 py-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md text-white font-bold text-lg hover:bg-white/10 hover:border-white/20 transition-all">
                 <Building2 className="w-6 h-6 text-slate-300 group-hover:text-white transition-colors" />
                 <span>Consultancy Login</span>
+              </Link>
+              <Link to="/register-university" className="group flex items-center justify-center gap-3 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md text-white font-bold hover:bg-white/10 hover:border-white/20 transition-all">
+                <BookOpen className="w-5 h-5 text-slate-300 group-hover:text-white transition-colors" />
+                <span>University Partner</span>
+              </Link>
+              <Link to="/register-employer" className="group flex items-center justify-center gap-3 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md text-white font-bold hover:bg-white/10 hover:border-white/20 transition-all">
+                <Briefcase className="w-5 h-5 text-slate-300 group-hover:text-white transition-colors" />
+                <span>Employer / Recruiter</span>
               </Link>
             </div>
           </div>
@@ -326,6 +345,32 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Latest Jobs */}
+      <section id="jobs" className="py-20 relative z-10 px-6 lg:px-12 bg-white/5 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-4xl font-display font-black text-white">Latest Jobs</h2>
+            <Link to="/jobs" className="text-emerald-400 font-bold hover:text-emerald-300 transition-colors flex items-center gap-2">
+              View All Jobs <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <JobsSection />
+        </div>
+      </section>
+
+      {/* Latest News */}
+      <section id="news" className="py-20 relative z-10 px-6 lg:px-12 bg-white/5 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-4xl font-display font-black text-white">Latest News</h2>
+            <Link to="/news" className="text-emerald-400 font-bold hover:text-emerald-300 transition-colors flex items-center gap-2">
+              View All <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <NewsSection />
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-white/10 py-12 relative z-10 bg-black/50">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row justify-between items-center gap-6">
@@ -341,6 +386,86 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function JobsSection() {
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/jobs/public?limit=6')
+      .then(r => r.json())
+      .then(data => {
+        setJobs(Array.isArray(data) ? data.slice(0, 6) : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="text-center text-slate-400 py-10">Loading jobs...</div>;
+  if (!jobs.length) return <div className="text-center text-slate-400 py-10">No jobs posted yet. Check back soon.</div>;
+
+  const formatType = (t: string) => (t || '').replace('_', ' ');
+  return (
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {jobs.map(job => (
+        <Link key={job._id} to="/jobs" className="group block rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:bg-white/10 hover:border-emerald-500/30 transition-all">
+          <div className="p-6">
+            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3 block">{formatType(job.type)}</span>
+            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-emerald-300 transition-colors">{job.title}</h3>
+            <p className="text-slate-400 text-sm mb-2">{job.company}</p>
+            <p className="text-slate-500 text-sm line-clamp-2 mb-4">{job.location}</p>
+            <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/10">
+              <span className="text-xs text-slate-500">{job.salaryRange || 'Competitive'}</span>
+              <span className="text-xs font-bold text-emerald-400">View →</span>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function NewsSection() {
+  const [news, setNews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/news')
+      .then(r => r.json())
+      .then(data => {
+        setNews(Array.isArray(data) ? data.slice(0, 3) : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="text-center text-slate-400 py-10">Loading news...</div>;
+  if (!news.length) return <div className="text-center text-slate-400 py-10">No specific news updates at the moment.</div>;
+
+  return (
+    <div className="grid md:grid-cols-3 gap-6">
+      {news.map(article => (
+        <Link key={article._id} to={`/news/${article.slug}`} className="group block rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:bg-white/10 hover:border-emerald-500/30 transition-all">
+          {article.coverImage && (
+            <div className="h-48 overflow-hidden relative">
+              <img src={resolveFileUrl(article.coverImage)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            </div>
+          )}
+          <div className="p-6">
+            <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3">
+              {article.categoryId?.name || article.category || 'Update'}
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-emerald-300 transition-colors">{article.title}</h3>
+            <p className="text-slate-400 text-sm line-clamp-3 mb-4">{article.summary || article.content}</p>
+            <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/10">
+              <span className="text-xs text-slate-500">{new Date(article.publishedAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }

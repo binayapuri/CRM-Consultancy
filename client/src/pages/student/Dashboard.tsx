@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore, authFetch } from '../../store/auth';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, Star, Newspaper } from 'lucide-react';
+import { resolveFileUrl } from '../../lib/imageUrl';
 import { STAGE_ICONS, ACTION_ICONS, QUICK_TOOL_ICONS, Sparkles } from './icons';
 
 // ── Journey stages ──────────────────────────────────────────────────────────
@@ -62,7 +63,20 @@ const quickTools = [
   { to: 'jobs',          label: 'Job Board',     desc: 'Student & 485 visa friendly',    gradient: 'from-amber-500 to-orange-600' },
   { to: 'compass',       label: 'AI Compass',    desc: 'Ask anything about your visa',   gradient: 'from-rose-500 to-pink-600' },
   { to: 'consultancies', label: 'Find Agent',    desc: 'Verified MARN consultancies',    gradient: 'from-violet-500 to-indigo-600' },
+  { to: 'news',          label: 'News',          desc: 'Visa news & immigration updates', gradient: 'from-sky-500 to-blue-600' },
 ];
+
+// ── Latest news (type for dashboard cards) ─────────────────────────────────────
+interface DashboardArticle {
+  _id: string;
+  title: string;
+  slug: string;
+  summary?: string;
+  content?: string;
+  coverImage?: string;
+  publishedAt: string;
+  views: number;
+}
 
 // ── PR Points quick estimate ──────────────────────────────────────────────────
 function estimatePoints(profile: any): number {
@@ -81,16 +95,61 @@ function estimatePoints(profile: any): number {
   return pts;
 }
 
+function profileCompleteness(user: any, client: any): { percent: number; missing: string[] } {
+  const p = user?.profile || {};
+  const cp = client?.profile || {};
+  const c = client || {};
+  const checks = [
+    ['First name', p.firstName || cp.firstName],
+    ['Last name', p.lastName || cp.lastName],
+    ['Email', user?.email || p.email || cp.email],
+    ['Phone', p.phone || cp.phone],
+    ['Date of birth', p.dob || cp.dob],
+    ['Nationality', p.nationality || cp.nationality],
+    ['Passport', p.passportNumber || cp.passportNumber],
+    ['English test', c?.englishTest?.score || p.englishScore],
+    ['ANZSCO / Occupation', p.anzscoCode],
+    ['Education', (c?.education?.length || 0) > 0],
+  ];
+  const filled = checks.filter(([, v]) => v && v !== '');
+  const missing = checks.filter(([, v]) => !v || v === '').map(([l]) => l);
+  return { percent: Math.round((filled.length / checks.length) * 100), missing };
+}
+
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<any>(null);
+  const [client, setClient] = useState<any>(null);
   const [stage, setStage] = useState<string>(() => localStorage.getItem('student_journey_stage') || 'planning');
+  const [newsArticles, setNewsArticles] = useState<DashboardArticle[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  const [authUser, setAuthUser] = useState<any>(null);
 
   useEffect(() => {
-    authFetch('/api/auth/me')
-      .then(r => r.json())
-      .then(u => { setProfile(u?.profile || null); })
+    Promise.all([
+      authFetch('/api/auth/me').then(r => r.json()),
+      authFetch('/api/student/profile').then(r => r.json()),
+    ])
+      .then(([auth, prof]) => {
+        setAuthUser(auth);
+        setProfile(auth?.profile || auth || null);
+        setClient(prof?.client || null);
+      })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/news')
+      .then(res => res.json())
+      .then(data => {
+        setNewsArticles(Array.isArray(data) ? data : []);
+        setNewsLoading(false);
+      })
+      .catch(() => {
+        setNewsArticles([]);
+        setNewsLoading(false);
+      });
   }, []);
 
   const setAndSaveStage = (s: string) => {
@@ -98,18 +157,19 @@ export default function StudentDashboard() {
     localStorage.setItem('student_journey_stage', s);
   };
 
-  const firstname = profile?.firstName || user?.profile?.firstName || 'there';
-  const prPoints = estimatePoints(profile || user?.profile);
+  const firstname = profile?.firstName || user?.profile?.firstName || client?.profile?.firstName || 'there';
+  const prPoints = estimatePoints(profile || user?.profile || client?.profile);
   const currentStageObj = JOURNEY_STAGES.find(s => s.id === stage)!;
+  const { percent: profilePercent, missing: profileMissing } = profileCompleteness(authUser || user, client);
   const currentActions = STAGE_ACTIONS[stage] || [];
 
   const stageIndex = JOURNEY_STAGES.findIndex(s => s.id === stage);
 
   return (
-    <div className="space-y-8 animate-fade-in-up">
+    <div className="w-full min-w-0 max-w-full space-y-6 sm:space-y-8 animate-fade-in-up">
       {/* ────────── Hero Banner ────────── */}
       <div
-        className="relative overflow-hidden rounded-xl p-8 md:p-12"
+        className="relative overflow-hidden rounded-xl p-6 sm:p-8 md:p-12"
         style={{ background: 'linear-gradient(135deg, #0F0E2E 0%, #1a1560 50%, #0d2847 100%)' }}
       >
         {/* Glow orbs */}
@@ -147,14 +207,29 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          {/* PR Points badge */}
-          <div className="shrink-0 text-center p-6 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}>
-            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#10B981' }}>My PR Points</p>
-            <p className="text-6xl font-black text-white leading-none">{prPoints}</p>
-            <p className="text-xs mt-2" style={{ color: '#94A3B8' }}>Estimate · Complete profile for accuracy</p>
-            <Link to="../calculator" className="mt-3 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full transition hover:opacity-80" style={{ background: 'rgba(99,102,241,0.4)', color: '#C7D2FE' }}>
-              Full Calculator <ArrowRight className="w-3 h-3" />
-            </Link>
+          <div className="shrink-0 flex flex-col gap-4">
+            {/* Profile completeness */}
+            <div className="text-center p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#10B981' }}>Profile</p>
+              <div className="w-24 h-24 rounded-full mx-auto flex items-center justify-center font-black text-2xl text-white" style={{ background: profilePercent >= 80 ? 'linear-gradient(135deg,#10B981,#059669)' : profilePercent >= 50 ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'linear-gradient(135deg,#6366F1,#4F46E5)' }}>
+                {profilePercent}%
+              </div>
+              <p className="text-xs mt-2" style={{ color: '#94A3B8' }}>{profilePercent >= 80 ? 'Complete!' : profileMissing.slice(0, 2).join(', ')}</p>
+              {profilePercent < 100 && (
+                <Link to="../profile" className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-indigo-200 hover:underline">
+                  Complete profile <ArrowRight className="w-3 h-3" />
+                </Link>
+              )}
+            </div>
+            {/* PR Points badge */}
+            <div className="text-center p-6 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#10B981' }}>My PR Points</p>
+              <p className="text-6xl font-black text-white leading-none">{prPoints}</p>
+              <p className="text-xs mt-2" style={{ color: '#94A3B8' }}>Estimate · Complete profile for accuracy</p>
+              <Link to="../calculator" className="mt-3 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full transition hover:opacity-80" style={{ background: 'rgba(99,102,241,0.4)', color: '#C7D2FE' }}>
+                Full Calculator <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -256,7 +331,56 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* ────────── Tool Cards Grid ────────── */}
+      {/* ────────── Latest news ────────── */}
+      <div>
+        <h2 className="text-xl font-black text-slate-900 mb-4">Latest news</h2>
+        {newsLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-8 h-8 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin" />
+          </div>
+        ) : newsArticles.length === 0 ? (
+          <div className="bg-white rounded-xl p-6 shadow-sm" style={{ border: '1px solid #E8EDFB' }}>
+            <p className="text-sm text-slate-500 font-medium mb-3">No news yet.</p>
+            <Link to="/student/news" className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+              View all news <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {newsArticles.slice(0, 6).map((article) => (
+                <Link
+                  key={article._id}
+                  to={`/student/news/${article.slug}`}
+                  className="bg-white p-6 rounded-xl group transition-all hover:shadow-lg hover:-translate-y-1"
+                  style={{ border: '1px solid #E8EDFB' }}
+                >
+                  {article.coverImage ? (
+                    <div className="w-14 h-14 rounded-lg overflow-hidden mb-4 bg-slate-100 shrink-0">
+                      <img src={resolveFileUrl(article.coverImage)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                    </div>
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg flex items-center justify-center bg-gradient-to-br from-sky-500 to-blue-600 shadow-md mb-4 group-hover:scale-110 transition-transform text-white">
+                      <Newspaper className="w-7 h-7" aria-hidden />
+                    </div>
+                  )}
+                  <h3 className="font-black text-slate-900 text-lg mb-1 group-hover:text-indigo-600 transition-colors line-clamp-2">{article.title}</h3>
+                  <p className="text-sm text-slate-500 font-medium line-clamp-2">{article.summary || article.content || ''}</p>
+                </Link>
+              ))}
+            </div>
+            {(newsArticles.length > 6 || newsArticles.length > 0) && (
+              <div className="mt-4">
+                <Link to="/student/news" className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+                  View all {newsArticles.length > 6 ? `(${newsArticles.length} articles)` : 'news'} <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ────────── Everything you need ────────── */}
       <div>
         <h2 className="text-xl font-black text-slate-900 mb-4">Everything you need</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authFetch } from '../../store/auth';
-import { Search, ToggleLeft, ToggleRight, TrendingUp, Users, Building2, Award } from 'lucide-react';
+import { Search, ToggleLeft, ToggleRight, TrendingUp, Users, Building2, Award, GraduationCap, User, Plane, FileText, Briefcase, BarChart2, MousePointerClick } from 'lucide-react';
 
 export default function AdminStudentManager() {
   const [students, setStudents] = useState<any[]>([]);
@@ -58,7 +58,7 @@ export default function AdminStudentManager() {
   return (
     <div className="animate-fade-in-up space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-slate-900">👨‍🎓 Student Manager</h1>
+        <h1 className="text-3xl font-black text-slate-900 flex items-center gap-3"><GraduationCap className="w-8 h-8 text-indigo-600" /> Student Manager</h1>
         <p className="text-slate-500 font-medium mt-1">Full visibility of all students registered on the platform.</p>
       </div>
 
@@ -111,7 +111,7 @@ export default function AdminStudentManager() {
         <div className="lg:col-span-3">
           {!selected ? (
             <div className="bg-white rounded-3xl p-12 text-center" style={{ border: '1px solid #E8EDFB' }}>
-              <p className="text-5xl mb-4">👆</p>
+              <MousePointerClick className="w-12 h-12 text-slate-300 mx-auto mb-4" aria-hidden />
               <p className="font-bold text-slate-400">Select a student to view their details</p>
             </div>
           ) : (
@@ -139,7 +139,7 @@ export default function AdminStudentManager() {
               <div className="p-6 space-y-5 max-h-96 overflow-y-auto">
                 {/* Personal */}
                 {selected.client?.profile && (
-                  <Section title="👤 Personal Information">
+                  <Section title={<><User className="w-4 h-4 inline-block mr-1.5 align-middle" /> Personal Information</>}>
                     <Row label="Nationality" value={selected.client.profile.nationality} />
                     <Row label="DOB" value={selected.client.profile.dob ? new Date(selected.client.profile.dob).toLocaleDateString('en-AU') : ''} />
                     <Row label="Gender" value={selected.client.profile.gender} />
@@ -150,7 +150,7 @@ export default function AdminStudentManager() {
                 )}
                 {/* Immigration */}
                 {selected.client?.profile && (
-                  <Section title="🛂 Immigration">
+                  <Section title={<><Plane className="w-4 h-4 inline-block mr-1.5 align-middle" /> Immigration</>}>
                     <Row label="Current Visa" value={selected.client.profile.currentVisa} />
                     <Row label="Visa Expiry" value={selected.client.profile.visaExpiry ? new Date(selected.client.profile.visaExpiry).toLocaleDateString('en-AU') : ''} />
                     <Row label="Target Visa" value={selected.client.profile.targetVisa} />
@@ -159,7 +159,7 @@ export default function AdminStudentManager() {
                 )}
                 {/* English */}
                 {selected.client?.englishTest?.testType && (
-                  <Section title="📝 English Test">
+                  <Section title={<><FileText className="w-4 h-4 inline-block mr-1.5 align-middle" /> English Test</>}>
                     <Row label="Test" value={selected.client.englishTest.testType} />
                     <Row label="Overall" value={selected.client.englishTest.score} />
                     <Row label="Listening" value={selected.client.englishTest.listening} />
@@ -171,7 +171,7 @@ export default function AdminStudentManager() {
                 )}
                 {/* Education */}
                 {selected.client?.education?.length > 0 && (
-                  <Section title="🎓 Education">
+                  <Section title={<><GraduationCap className="w-4 h-4 inline-block mr-1.5 align-middle" /> Education</>}>
                     {selected.client.education.map((e: any) => (
                       <div key={e._id} className="p-3 rounded-xl bg-slate-50 text-sm">
                         <p className="font-bold text-slate-700">{e.qualification}</p>
@@ -182,7 +182,7 @@ export default function AdminStudentManager() {
                 )}
                 {/* Experience */}
                 {selected.client?.experience?.length > 0 && (
-                  <Section title="💼 Work History">
+                  <Section title={<><Briefcase className="w-4 h-4 inline-block mr-1.5 align-middle" /> Work History</>}>
                     {selected.client.experience.map((e: any) => (
                       <div key={e._id} className="p-3 rounded-xl bg-slate-50 text-sm">
                         <p className="font-bold text-slate-700">{e.role} @ {e.employer}</p>
@@ -193,7 +193,7 @@ export default function AdminStudentManager() {
                 )}
                 {/* Skills */}
                 {selected.client?.skillsData?.assessingBody && (
-                  <Section title="📊 Skills Assessment">
+                  <Section title={<><BarChart2 className="w-4 h-4 inline-block mr-1.5 align-middle" /> Skills Assessment</>}>
                     <Row label="Body" value={selected.client.skillsData.assessingBody} />
                     <Row label="Outcome" value={selected.client.skillsData.outcome} />
                     <Row label="EOI Status" value={selected.client.skillsData.eoiSubmitted} />
@@ -214,10 +214,10 @@ export default function AdminStudentManager() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">{title}</p>
+      <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center">{title}</p>
       <div className="grid grid-cols-2 gap-x-6 gap-y-1">{children}</div>
     </div>
   );

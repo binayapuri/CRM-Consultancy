@@ -1,13 +1,25 @@
 import { useEffect, useState } from 'react';
 import { authFetch } from '../../store/auth';
-import { Plus, UserCheck, Pencil, UserX } from 'lucide-react';
+import { useUiStore } from '../../store/ui';
+import { Plus, Pencil, UserX } from 'lucide-react';
+
+const emptyForm = () => ({
+  email: '',
+  password: 'test123',
+  role: 'STUDENT' as string,
+  profile: { firstName: '', lastName: '' },
+  consultancyId: '',
+  isActive: true,
+});
 
 export default function SuperUsers() {
   const [users, setUsers] = useState<any[]>([]);
   const [consultancies, setConsultancies] = useState<any[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ email: '', password: 'test123', role: 'STUDENT', profile: { firstName: '', lastName: '' }, consultancyId: '' } as any);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [form, setForm] = useState(emptyForm());
+  const [saving, setSaving] = useState(false);
+
+  const { openModal, closeModal, showToast, openConfirm, modal, setModalContentGetter, bumpModalContentKey } = useUiStore();
 
   const fetchUsers = () => authFetch('/api/users').then(r => r.json()).then(setUsers);
 
@@ -16,53 +28,185 @@ export default function SuperUsers() {
     authFetch('/api/consultancies').then(r => r.json()).then(setConsultancies);
   }, []);
 
-  const handleCreateTest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const payload: any = { ...form };
-      if (payload.consultancyId === '') delete payload.consultancyId;
-      const res = await authFetch('/api/users/test-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error((await res.json()).error);
-      setShowForm(false);
-      setForm({ email: '', password: 'test123', role: 'STUDENT', profile: { firstName: '', lastName: '' }, consultancyId: '' });
-      fetchUsers();
-    } catch (err: any) {
-      alert(err.message);
+  const getFormContent = () => (
+    <div className="space-y-4">
+      {!editingUser ? (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
+            <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="input w-full" required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Password *</label>
+            <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className="input w-full" required />
+          </div>
+        </>
+      ) : (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input type="email" value={editingUser.email} className="input w-full bg-slate-50" readOnly />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">New Password (leave blank to keep)</label>
+            <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className="input w-full" placeholder="••••••••" />
+          </div>
+        </>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <input value={form.profile.firstName} onChange={e => setForm(f => ({ ...f, profile: { ...f.profile, firstName: e.target.value } }))} className="input w-full" placeholder="First Name" />
+        <input value={form.profile.lastName} onChange={e => setForm(f => ({ ...f, profile: { ...f.profile, lastName: e.target.value } }))} className="input w-full" placeholder="Last Name" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+        <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className="input w-full">
+          <option value="STUDENT">Student</option>
+          <option value="AGENT">Agent</option>
+          <option value="MANAGER">Manager</option>
+          <option value="CONSULTANCY_ADMIN">Consultancy Admin</option>
+          <option value="UNIVERSITY_PARTNER">University Partner</option>
+          <option value="EMPLOYER">Employer</option>
+          <option value="RECRUITER">Recruiter</option>
+          <option value="INSURANCE_PARTNER">Insurance Partner</option>
+        </select>
+      </div>
+      {['AGENT', 'MANAGER', 'CONSULTANCY_ADMIN'].includes(form.role) && (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Consultancy</label>
+          <select value={form.consultancyId} onChange={e => setForm(f => ({ ...f, consultancyId: e.target.value }))} className="input w-full">
+            <option value="">{editingUser ? '—' : 'First consultancy'}</option>
+            {consultancies.map((c: any) => (
+              <option key={c._id} value={c._id}>{c.displayName || c.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+      {editingUser && (
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.isActive}
+            onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
+            className="w-5 h-5 rounded border-slate-300 text-ori-600 focus:ring-ori-500/50"
+          />
+          <span className="text-sm font-medium text-slate-700">Active (can login)</span>
+        </label>
+      )}
+      <div className="flex gap-2 pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={() => {
+            closeModal();
+            setEditingUser(null);
+            setForm(emptyForm());
+          }}
+          className="btn-secondary"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true);
+            try {
+              if (editingUser) {
+                const payload: any = { role: form.role, profile: { firstName: form.profile.firstName, lastName: form.profile.lastName, consultancyId: form.consultancyId || null }, isActive: form.isActive };
+                if (form.password) payload.password = form.password;
+                const res = await authFetch(`/api/users/${editingUser._id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload),
+                });
+                const data = res.ok ? null : await res.json().catch(() => ({}));
+                if (res.ok) {
+                  closeModal();
+                  setEditingUser(null);
+                  setForm(emptyForm());
+                  showToast('User updated', 'success');
+                  fetchUsers();
+                } else {
+                  showToast(data?.error || 'Update failed', 'error');
+                }
+              } else {
+                const payload: any = { ...form };
+                if (payload.consultancyId === '') delete payload.consultancyId;
+                const res = await authFetch('/api/users/test-account', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload),
+                });
+                const data = res.ok ? null : await res.json().catch(() => ({}));
+                if (res.ok) {
+                  closeModal();
+                  setForm(emptyForm());
+                  showToast('Test account created', 'success');
+                  fetchUsers();
+                } else {
+                  showToast(data?.error || 'Create failed', 'error');
+                }
+              }
+            } catch (err: any) {
+              showToast(err?.message || 'Request failed', 'error');
+            } finally {
+              setSaving(false);
+            }
+          }}
+          className="btn-primary disabled:opacity-50"
+        >
+          {editingUser ? (saving ? 'Saving...' : 'Save') : saving ? 'Creating...' : 'Create'}
+        </button>
+      </div>
+    </div>
+  );
+
+  useEffect(() => {
+    if (modal.open) {
+      setModalContentGetter(getFormContent);
+      bumpModalContentKey();
     }
+  }, [modal.open, form, saving, editingUser, consultancies, setModalContentGetter, bumpModalContentKey]);
+
+  const openAddModal = () => {
+    setEditingUser(null);
+    setForm(emptyForm());
+    openModal('Create Test Account', null);
   };
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editing) return;
-    try {
-      const payload: any = { role: form.role, profile: { firstName: form.profile.firstName, lastName: form.profile.lastName, consultancyId: form.consultancyId || null } };
-      if (form.password) payload.password = form.password;
-      const res = await authFetch(`/api/users/${editing._id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error((await res.json()).error);
-      setEditing(null);
-      fetchUsers();
-    } catch (err: any) {
-      alert(err.message);
-    }
+  const openEditModal = (u: any) => {
+    setEditingUser(u);
+    setForm({
+      email: u.email || '',
+      password: '',
+      role: u.role || 'STUDENT',
+      profile: { firstName: u.profile?.firstName || '', lastName: u.profile?.lastName || '' },
+      consultancyId: u.profile?.consultancyId?._id || u.profile?.consultancyId || '',
+      isActive: u.isActive !== false,
+    });
+    openModal('Edit User', null);
   };
 
-  const handleDeactivate = async (u: any) => {
-    if (!confirm(`Deactivate ${u.email}? They will not be able to login.`)) return;
-    try {
-      const res = await authFetch(`/api/users/${u._id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error((await res.json()).error);
-      fetchUsers();
-    } catch (err: any) {
-      alert(err.message);
-    }
+  const handleDeactivate = (u: any) => {
+    openConfirm({
+      title: 'Deactivate User',
+      message: `Deactivate ${u.email}? They will not be able to login.`,
+      confirmLabel: 'Deactivate',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await authFetch(`/api/users/${u._id}`, { method: 'DELETE' });
+          const data = res.ok ? null : await res.json().catch(() => ({}));
+          if (res.ok) {
+            showToast('User deactivated', 'success');
+            fetchUsers();
+          } else {
+            showToast(data?.error || 'Deactivate failed', 'error');
+          }
+        } catch (err: any) {
+          showToast(err?.message || 'Request failed', 'error');
+        }
+      },
+    });
   };
 
   return (
@@ -72,46 +216,8 @@ export default function SuperUsers() {
           <h1 className="text-2xl font-display font-bold text-slate-900">Users</h1>
           <p className="text-slate-500 mt-1">All platform users. Create test accounts, edit roles, assign consultancies.</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2"><Plus className="w-4 h-4" /> Create Test Account</button>
+        <button onClick={openAddModal} className="btn-primary flex items-center gap-2"><Plus className="w-4 h-4" /> Create Test Account</button>
       </div>
-
-      {showForm && (
-        <div className="card mt-6 max-w-md">
-          <h2 className="font-display font-semibold mb-4 flex items-center gap-2"><UserCheck className="w-5 h-5 text-ori-600" /> Create Test Account</h2>
-          <form onSubmit={handleCreateTest} className="space-y-4">
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Email *</label><input type="email" value={form.email} onChange={e => setForm((f: any) => ({ ...f, email: e.target.value }))} className="input" required /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Password *</label><input type="password" value={form.password} onChange={e => setForm((f: any) => ({ ...f, password: e.target.value }))} className="input" required /></div>
-            <div className="grid grid-cols-2 gap-2">
-              <input value={form.profile.firstName} onChange={e => setForm((f: any) => ({ ...f, profile: { ...f.profile, firstName: e.target.value } }))} className="input" placeholder="First Name" />
-              <input value={form.profile.lastName} onChange={e => setForm((f: any) => ({ ...f, profile: { ...f.profile, lastName: e.target.value } }))} className="input" placeholder="Last Name" />
-            </div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Role</label><select value={form.role} onChange={e => setForm((f: any) => ({ ...f, role: e.target.value }))} className="input"><option value="STUDENT">Student</option><option value="AGENT">Agent</option><option value="MANAGER">Manager</option><option value="CONSULTANCY_ADMIN">Consultancy Admin</option></select></div>
-            {['AGENT', 'MANAGER', 'CONSULTANCY_ADMIN'].includes(form.role) && (
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Consultancy</label><select value={form.consultancyId} onChange={e => setForm((f: any) => ({ ...f, consultancyId: e.target.value }))} className="input"><option value="">First consultancy</option>{consultancies.map((c: any) => <option key={c._id} value={c._id}>{c.displayName || c.name}</option>)}</select></div>
-            )}
-            <div className="flex gap-2"><button type="submit" className="btn-primary">Create</button><button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button></div>
-          </form>
-        </div>
-      )}
-
-      {editing && (
-        <div className="card mt-6 max-w-md border-2 border-ori-200">
-          <h2 className="font-display font-semibold mb-4 flex items-center gap-2"><Pencil className="w-5 h-5 text-ori-600" /> Edit User</h2>
-          <form onSubmit={handleUpdate} className="space-y-4">
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Email</label><input type="email" value={editing.email} className="input bg-slate-50" readOnly /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">New Password (leave blank to keep)</label><input type="password" value={form.password} onChange={e => setForm((f: any) => ({ ...f, password: e.target.value }))} className="input" placeholder="••••••••" /></div>
-            <div className="grid grid-cols-2 gap-2">
-              <input value={form.profile.firstName} onChange={e => setForm((f: any) => ({ ...f, profile: { ...f.profile, firstName: e.target.value } }))} className="input" placeholder="First Name" />
-              <input value={form.profile.lastName} onChange={e => setForm((f: any) => ({ ...f, profile: { ...f.profile, lastName: e.target.value } }))} className="input" placeholder="Last Name" />
-            </div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Role</label><select value={form.role} onChange={e => setForm((f: any) => ({ ...f, role: e.target.value }))} className="input"><option value="STUDENT">Student</option><option value="AGENT">Agent</option><option value="MANAGER">Manager</option><option value="CONSULTANCY_ADMIN">Consultancy Admin</option></select></div>
-            {['AGENT', 'MANAGER', 'CONSULTANCY_ADMIN'].includes(form.role) && (
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Consultancy</label><select value={form.consultancyId} onChange={e => setForm((f: any) => ({ ...f, consultancyId: e.target.value }))} className="input"><option value="">—</option>{consultancies.map((c: any) => <option key={c._id} value={c._id}>{c.displayName || c.name}</option>)}</select></div>
-            )}
-            <div className="flex gap-2"><button type="submit" className="btn-primary">Save</button><button type="button" onClick={() => setEditing(null)} className="btn-secondary">Cancel</button></div>
-          </form>
-        </div>
-      )}
 
       <div className="card mt-6 overflow-hidden">
         <table className="w-full">
@@ -138,7 +244,7 @@ export default function SuperUsers() {
                   {!u.isActive ? <span className="text-xs text-red-600">Inactive</span> : u.isTestAccount ? <span className="text-xs text-ori-600">Test</span> : '—'}
                 </td>
                 <td className="px-4 py-3 flex gap-1">
-                  <button onClick={() => { setEditing(u); setForm({ ...form, role: u.role, profile: { firstName: u.profile?.firstName || '', lastName: u.profile?.lastName || '' }, consultancyId: u.profile?.consultancyId?._id || u.profile?.consultancyId || '' }); }} className="p-2 text-ori-600 hover:bg-ori-50 rounded" title="Edit"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => openEditModal(u)} className="p-2 text-ori-600 hover:bg-ori-50 rounded" title="Edit"><Pencil className="w-4 h-4" /></button>
                   {u.role !== 'SUPER_ADMIN' && u.isActive !== false && (
                     <button onClick={() => handleDeactivate(u)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Deactivate"><UserX className="w-4 h-4" /></button>
                   )}

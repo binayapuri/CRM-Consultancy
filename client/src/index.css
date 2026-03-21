@@ -56,3 +56,21 @@ body {
 .toast-animate-in {
   animation: toast-slide-in 0.3s ease-out both;
 }
+
+/* Hide scrollbar for horizontal tab scroll on mobile */
+.scrollbar-hide::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide,
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Horizontal tab strips: reliable swipe + momentum on mobile */
+.student-tabs-x-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}

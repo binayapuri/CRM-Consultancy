@@ -13,6 +13,8 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Activate from './pages/auth/Activate';
 import RegisterConsultancy from './pages/auth/RegisterConsultancy';
+import RegisterUniversity from './pages/auth/RegisterUniversity';
+import RegisterEmployer from './pages/auth/RegisterEmployer';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import AuthCallback from './pages/auth/AuthCallback';
@@ -24,10 +26,12 @@ import Clients from './pages/consultancy/Clients';
 import ClientDetail from './pages/consultancy/ClientDetail';
 import Documents from './pages/consultancy/Documents';
 import Leads from './pages/consultancy/Leads';
+import ConsultancyCalendarView from './pages/consultancy/CalendarView';
 import DailyTasks from './pages/consultancy/DailyTasks';
 import Colleges from './pages/consultancy/Colleges';
 import OSHC from './pages/consultancy/OSHC';
 import TrustLedger from './pages/consultancy/TrustLedger';
+import ConsultancyBilling from './pages/consultancy/Billing';
 import Sponsors from './pages/consultancy/Sponsors';
 import ConsultancyProfile from './pages/consultancy/Profile';
 import ConsultancySettings from './pages/consultancy/Settings';
@@ -39,6 +43,7 @@ import Attendance from './pages/consultancy/Attendance';
 import LeadForm from './pages/consultancy/LeadForm';
 import LeadDetail from './pages/consultancy/LeadDetail';
 import ClientEdit from './pages/consultancy/ClientEdit';
+import UniversityRequests from './pages/consultancy/UniversityRequests';
 
 // Student pages
 import StudentDashboard from './pages/student/Dashboard';
@@ -56,9 +61,13 @@ import CVGenerator from './pages/student/CVGenerator';
 import StudentApplications from './pages/student/Applications';
 import StudentTasks from './pages/student/Tasks';
 import Community from './pages/student/Community';
+import CommunityPostDetail from './pages/student/CommunityPostDetail';
+import Messages from './pages/student/Messages';
 import Jobs from './pages/student/Jobs';
 import News from './pages/student/News';
+import NewsDetail from './pages/student/NewsDetail';
 import Bookings from './pages/student/Bookings';
+import InvoicesPage from './pages/student/Invoices';
 
 // Super Admin
 import SuperDashboard from './pages/super/Dashboard';
@@ -68,11 +77,19 @@ import ConsultancyForm from './pages/super/ConsultancyForm';
 import SuperUsers from './pages/super/Users';
 import SuperTraceHistory from './pages/super/TraceHistory';
 import Verifications from './pages/super/Verifications';
+import SuperEmployers from './pages/super/Employers';
 import Universities from './pages/super/Universities';
+import UniversityDetail from './pages/super/UniversityDetail';
+import UniversityEdit from './pages/super/UniversityEdit';
+import UniversityRequestsAdmin from './pages/super/UniversityRequests';
+import AdminAdvancedSettings from './pages/super/AdminAdvancedSettings';
+import AdminNewsManager from './pages/super/AdminNewsManager';
+import AdminNewsForm from './pages/super/AdminNewsForm';
 import AdminStudentManager from './pages/super-admin/StudentManager';
 
 // Partner
 import UniversityApplications from './pages/partner/UniversityApplications';
+import UniversityProfile from './pages/partner/UniversityProfile';
 import InsuranceDashboard from './pages/partner/InsuranceDashboard';
 import EmployerDashboard from './pages/partner/EmployerDashboard';
 
@@ -84,6 +101,9 @@ import SponsorCompanyInfo from './pages/sponsor/CompanyInfo';
 
 // Landing
 import Landing from './pages/Landing';
+import PublicNews from './pages/public/PublicNews';
+import PublicNewsDetail from './pages/public/PublicNewsDetail';
+import PublicJobs from './pages/public/PublicJobs';
 
 // Global UI
 import { ToastContainer, Modal, ConfirmDialog } from './components/ui';
@@ -91,8 +111,22 @@ import { ToastContainer, Modal, ConfirmDialog } from './components/ui';
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles: string[] }) {
   const { user, token } = useAuthStore();
   if (!token || !user) return <Navigate to="/login" replace />;
-  if (roles.length && !roles.includes(user.role)) return <Navigate to="/" replace />;
+  if (roles.length && !roles.includes(user.role)) return <Navigate to={getDashboardPathForRole(user.role)} replace />;
   return <>{children}</>;
+}
+
+function PartnerHomeRedirect() {
+  const { user } = useAuthStore();
+  const role = user?.role || '';
+  const to =
+    role === 'EMPLOYER' || role === 'RECRUITER'
+      ? '/partner/jobs'
+      : role === 'INSURANCE_PARTNER'
+      ? '/partner/insurance'
+      : role === 'UNIVERSITY_PARTNER'
+      ? '/partner/profile'
+      : '/partner/applications';
+  return <Navigate to={to} replace />;
 }
 
 function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
@@ -109,12 +143,17 @@ export default function App() {
       <ConfirmDialog />
       <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/news" element={<PublicNews />} />
+      <Route path="/news/:slug" element={<PublicNewsDetail />} />
+      <Route path="/jobs" element={<PublicJobs />} />
       <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
       <Route path="/forgot-password" element={<GuestOnlyRoute><ForgotPassword /></GuestOnlyRoute>} />
       <Route path="/reset-password" element={<GuestOnlyRoute><ResetPassword /></GuestOnlyRoute>} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
       <Route path="/register-consultancy" element={<GuestOnlyRoute><RegisterConsultancy /></GuestOnlyRoute>} />
+      <Route path="/register-university" element={<GuestOnlyRoute><RegisterUniversity /></GuestOnlyRoute>} />
+      <Route path="/register-employer" element={<GuestOnlyRoute><RegisterEmployer /></GuestOnlyRoute>} />
       <Route path="/activate" element={<GuestOnlyRoute><Activate /></GuestOnlyRoute>} />
 
       <Route path="/consultancy" element={<ProtectedRoute roles={['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPER_ADMIN']}><ConsultancyLayout /></ProtectedRoute>}>
@@ -131,6 +170,7 @@ export default function App() {
         <Route path="documents" element={<Documents />} />
         <Route path="templates" element={<Navigate to="documents" replace />} />
         <Route path="leads" element={<Leads />} />
+        <Route path="calendar" element={<ConsultancyCalendarView />} />
         <Route path="leads/add" element={<LeadForm />} />
         <Route path="leads/:id/edit" element={<LeadForm />} />
         <Route path="leads/:id" element={<LeadDetail />} />
@@ -139,7 +179,9 @@ export default function App() {
         <Route path="colleges" element={<Colleges />} />
         <Route path="oshc" element={<OSHC />} />
         <Route path="trust" element={<TrustLedger />} />
+        <Route path="billing" element={<ConsultancyBilling />} />
         <Route path="sponsors" element={<Sponsors />} />
+        <Route path="university-requests" element={<UniversityRequests />} />
         <Route path="profile" element={<ConsultancyProfile />} />
         <Route path="settings" element={<ConsultancySettings />} />
       </Route>
@@ -151,11 +193,15 @@ export default function App() {
         <Route path="applications" element={<StudentApplications />} />
         <Route path="tasks" element={<StudentTasks />} />
         <Route path="documents" element={<StudentDocuments />} />
+        <Route path="invoices" element={<InvoicesPage />} />
         <Route path="calculator" element={<PRCalculator />} />
         <Route path="compass" element={<MigrationCompass />} />
         <Route path="community" element={<Community />} />
+        <Route path="community/:id" element={<CommunityPostDetail />} />
+        <Route path="messages" element={<Messages />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="news" element={<News />} />
+        <Route path="news/:slug" element={<NewsDetail />} />
         <Route path="bookings" element={<Bookings />} />
         <Route path="offer-letters" element={<OfferLetters />} />
         <Route path="insurance" element={<StudentInsurance />} />
@@ -174,9 +220,10 @@ export default function App() {
         <Route path="company" element={<SponsorCompanyInfo />} />
       </Route>
 
-      <Route path="/partner" element={<ProtectedRoute roles={['UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER']}><PartnerLayout /></ProtectedRoute>}>
-        <Route index element={<Navigate to="applications" replace />} />
-        <Route path="dashboard" element={<Navigate to="applications" replace />} />
+      <Route path="/partner" element={<ProtectedRoute roles={['UNIVERSITY_PARTNER', 'INSURANCE_PARTNER', 'EMPLOYER', 'RECRUITER']}><PartnerLayout /></ProtectedRoute>}>
+        <Route index element={<PartnerHomeRedirect />} />
+        <Route path="dashboard" element={<PartnerHomeRedirect />} />
+        <Route path="profile" element={<UniversityProfile />} />
         <Route path="applications" element={<UniversityApplications />} />
         <Route path="insurance" element={<InsuranceDashboard />} />
         <Route path="jobs" element={<EmployerDashboard />} />
@@ -192,8 +239,16 @@ export default function App() {
         <Route path="users" element={<SuperUsers />} />
         <Route path="trace-history" element={<SuperTraceHistory />} />
         <Route path="verifications" element={<Verifications />} />
+        <Route path="employers" element={<SuperEmployers />} />
         <Route path="universities" element={<Universities />} />
+        <Route path="universities/:id/edit" element={<UniversityEdit />} />
+        <Route path="universities/:id" element={<UniversityDetail />} />
+        <Route path="university-requests" element={<UniversityRequestsAdmin />} />
         <Route path="students" element={<AdminStudentManager />} />
+        <Route path="news" element={<AdminNewsManager />} />
+        <Route path="news/add" element={<AdminNewsForm />} />
+        <Route path="news/:id/edit" element={<AdminNewsForm />} />
+        <Route path="settings" element={<AdminAdvancedSettings />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

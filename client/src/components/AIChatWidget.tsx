@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, Minimize2, Maximize2, Loader2 } from 'lucide-react';
+import { useAuthStore } from '../store/auth';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -35,15 +36,18 @@ export default function AIChatWidget() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/ai/compass', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ message: userMessage })
-      });
+      const token = useAuthStore.getState().token;
+      const res = await fetch(
+        (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:4000' : '')) + '/api/ai/compass',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ message: userMessage })
+        }
+      );
 
       const data = await res.json();
       
@@ -64,7 +68,7 @@ export default function AIChatWidget() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-emerald-500 to-sky-500 flex items-center justify-center text-white shadow-xl shadow-emerald-500/30 hover:scale-110 active:scale-95 transition-all z-50 group"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-emerald-500 to-sky-500 flex items-center justify-center text-white shadow-xl shadow-emerald-500/30 hover:scale-110 active:scale-95 transition-all z-50 group"
       >
         <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
         <Bot className="w-7 h-7 group-hover:animate-bounce" />
@@ -74,7 +78,11 @@ export default function AIChatWidget() {
 
   return (
     <div 
-      className={`fixed bottom-6 right-6 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 z-50 ${isExpanded ? 'w-[calc(100vw-3rem)] md:w-[600px] h-[calc(100vh-3rem)] max-h-[800px]' : 'w-[380px] h-[600px]'}`}
+      className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 z-50 ${
+        isExpanded
+          ? 'w-[calc(100vw-2rem)] sm:w-[calc(100vw-3rem)] md:w-[600px] h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] max-h-[800px]'
+          : 'w-[calc(100vw-2rem)] sm:w-[380px] h-[min(70vh,520px)] sm:h-[600px]'
+      }`}
     >
       {/* Header */}
       <div className="bg-gradient-to-r from-emerald-600 to-sky-600 p-4 flex items-center justify-between text-white relative overflow-hidden shrink-0">

@@ -29,10 +29,10 @@ export const FamilyInfo: React.FC<FamilyInfoProps> = ({ items, onAdd, onDelete }
       <div className="space-y-6">
         <div className="space-y-4">
           {items.map((item) => (
-            <div key={item._id} className="relative group bg-slate-50/50 p-5 rounded-lg border border-slate-100 hover:border-indigo-100 transition-all">
-              <div className="flex justify-between items-start">
+            <div key={item._id} className="relative group bg-slate-50/50 p-4 sm:p-5 rounded-lg border border-slate-100 hover:border-indigo-100 transition-all">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h4 className="font-black text-slate-800 text-base">{item.firstName} {item.lastName}</h4>
                     <span className="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{item.relationship}</span>
                   </div>
@@ -41,14 +41,14 @@ export const FamilyInfo: React.FC<FamilyInfoProps> = ({ items, onAdd, onDelete }
                     <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {item.nationality}</span>
                     <span className="flex items-center gap-1"><FileCheck className="w-3.5 h-3.5" /> {item.passportNumber || 'No Passport'}</span>
                   </div>
-                  <div className="mt-3 flex items-center gap-4">
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
                      <span className={`flex items-center gap-1.5 text-xs font-black ${item.includedInApplication ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-100'} px-3 py-1 rounded-xl`}>
                        {item.includedInApplication ? <><CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden /> Included in Application</> : <><Circle className="w-3.5 h-3.5 shrink-0" aria-hidden /> Not Included</>}
                      </span>
                      {item.visaStatus && <span className="text-xs font-bold text-slate-500 italic">Visa: {item.visaStatus}</span>}
                   </div>
                 </div>
-                <button onClick={() => onDelete(item._id)} className="p-2 text-slate-300 hover:text-red-500 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => onDelete(item._id)} className="self-end sm:self-auto p-2 text-slate-400 hover:text-red-500 rounded-xl transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
           ))}
@@ -74,7 +74,7 @@ export const FamilyInfo: React.FC<FamilyInfoProps> = ({ items, onAdd, onDelete }
                <label className="flex items-center gap-2 cursor-pointer group"><input type="checkbox" checked={newEntry.includedInApplication} onChange={e => setNewEntry({...newEntry, includedInApplication: e.target.checked})} className="w-4 h-4 rounded accent-emerald-500" /><span className="text-sm font-bold text-slate-600 group-hover:text-slate-800">Included in the visa application?</span></label>
             </div>
             <F label="Additional Notes"><TA value={newEntry.notes} onChange={e => setNewEntry({...newEntry, notes: e.target.value})} /></F>
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
               <button onClick={() => setShowAddForm(false)} className={btnCancel} disabled={isSaving}>Cancel</button>
               <button onClick={handleAdd} className={btnPrimary} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Member'}</button>
             </div>

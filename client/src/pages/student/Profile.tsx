@@ -138,45 +138,48 @@ export default function StudentProfile() {
   );
 
   return (
-    <div className="w-full pb-20 animate-in fade-in duration-500">
+    <div className="w-full min-w-0 max-w-full pb-20 animate-in fade-in duration-500">
       {errorBanner && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-800">
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 sm:px-5 py-4 text-sm font-bold text-red-800">
           {errorBanner}
         </div>
       )}
 
       {/* Header */}
-      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-5xl font-black text-slate-900 tracking-tight mb-2">My Profile</h1>
-          <p className="text-slate-500 font-bold max-w-lg">Manage your migration journey details. This is your "source of truth"—everything here helps your agent and AI Compass work for you.</p>
+      <div className="mb-6 sm:mb-8">
+        <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 mb-2 flex items-center gap-2">
+          <User className="w-3.5 h-3.5" /> Student Portal
         </div>
-        <div className="flex items-center gap-4 bg-white p-2 rounded-xl border border-slate-200">
-          <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-xl border border-indigo-100 uppercase">
-             {profile.firstName?.[0]}{profile.lastName?.[0]}
-          </div>
-          <div className="pr-4">
-            <p className="font-black text-slate-800 leading-none mb-1">{profile.firstName} {profile.lastName}</p>
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Student Portal Profile</p>
-          </div>
-        </div>
+        <h1 className="text-2xl sm:text-3xl font-display font-black text-slate-900 tracking-tight mb-2">My Profile</h1>
+        <p className="text-slate-500 text-sm font-medium max-w-none break-words">
+          Manage your migration journey details. This is your <span className="text-indigo-600 font-bold">"source of truth"</span>—everything here helps your agent and AI Compass work for you.
+        </p>
       </div>
 
-      {/* Modern Navigation Tabs */}
-      <StudentSectionTabs tabs={TABS} activeId={tab} onChange={setTab} />
-
-      {/* Main Content Area */}
-      <div className="animate-in slide-in-from-bottom-4 duration-500">
-        {tab === 'personal' && <PersonalInfo data={profile} onSave={wrapSave('/api/student/profile')} />}
-        {tab === 'immigration' && <ImmigrationInfo profile={profile} english={english} onSaveImmigration={wrapSave('/api/student/immigration')} onSaveEnglish={wrapSave('/api/student/english-test')} />}
-        {tab === 'address' && <AddressInfo current={address.current} previous={address.previous} onSaveCurrent={wrapSave('/api/student/addresses/current')} onAddPrevious={wrapSave('/api/student/addresses', 'POST')} onDeletePrevious={id => wrapSave(`/api/student/addresses/${id}`, 'DELETE')({})} />}
-        {tab === 'education' && <EducationInfo items={education} onAdd={wrapSave('/api/student/education', 'POST')} onDelete={id => wrapSave(`/api/student/education/${id}`, 'DELETE')({})} />}
-        {tab === 'experience' && <WorkInfo items={experience} onAdd={wrapSave('/api/student/experience', 'POST')} onDelete={id => wrapSave(`/api/student/experience/${id}`, 'DELETE')({})} />}
-        {tab === 'travel' && <TravelInfo items={travel} onAdd={wrapSave('/api/student/travel-history', 'POST')} onDelete={id => wrapSave(`/api/student/travel-history/${id}`, 'DELETE')({})} />}
-        {tab === 'family' && <FamilyInfo items={family} onAdd={wrapSave('/api/student/family-members', 'POST')} onDelete={id => wrapSave(`/api/student/family-members/${id}`, 'DELETE')({})} />}
-        {tab === 'skills' && <SkillsInfo data={skills} onSave={wrapSave('/api/student/skills')} />}
-        {tab === 'health' && <HealthInfo data={health} onSave={wrapSave('/api/student/health')} />}
-        {tab === 'notes' && <NotesInfo notes={notes} statement={statement} onSaveStatement={txt => wrapSave('/api/student/profile/statement')({ initialStatement: txt })} onAddNote={wrapSave('/api/student/notes', 'POST')} onUpdateNote={(id, data) => wrapSave(`/api/student/notes/${id}`)(data)} onDeleteNote={id => wrapSave(`/api/student/notes/${id}`, 'DELETE')({})} onTogglePin={(id, isPinned) => wrapSave(`/api/student/notes/${id}`)({ isPinned })} />}
+      {/* Tabs: horizontal / picker below lg; vertical rail on the right for desktop */}
+      <div className="flex flex-col lg:flex-row lg:items-start lg:gap-8 xl:gap-10 w-full min-w-0">
+        <div className="flex-1 min-w-0 order-2 lg:order-1">
+          <div className="animate-in slide-in-from-bottom-4 duration-500">
+            {tab === 'personal' && <PersonalInfo data={profile} onSave={wrapSave('/api/student/profile')} />}
+            {tab === 'immigration' && <ImmigrationInfo profile={profile} english={english} onSaveImmigration={wrapSave('/api/student/immigration')} onSaveEnglish={wrapSave('/api/student/english-test')} />}
+            {tab === 'address' && <AddressInfo current={address.current} previous={address.previous} onSaveCurrent={wrapSave('/api/student/addresses/current')} onAddPrevious={wrapSave('/api/student/addresses', 'POST')} onDeletePrevious={id => wrapSave(`/api/student/addresses/${id}`, 'DELETE')({})} />}
+            {tab === 'education' && <EducationInfo items={education} onAdd={wrapSave('/api/student/education', 'POST')} onDelete={id => wrapSave(`/api/student/education/${id}`, 'DELETE')({})} />}
+            {tab === 'experience' && <WorkInfo items={experience} onAdd={wrapSave('/api/student/experience', 'POST')} onDelete={id => wrapSave(`/api/student/experience/${id}`, 'DELETE')({})} />}
+            {tab === 'travel' && <TravelInfo items={travel} onAdd={wrapSave('/api/student/travel-history', 'POST')} onDelete={id => wrapSave(`/api/student/travel-history/${id}`, 'DELETE')({})} />}
+            {tab === 'family' && <FamilyInfo items={family} onAdd={wrapSave('/api/student/family-members', 'POST')} onDelete={id => wrapSave(`/api/student/family-members/${id}`, 'DELETE')({})} />}
+            {tab === 'skills' && <SkillsInfo data={skills} onSave={wrapSave('/api/student/skills')} />}
+            {tab === 'health' && <HealthInfo data={health} onSave={wrapSave('/api/student/health')} />}
+            {tab === 'notes' && <NotesInfo notes={notes} statement={statement} onSaveStatement={txt => wrapSave('/api/student/profile/statement')({ initialStatement: txt })} onAddNote={wrapSave('/api/student/notes', 'POST')} onUpdateNote={(id, data) => wrapSave(`/api/student/notes/${id}`)(data)} onDeleteNote={id => wrapSave(`/api/student/notes/${id}`, 'DELETE')({})} onTogglePin={(id, isPinned) => wrapSave(`/api/student/notes/${id}`)({ isPinned })} />}
+          </div>
+        </div>
+        <aside className="order-1 lg:order-2 w-full lg:w-56 xl:w-60 shrink-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto pb-2 lg:pb-0">
+          <div className="lg:hidden">
+            <StudentSectionTabs tabs={TABS} activeId={tab} onChange={setTab} mobilePicker />
+          </div>
+          <div className="hidden lg:block rounded-xl border border-slate-200/80 bg-white/90 p-3 shadow-sm backdrop-blur-sm">
+            <StudentSectionTabs tabs={TABS} activeId={tab} onChange={setTab} variant="vertical" />
+          </div>
+        </aside>
       </div>
     </div>
   );
