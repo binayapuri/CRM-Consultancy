@@ -189,13 +189,14 @@ export default function StudentLayout() {
 
       {/* Main: topbar + full-width content */}
       <div className={`flex-1 flex flex-col min-h-screen transition-[margin-left] duration-200 ease-in-out ml-0 min-w-0 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 min-w-0 flex-1 basis-full sm:basis-auto order-2 sm:order-1">
-            <button type="button" onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Open menu">
-              <Menu className="w-5 h-5" />
-            </button>
-            <div className="flex-1 max-w-full sm:max-w-md flex items-center gap-2 min-w-0">
-              <SearchIcon className="w-5 h-5 text-slate-400 shrink-0 hidden sm:block" />
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 flex-nowrap min-h-[3.25rem]">
+          <button type="button" onClick={() => setMobileMenuOpen(true)} className="lg:hidden shrink-0 p-2 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Open menu">
+            <Menu className="w-5 h-5" />
+          </button>
+          {/* Single toolbar row, grouped on the right (prevents wrap duplication on mid-width viewports) */}
+          <div className="flex flex-1 min-w-0 justify-end items-center gap-2 sm:gap-3 flex-nowrap">
+            <div className="flex items-center gap-2 min-w-0 max-w-[min(100%,20rem)] sm:max-w-xs md:max-w-md">
+              <SearchIcon className="w-5 h-5 text-slate-400 shrink-0 hidden sm:block" aria-hidden />
               <input
                 type="search"
                 placeholder="Search…"
@@ -270,7 +271,7 @@ export default function StudentLayout() {
           </div>
           <div className="flex items-center gap-2 sm:gap-4 ml-auto">
             <Notifications />
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
