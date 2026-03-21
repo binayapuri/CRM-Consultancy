@@ -116,7 +116,7 @@ export default function OfferLetters() {
                     ) : (
                       <button 
                         onClick={() => applyForCourse(course._id)}
-                        className="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-sm shadow-emerald-500/20 active:scale-95 whitespace-nowrap"
+                        className="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-sm shadow-emerald-500/20 active:scale-95"
                       >
                         Apply Now
                       </button>

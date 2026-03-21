@@ -1167,7 +1167,7 @@ export default function InvoicesPage() {
                 )}
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-slate-200 flex flex-wrap justify-between gap-2 bg-white sticky bottom-0">
+            <div className="px-5 py-4 border-t border-slate-200 flex flex-wrap justify-between gap-2 bg-white sticky bottom-0 pb-[env(safe-area-inset-bottom)]">
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => downloadPdf(viewInv)} className="btn-secondary inline-flex items-center gap-2">
                   <Download className="w-4 h-4" /> PDF
@@ -1251,7 +1251,7 @@ export default function InvoicesPage() {
                 </label>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0">
+            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0 pb-[env(safe-area-inset-bottom)]">
               <button onClick={() => setViewEmployer(null)} className="btn-secondary">Close</button>
               <button onClick={saveEmployerEdits} disabled={!editingEmployer || employerSaving} className="btn-primary inline-flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" /> {employerSaving ? 'Saving…' : 'Save changes'}
@@ -1301,7 +1301,7 @@ export default function InvoicesPage() {
                 <input className="mt-1 w-full input" value={employerForm.address.country} onChange={e => setEmployerForm((f: any) => ({ ...f, address: { ...f.address, country: e.target.value } }))} />
               </label>
             </div>
-            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0">
+            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0 pb-[env(safe-area-inset-bottom)]">
               <button onClick={() => setShowEmployerModal(false)} className="btn-secondary">Cancel</button>
               <button onClick={saveEmployer} disabled={savingEmployer} className="btn-primary inline-flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" /> {savingEmployer ? 'Saving...' : 'Save Employer'}
@@ -1450,7 +1450,7 @@ export default function InvoicesPage() {
                 </div>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0">
+            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0 pb-[env(safe-area-inset-bottom)]">
               <button onClick={() => setShowInvoiceModal(false)} className="btn-secondary">Cancel</button>
               <button onClick={saveInvoice} disabled={savingInvoice} className="btn-primary inline-flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" /> {savingInvoice ? 'Saving...' : 'Save Draft'}
@@ -1480,7 +1480,7 @@ export default function InvoicesPage() {
               </label>
               <p className="text-xs text-slate-500">This uses your platform SMTP settings (Super Admin → Settings). The PDF will be attached automatically.</p>
             </div>
-            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0">
+            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 bg-white sticky bottom-0 pb-[env(safe-area-inset-bottom)]">
               <button onClick={() => setSendFor(null)} className="btn-secondary">Cancel</button>
               <button onClick={openMailClient} className="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-black hover:bg-slate-50">
                 Open Mail
