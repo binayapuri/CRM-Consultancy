@@ -100,10 +100,18 @@ jobs:
             if command -v nginx >/dev/null 2>&1; then
               if [ -f /etc/nginx/.abroadup-keep-nginx ]; then
                 echo "Skipping nginx config copy (found /etc/nginx/.abroadup-keep-nginx — Certbot or custom SSL active)."
+                if ! nginx -t 2>&1; then
+                  echo "::warning:: nginx -t failed with keep-nginx marker — fix config on server manually"
+                fi
               else
                 cp "$APP_DIR/deploy/dev/nginx-abroadup-dev.conf" /etc/nginx/sites-available/abroadup
                 ln -sfn /etc/nginx/sites-available/abroadup /etc/nginx/sites-enabled/abroadup
-                nginx -t && systemctl reload nginx
+                if nginx -t 2>&1; then
+                  systemctl reload nginx
+                  echo "Nginx reloaded OK."
+                else
+                  echo "::warning:: nginx -t failed — skipping reload; fix nginx on host. Continuing app deploy."
+                fi
               fi
             else
               echo "Nginx not installed; skipping web server config."
