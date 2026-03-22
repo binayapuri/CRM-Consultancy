@@ -1,7 +1,7 @@
 {
   "name": "orivisa",
   "version": "1.0.0",
-  "description": "ORIVISA - Australian Migration Consultancy & Student Platform",
+  "description": "Abroad Up - Australian migration consultancy & student platform (abroadup.com / abroadup.online)",
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",

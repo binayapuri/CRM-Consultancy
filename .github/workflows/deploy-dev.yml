@@ -96,10 +96,10 @@ jobs:
             systemctl daemon-reload
             systemctl enable --now orivisa-dev.service
 
-            echo "Installing/refreshing Nginx site for bigfew.com..."
+            echo "Installing/refreshing Nginx site for abroadup.com + abroadup.online..."
             if command -v nginx >/dev/null 2>&1; then
-              cp "$APP_DIR/deploy/dev/nginx-bigfew-dev.conf" /etc/nginx/sites-available/bigfew.com
-              ln -sfn /etc/nginx/sites-available/bigfew.com /etc/nginx/sites-enabled/bigfew.com
+              cp "$APP_DIR/deploy/dev/nginx-abroadup-dev.conf" /etc/nginx/sites-available/abroadup
+              ln -sfn /etc/nginx/sites-available/abroadup /etc/nginx/sites-enabled/abroadup
               nginx -t && systemctl reload nginx
             else
               echo "Nginx not installed; skipping web server config."

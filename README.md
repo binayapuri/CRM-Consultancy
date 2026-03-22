@@ -1,4 +1,6 @@
-# BIGFEW (formerly ORIVISA) - Australian Migration & Education Platform
+# Abroad Up (formerly ORIVISA) - Australian Migration & Education Platform
+
+Production domains: **abroadup.com** and **abroadup.online** (see `docs/DEPLOY_DEV.md`).
 
 A full-stack application bridging **students** and **consultancies** in the Australian migration ecosystem. Built with Node.js, Express, MongoDB, and React.
 

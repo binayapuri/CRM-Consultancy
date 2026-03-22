@@ -1,4 +1,4 @@
-# BIGFEW CRM Phase QA + Release Checklist
+# Abroad Up CRM Phase QA + Release Checklist
 
 Use this checklist before promoting changes from `dev`.
 
