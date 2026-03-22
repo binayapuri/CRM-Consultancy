@@ -52,8 +52,12 @@ import employersRoutes from './routes/employers.js';
 import appointmentsRoutes from './routes/appointments.js';
 import reviewsRoutes from './routes/reviews.js';
 import studentRoutes, { getPointsHandler, savePointsHandler } from './apps/student/routes.js';
+import { errorHandler } from './shared/middleware/errorHandler.js';
 
 configurePassport();
+
+/** Default 10s buffer timeout causes slow 500s when DB is not ready; align with Atlas cold starts */
+mongoose.set('bufferTimeoutMS', 30_000);
 
 // Student-only role check (must run after authenticate)
 const studentOnly = (req, res, next) => {
@@ -81,19 +85,30 @@ app.use(express.json());
 app.use(passport.initialize());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
+// Health — mongo is connected before listen(); if mongo drops later, mongoReadyState !== 1
+app.get('/api/health', (req, res) => {
+  const rs = mongoose.connection.readyState;
+  const mongoLabels = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  res.json({
+    ok: true,
+    mongo: mongoLabels[rs] ?? String(rs),
+    mongoReadyState: rs,
+    timestamp: new Date().toISOString(),
+  });
+});
 
-// MongoDB connection
+// Fail fast when MongoDB is not connected (avoids ~10s buffered findOne timeout on login, etc.)
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api')) return next();
+  if (req.path === '/api/health') return next();
+  if (mongoose.connection.readyState === 1) return next();
+  return res.status(503).json({
+    error: 'Database temporarily unavailable. Please try again in a moment.',
+    mongoReadyState: mongoose.connection.readyState,
+  });
+});
+
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/orivisa';
-mongoose.connect(MONGODB_URI)
-  .then(() => {
-    const dbName = mongoose.connection.db?.databaseName;
-    const host = mongoose.connection.host;
-    console.log('✓ MongoDB connected →', dbName || '(unknown db)', '@', host || '(unknown host)');
-    CampaignSchedulerService.start();
-  })
-  .catch(err => console.error('MongoDB error:', err));
 
 // API Routes — register /api/student/points explicitly first so PATCH is always matched
 app.get('/api/student/points', authenticate, studentOnly, getPointsHandler);
@@ -144,7 +159,6 @@ app.use('/api/employers', employersRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/reviews', reviewsRoutes);
 
-import { errorHandler } from './shared/middleware/errorHandler.js';
 app.use(errorHandler);
 
 // Serve static frontend in production
@@ -155,6 +169,28 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`✓ ORIVISA server running on http://localhost:${PORT}`);
-});
+const MONGO_OPTIONS = {
+  serverSelectionTimeoutMS: 45_000,
+  connectTimeoutMS: 45_000,
+  maxPoolSize: 10,
+};
+
+async function start() {
+  try {
+    await mongoose.connect(MONGODB_URI, MONGO_OPTIONS);
+    const dbName = mongoose.connection.db?.databaseName;
+    const host = mongoose.connection.host;
+    console.log('✓ MongoDB connected →', dbName || '(unknown db)', '@', host || '(unknown host)');
+    CampaignSchedulerService.start();
+  } catch (err) {
+    console.error('MongoDB connection failed — fix MONGODB_URI, Atlas Network Access (IP allowlist), and credentials.');
+    console.error(err);
+    process.exit(1);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`✓ ORIVISA server running on http://localhost:${PORT}`);
+  });
+}
+
+start();

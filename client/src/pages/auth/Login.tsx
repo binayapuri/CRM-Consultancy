@@ -7,6 +7,10 @@ import { BrandMark } from '../../components/brand/BrandMark';
 
 const API = '/api';
 
+/** Shown when Google redirects back with ?error=oauth */
+const OAUTH_ERROR_HINT =
+  'Google sign-in failed. Ask the admin to confirm BACKEND_URL on the server matches the exact redirect URI in Google Cloud Console (…/api/auth/google/callback), and that MongoDB is online.';
+
 export default function Login() {
   const [searchParams] = useSearchParams();
   const errorParam = searchParams.get('error');
@@ -17,7 +21,9 @@ export default function Login() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [error, setError] = useState(errorParam || '');
+  const [error, setError] = useState(
+    errorParam === 'oauth' ? OAUTH_ERROR_HINT : errorParam || ''
+  );
   const [loading, setLoading] = useState(false);
   const { login } = useAuthStore();
   const navigate = useNavigate();

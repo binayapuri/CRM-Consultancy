@@ -59,7 +59,11 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
   router.get('/google/callback', (req, res, next) => {
     passport.authenticate('google', { session: false }, (err, user) => {
-      if (err || !user) return res.redirect(`${FRONTEND_URL}/login?error=oauth`);
+      if (err || !user) {
+        if (err) console.error('[auth/google/callback]', err.message || err);
+        else console.error('[auth/google/callback] no user (check MongoDB + user creation)');
+        return res.redirect(`${FRONTEND_URL}/login?error=oauth`);
+      }
       const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
       res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}`);
     })(req, res, next);
