@@ -15,3 +15,11 @@ export const BRAND_DOMAINS = [
   'abroadup.online',
   'www.abroadup.online',
 ] as const;
+
+/** Legal / operating company (footer, contact, copyright) */
+export const COMPANY_NAME = 'AuthKeep';
+export const COMPANY_WEBSITE = 'https://authkeep.com';
+export const COMPANY_EMAIL = 'info@authkeep.com';
+/** Display as AU national format */
+export const COMPANY_PHONE_DISPLAY = '0433 432 085';
+export const COMPANY_PHONE_TEL = '+61433432085';

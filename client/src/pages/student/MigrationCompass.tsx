@@ -9,7 +9,7 @@ export default function MigrationCompass() {
     {
       role: 'assistant',
       content:
-        "Hi! I'm the BIGFEW Migration Compass. I provide factual information about Australian and New Zealand visas. I can explain visa types, fees, English requirements, and general PR pathways. I also use the details in your BIGFEW profile when available, but I cannot give personal migration advice—for that, you should speak with a registered migration agent.",
+        "Hi! I'm the Abroad Up Migration Compass. I provide factual information about Australian and New Zealand visas. I can explain visa types, fees, English requirements, and general PR pathways. I also use the details in your Abroad Up profile when available, but I cannot give personal migration advice—for that, you should speak with a registered migration agent.",
     },
   ]);
   const [input, setInput] = useState('');

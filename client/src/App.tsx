@@ -104,6 +104,7 @@ import Landing from './pages/Landing';
 import PublicNews from './pages/public/PublicNews';
 import PublicNewsDetail from './pages/public/PublicNewsDetail';
 import PublicJobs from './pages/public/PublicJobs';
+import AustralianVisasPage from './pages/public/AustralianVisasPage';
 
 // Global UI
 import { ToastContainer, Modal, ConfirmDialog } from './components/ui';
@@ -146,6 +147,7 @@ export default function App() {
       <Route path="/news" element={<PublicNews />} />
       <Route path="/news/:slug" element={<PublicNewsDetail />} />
       <Route path="/jobs" element={<PublicJobs />} />
+      <Route path="/visas" element={<AustralianVisasPage />} />
       <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
       <Route path="/forgot-password" element={<GuestOnlyRoute><ForgotPassword /></GuestOnlyRoute>} />
       <Route path="/reset-password" element={<GuestOnlyRoute><ResetPassword /></GuestOnlyRoute>} />

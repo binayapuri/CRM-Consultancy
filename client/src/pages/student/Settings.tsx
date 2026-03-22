@@ -365,7 +365,7 @@ export default function Settings() {
               <span className="break-words">Email sending (SMTP)</span>
             </h2>
             <p className="text-sm text-slate-500 font-medium mt-2 break-words">
-              Configure your own SMTP (private) for sending invoices and other future emails from BIGFEW (for example, reminders or statements).
+              Configure your own SMTP (private) for sending invoices and other future emails from Abroad Up (for example, reminders or statements).
             </p>
           </div>
 

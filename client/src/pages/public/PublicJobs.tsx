@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Briefcase, MapPin, Building2, Search, DollarSign, Shield } from 'lucide-react';
+import { Briefcase, MapPin, Building2, Search, DollarSign } from 'lucide-react';
 import { useAuthStore } from '../../store/auth';
 import { getDashboardPathForRole } from '../../lib/authHelpers';
+import { PublicMarketingHeader } from '../../components/public/PublicMarketingHeader';
+import { PublicMarketingFooter } from '../../components/public/PublicMarketingFooter';
+import { BRAND_DOMAIN, BRAND_NAME } from '../../constants/brand';
 
 const JOB_TYPES = ['FULL_TIME', 'PART_TIME', 'CASUAL', 'CONTRACT', 'INTERNSHIP'];
 
@@ -37,25 +40,27 @@ export default function PublicJobs() {
   return (
     <div className="min-h-screen bg-[#020617] selection:bg-emerald-500/30 flex flex-col">
       <Helmet>
-        <title>Jobs for Students & Graduates | Big Few</title>
-        <meta name="description" content="Find jobs suited for international students and graduates. Part-time, casual, and visa sponsorship opportunities." />
-        <meta property="og:title" content="Jobs for Students & Graduates | Big Few" />
+        <title>Jobs for students & graduates | {BRAND_NAME}</title>
+        <meta
+          name="description"
+          content="Find jobs suited for international students and graduates in Australia—part-time, casual, and full-time roles."
+        />
+        <link rel="canonical" href={`https://${BRAND_DOMAIN}/jobs`} />
+        <meta property="og:title" content={`Jobs for students & graduates | ${BRAND_NAME}`} />
+        <meta property="og:url" content={`https://${BRAND_DOMAIN}/jobs`} />
       </Helmet>
-      {/* Nav */}
-      <nav className="w-full top-0 border-b border-white/5 bg-[#020617]">
-        <div className="flex items-center justify-between px-6 lg:px-12 py-5 max-w-7xl mx-auto">
-          <Link to="/" className="group flex flex-col leading-tight">
-            <span className="text-2xl font-display font-black tracking-tighter text-white group-hover:drop-shadow-[0_0_15px_rgba(52,211,153,0.5)] transition-all">
-              <span className="text-white">BIG</span>
-              <span className="text-emerald-400">FEW</span>
-            </span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
-              Evolution of Migration
-            </span>
-          </Link>
-          <div className="flex items-center gap-8">
-            <Link to="/#jobs" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Back to Home</Link>
-            <Link to="/#news" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">News</Link>
+      <PublicMarketingHeader
+        extraNav={[
+          { to: '/', label: 'Home' },
+          { to: '/news', label: 'News' },
+          { to: '/visas', label: 'Visas' },
+          { to: '/jobs', label: 'Jobs' },
+        ]}
+      />
+      <div className="border-b border-white/5 bg-[#020617]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-3 flex flex-wrap items-center justify-end gap-4 text-sm font-semibold">
+            <Link to="/#jobs" className="text-slate-300 hover:text-white transition-colors">Back to Home</Link>
+            <Link to="/news" className="text-slate-300 hover:text-white transition-colors">News</Link>
             {token ? (
               user?.role === 'STUDENT' ? (
                 <Link to="/student/jobs" className="text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">My Jobs</Link>
@@ -65,11 +70,10 @@ export default function PublicJobs() {
             ) : (
               <Link to="/login?redirect=/jobs" className="text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">Sign in to Apply</Link>
             )}
-          </div>
         </div>
-      </nav>
+      </div>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 lg:px-12 py-12 relative z-10">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-10 py-12 relative z-10">
         <div className="mb-10 text-center max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-display font-black text-white tracking-tight mb-4">Jobs for Students & Graduates</h1>
           <p className="text-slate-400 text-lg">Find part-time, casual, and full-time roles suited for international students and visa holders.</p>
@@ -193,20 +197,7 @@ export default function PublicJobs() {
         )}
       </main>
 
-      <footer className="border-t border-white/10 py-12 relative z-10 bg-black/50 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-display font-black tracking-tighter text-white">
-              <span className="text-white">BIG</span>
-              <span className="text-emerald-400">FEW</span>
-            </span>
-          </div>
-          <p className="text-slate-500 text-sm font-medium">© 2026 Dream Big, Hustle Few. Australian Migration CRM.</p>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-slate-400 text-sm font-medium">
-            <Shield className="w-4 h-4 text-emerald-400" /> Secure Australian Data Hosting
-          </div>
-        </div>
-      </footer>
+      <PublicMarketingFooter />
     </div>
   );
 }

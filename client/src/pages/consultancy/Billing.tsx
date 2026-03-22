@@ -259,8 +259,8 @@ export default function ConsultancyBillingPage() {
     setSendFor(row);
     setSendForm({
       to: row.customer?.email || '',
-      subject: `${row.documentType} ${row.documentNumber} from BIGFEW`,
-      text: `Hello,\n\nPlease find attached ${row.documentType.toLowerCase()} ${row.documentNumber}.\n\nRegards,\nBIGFEW`,
+      subject: `${row.documentType} ${row.documentNumber} from Abroad Up`,
+      text: `Hello,\n\nPlease find attached ${row.documentType.toLowerCase()} ${row.documentNumber}.\n\nRegards,\nAbroad Up`,
     });
   }
 

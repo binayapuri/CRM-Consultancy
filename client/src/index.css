@@ -38,8 +38,35 @@ body {
   }
 }
 
-.bigfew-marquee {
+.bigfew-marquee,
+.abroadup-marquee {
   animation: bigfew-marquee 18s linear infinite;
+}
+
+/* Public news: CMS HTML often ships dark-grey inline colours — force readable contrast */
+.public-article-body {
+  color: rgb(226 232 240);
+}
+.public-article-body p,
+.public-article-body li,
+.public-article-body td,
+.public-article-body th,
+.public-article-body blockquote {
+  color: rgb(226 232 240) !important;
+}
+.public-article-body a {
+  color: rgb(52 211 153) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.public-article-body h1,
+.public-article-body h2,
+.public-article-body h3,
+.public-article-body h4 {
+  color: rgb(255 255 255) !important;
+}
+.public-article-body strong {
+  color: rgb(255 255 255) !important;
 }
 
 @keyframes toast-slide-in {

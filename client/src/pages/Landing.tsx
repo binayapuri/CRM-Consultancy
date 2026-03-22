@@ -83,6 +83,7 @@ export default function Landing() {
             <a href="#about" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Our Vision</a>
             <a href="#pathways" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Pathways</a>
             <Link to="/jobs" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Jobs</Link>
+            <Link to="/visas" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Visas</Link>
             <a href="#news" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">News</a>
             <a href="#enquiry" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Contact</a>
           </div>

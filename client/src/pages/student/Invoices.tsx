@@ -545,7 +545,7 @@ export default function InvoicesPage() {
       inv.period?.from || inv.period?.to
         ? ` (${fmtDate(inv.period?.from)} - ${fmtDate(inv.period?.to)})`
         : '';
-    const subject = `${inv.gstEnabled ? 'Tax Invoice' : 'Invoice'} ${inv.invoiceNumber}${period} — ${inv.supplier?.name || 'BIGFEW'}`;
+    const subject = `${inv.gstEnabled ? 'Tax Invoice' : 'Invoice'} ${inv.invoiceNumber}${period} — ${inv.supplier?.name || 'Abroad Up'}`;
     const text = `Hi${employer?.contactName ? ` ${employer.contactName}` : ''},\n\nPlease find attached ${inv.gstEnabled ? 'Tax Invoice' : 'Invoice'} ${inv.invoiceNumber}${period}.\n\nTotal: ${money(inv.total)}\nDue: ${inv.dueDate ? fmtDate(inv.dueDate) : '—'}\n\nRegards,\n${inv.supplier?.name || ''}`;
     setSendFor(inv);
     setSendForm({ to, subject, text });

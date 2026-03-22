@@ -262,7 +262,7 @@ export default function Clients() {
             </div>
             <div className="p-6">
               <p className="text-sm text-slate-600 mb-4">
-                If a student has already created an independent profile on BIGFEW, you can request access to manage their profile and visa applications.
+                If a student has already created an independent profile on Abroad Up, you can request access to manage their profile and visa applications.
               </p>
               {requestMessage.text && (
                 <div className={`p-3 rounded-lg text-sm font-medium mb-4 flex items-start gap-2 ${requestMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>

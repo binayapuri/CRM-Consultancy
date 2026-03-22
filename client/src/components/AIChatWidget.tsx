@@ -154,7 +154,7 @@ export default function AIChatWidget() {
           </button>
         </div>
         <p className="text-[10px] text-center text-slate-400 mt-2 font-medium">
-          BIGFEW AI provides general guidance, not legal advice.
+          Abroad Up AI provides general guidance, not legal advice.
         </p>
       </form>
     </div>
