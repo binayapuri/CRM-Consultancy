@@ -35,11 +35,11 @@ export default function SuperAdminLayout() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} aria-hidden />
       )}
-      <aside className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 w-64 bg-slate-900 text-white flex flex-col fixed h-full z-50 lg:z-30 transition-transform duration-300 ease-in-out`}>
-        <div className="p-5 border-b border-slate-700">
+      <aside className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 w-64 bg-brand-navy text-white flex flex-col fixed h-full z-50 lg:z-30 transition-transform duration-300 ease-in-out`}>
+        <div className="p-5 border-b border-white/10">
           <div className="flex items-center gap-2 mb-1">
-            <AbroadUpLogo variant="mark" />
-            <span className="text-xl font-display font-bold text-amber-400">{BRAND_NAME}</span>
+            <AbroadUpLogo variant="mark" scale="lg" />
+            <span className="text-xl font-display font-bold text-brand-gold-light">{BRAND_NAME}</span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">Super Admin – Platform Owner</p>
         </div>
@@ -50,7 +50,7 @@ export default function SuperAdminLayout() {
               to={to}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${isActive ? 'bg-amber-600/20 text-amber-400' : 'text-slate-400 hover:bg-slate-800'}`
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${isActive ? 'bg-brand-gold/20 text-brand-gold-light' : 'text-slate-400 hover:bg-white/10'}`
               }
             >
               <Icon className="w-5 h-5" />
@@ -58,11 +58,11 @@ export default function SuperAdminLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-3 border-t border-slate-700">
-          <NavLink to="/consultancy/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-ori-400 hover:bg-slate-800">
+        <div className="p-3 border-t border-white/10">
+          <NavLink to="/consultancy/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-brand-gold hover:bg-white/10">
             ← Back to CRM
           </NavLink>
-          <button onClick={() => { logout(); navigate('/login'); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 w-full mt-1">
+          <button onClick={() => { logout(); navigate('/login'); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-white/10 w-full mt-1">
             <LogOut className="w-5 h-5" />
             <span>Logout</span>
           </button>

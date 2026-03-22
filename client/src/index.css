@@ -3,15 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --ori-500: #14b8a6;
-  --ori-600: #0d9488;
-  --ori-700: #0f766e;
-  --ori-950: #134e4a;
+  /* Legacy teal scale — kept for gradual migration; prefer `brand-*` Tailwind tokens */
+  --ori-500: #c1a376;
+  --ori-600: #1b365d;
+  --ori-700: #15304a;
+  --ori-950: #0f2440;
   --coral: #f87171;
+  --brand-navy: #1b365d;
+  --brand-gold: #c1a376;
+  --brand-charcoal: #333333;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 font-sans antialiased;
+  @apply bg-brand-cream text-slate-900 font-sans antialiased;
 }
 
 @layer components {
@@ -19,13 +23,13 @@ body {
     @apply bg-white rounded-xl shadow-sm border border-slate-200/80 p-5;
   }
   .btn-primary {
-    @apply px-4 py-2.5 rounded-lg bg-ori-600 text-white font-medium hover:bg-ori-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply px-4 py-2.5 rounded-lg bg-brand-navy text-white font-medium hover:bg-brand-navy-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm;
   }
   .btn-secondary {
     @apply px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors;
   }
   .input {
-    @apply w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-ori-500/30 focus:border-ori-500 outline-none transition;
+    @apply w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-gold/35 focus:border-brand-navy outline-none transition;
   }
 }
 
@@ -55,7 +59,7 @@ body {
   color: rgb(226 232 240) !important;
 }
 .public-article-body a {
-  color: rgb(52 211 153) !important;
+  color: rgb(193 163 118) !important;
   text-decoration: underline;
   text-underline-offset: 3px;
 }

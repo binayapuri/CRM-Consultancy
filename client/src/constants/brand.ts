@@ -2,8 +2,19 @@
 export const BRAND_NAME = 'Abroad Up';
 export const BRAND_NAME_SHORT = 'AbroadUp';
 
-/** Primary marketing line under the logo */
-export const BRAND_TAGLINE = 'Your Australian Journey';
+/** Primary marketing line (also in raster logo artwork when applicable) */
+export const BRAND_TAGLINE = 'Your Global Journey Elevated.';
+
+/** Set true when `BRAND_LOGO_PATH` PNG already includes the tagline text (no duplicate line under the image). */
+export const BRAND_LOGO_INCLUDES_TAGLINE = true;
+
+/** Raster logo in `client/public` */
+export const BRAND_LOGO_PATH = '/logo3.png';
+
+/** Brand palette — match logo (navy + antique gold + charcoal) */
+export const BRAND_COLOR_NAVY = '#1B365D';
+export const BRAND_COLOR_GOLD = '#C1A376';
+export const BRAND_COLOR_CHARCOAL = '#333333';
 
 /** Canonical domain (use in copy when you want the “main” site) */
 export const BRAND_DOMAIN = 'abroadup.com';

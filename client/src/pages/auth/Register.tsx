@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth';
 import { GraduationCap } from 'lucide-react';
+import { AbroadUpLogo } from '../../components/brand/AbroadUpLogo';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -25,10 +26,13 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-ori-950 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-brand-navy via-brand-navy-deep to-[#0a1628] p-4 gap-8">
+      <div className="rounded-2xl bg-white px-5 py-3 shadow-2xl shadow-black/40 ring-1 ring-white/20">
+        <AbroadUpLogo variant="wordmark" theme="light" scale="lg" />
+      </div>
       <div className="w-full max-w-md card bg-white/95 backdrop-blur">
         <div className="flex items-center gap-2 justify-center mb-2">
-          <GraduationCap className="w-8 h-8 text-ori-600" />
+          <GraduationCap className="w-8 h-8 text-brand-navy" />
           <h1 className="text-2xl font-display font-bold text-slate-900">Student Registration</h1>
         </div>
         <p className="text-slate-500 text-center text-sm mb-6">
@@ -49,9 +53,9 @@ export default function Register() {
           <button type="submit" className="btn-primary w-full">Create Account</button>
         </form>
         <p className="mt-4 text-center text-sm text-slate-500">
-          Already have an account? <Link to="/login" className="text-ori-600 hover:underline">Login</Link>
+          Already have an account? <Link to="/login" className="text-brand-navy hover:underline">Login</Link>
           {' · '}
-          <Link to="/register-consultancy" className="text-ori-600 hover:underline">Register Consultancy</Link>
+          <Link to="/register-consultancy" className="text-brand-navy hover:underline">Register Consultancy</Link>
         </p>
       </div>
     </div>

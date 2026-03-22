@@ -108,7 +108,7 @@ export default function StudentLayout() {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex overflow-hidden" style={{ background: '#F0F4FF', fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-screen flex overflow-hidden bg-brand-cream" style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
       {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} aria-hidden />
@@ -121,17 +121,17 @@ export default function StudentLayout() {
         `}
         style={{
           width: mobileMenuOpen ? 256 : sidebarWidth,
-          background: '#0F0E2E',
-          boxShadow: mobileMenuOpen ? '4px 0 24px rgba(0,0,0,0.4)' : '4px 0 24px rgba(0,0,0,0.25)',
+          background: '#1B365D',
+          boxShadow: mobileMenuOpen ? '4px 0 24px rgba(0,0,0,0.35)' : '4px 0 24px rgba(27,54,93,0.4)',
         }}
       >
         {/* Logo */}
-        <div className={`border-b border-white/10 shrink-0 ${(sidebarCollapsed && !mobileMenuOpen) ? 'px-3 py-4' : 'px-6 py-5'}`}>
+        <div className={`border-b border-white/10 shrink-0 ${(sidebarCollapsed && !mobileMenuOpen) ? 'px-3 py-3' : 'px-5 py-4'}`}>
           <div className="flex items-center gap-3 min-w-0">
             {(sidebarCollapsed && !mobileMenuOpen) ? (
-              <AbroadUpLogo variant="mark" className="justify-center w-full" />
+              <AbroadUpLogo variant="mark" scale="lg" className="justify-center w-full" />
             ) : (
-              <AbroadUpLogo variant="full" className="min-w-0" />
+              <AbroadUpLogo variant="full" scale="lg" className="min-w-0" />
             )}
           </div>
         </div>
@@ -141,7 +141,7 @@ export default function StudentLayout() {
           {navSections.map(section => (
             <div key={section.label}>
               {(!sidebarCollapsed || mobileMenuOpen) && (
-                <p className="text-xs font-bold uppercase tracking-widest px-3 mb-2" style={{ color: '#3D4A7A' }}>{section.label}</p>
+                <p className="text-xs font-bold uppercase tracking-widest px-3 mb-2 text-brand-gold/60">{section.label}</p>
               )}
               <div className="space-y-0.5">
                 {section.items.map(({ to, icon: Icon, label }) => (
@@ -155,8 +155,8 @@ export default function StudentLayout() {
                         (sidebarCollapsed && !mobileMenuOpen) ? 'justify-center px-0' : 'justify-between px-3'
                       } ${
                         isActive
-                          ? 'text-white bg-indigo-500 shadow-md ring-1 ring-black/10'
-                          : 'text-[#6D7ECC] hover:text-white hover:bg-white/10'
+                          ? 'text-white bg-brand-gold/25 shadow-md ring-1 ring-brand-gold/40'
+                          : 'text-slate-300 hover:text-white hover:bg-white/10'
                       }`
                     }
                   >
@@ -200,7 +200,7 @@ export default function StudentLayout() {
                 type="search"
                 placeholder="Search…"
                 aria-label="Search"
-                className="w-full min-w-0 px-3 py-2 rounded-md border border-slate-200 bg-slate-50 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400"
+                className="w-full min-w-0 px-3 py-2 rounded-md border border-slate-200 bg-white text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-brand-gold/35 focus:border-brand-navy"
               />
             </div>
             <Notifications />
@@ -213,7 +213,7 @@ export default function StudentLayout() {
                 {user?.profile?.avatar ? (
                   <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-slate-200" />
                 ) : (
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm text-white shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm text-white shrink-0 bg-gradient-to-br from-brand-navy to-brand-gold-dark">
                     {initials}
                   </div>
                 )}

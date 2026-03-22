@@ -57,7 +57,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-[#0f1f35] selection:bg-brand-gold/30">
       <Helmet>
         <title>{BRAND_NAME} | Australian Migration CRM & Student Hub</title>
         <meta name="description" content="Experience the future of Australian migration. Manage student visas, PR pathways, and consultancy operations seamlessly." />
@@ -68,44 +68,44 @@ export default function Landing() {
       
       {/* Background Orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-emerald-500/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob" />
-        <div className="absolute top-[20%] right-[-10%] w-[35rem] h-[35rem] bg-indigo-500/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob animation-delay-2000" />
-        <div className="absolute bottom-[-20%] left-[20%] w-[45rem] h-[45rem] bg-sky-500/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob animation-delay-4000" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-brand-navy/35 rounded-full mix-blend-screen filter blur-[100px] animate-blob" />
+        <div className="absolute top-[20%] right-[-10%] w-[35rem] h-[35rem] bg-brand-gold/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-[-20%] left-[20%] w-[45rem] h-[45rem] bg-brand-navy-light/25 rounded-full mix-blend-screen filter blur-[100px] animate-blob animation-delay-4000" />
       </div>
 
       {/* Nav */}
-      <nav className="fixed w-full top-0 z-50 bg-[#020617]/50 backdrop-blur-xl border-b border-white/5">
-        <div className="flex items-center justify-between px-6 lg:px-12 py-5 max-w-7xl mx-auto">
-          <Link to="/" className="group flex items-center gap-2 min-w-0 hover:opacity-95 transition-opacity">
-            <AbroadUpLogo variant="wordmark" theme="dark" className="group-hover:drop-shadow-[0_0_18px_rgba(52,211,153,0.35)]" />
+      <nav className="fixed w-full top-0 z-50 bg-brand-cream/95 backdrop-blur-xl border-b border-slate-200/90 shadow-sm">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 py-2 max-w-7xl mx-auto">
+          <Link to="/" className="group flex items-center min-w-0 shrink leading-none hover:opacity-95 transition-opacity rounded-lg -my-0.5">
+            <AbroadUpLogo variant="wordmark" theme="light" scale="header" className="group-hover:drop-shadow-[0_4px_14px_rgba(27,54,93,0.12)]" />
           </Link>
           <div className="hidden md:flex items-center gap-8">
-            <a href="#about" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Our Vision</a>
-            <a href="#pathways" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Pathways</a>
-            <Link to="/jobs" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Jobs</Link>
-            <Link to="/visas" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Visas</Link>
-            <a href="#news" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">News</a>
-            <a href="#enquiry" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Contact</a>
+            <a href="#about" className="text-sm font-semibold text-brand-navy/80 hover:text-brand-navy transition-colors">Our Vision</a>
+            <a href="#pathways" className="text-sm font-semibold text-brand-navy/80 hover:text-brand-navy transition-colors">Pathways</a>
+            <Link to="/jobs" className="text-sm font-semibold text-brand-navy/80 hover:text-brand-navy transition-colors">Jobs</Link>
+            <Link to="/visas" className="text-sm font-semibold text-brand-navy/80 hover:text-brand-navy transition-colors">Visas</Link>
+            <a href="#news" className="text-sm font-semibold text-brand-navy/80 hover:text-brand-navy transition-colors">News</a>
+            <a href="#enquiry" className="text-sm font-semibold text-brand-navy/80 hover:text-brand-navy transition-colors">Contact</a>
           </div>
           <div className="flex items-center gap-4">
             {token && user ? (
               <Link
                 to={getDashboardPathForRole(user.role)}
-                className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 border border-white/10 hover:bg-white/15 hover:border-white/20 transition-all"
+                className="flex items-center gap-3 px-4 py-2 rounded-full bg-white border border-slate-200/90 hover:border-brand-gold/50 shadow-sm transition-all"
               >
                 {user.profile?.avatar ? (
-                  <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-8 h-8 rounded-full object-cover border border-white/20" />
+                  <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-8 h-8 rounded-full object-cover border border-slate-200" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 bg-gradient-to-br from-emerald-500 to-teal-500">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 bg-gradient-to-br from-brand-navy to-brand-gold-dark">
                     {initials}
                   </div>
                 )}
-                <span className="text-sm font-semibold text-white truncate max-w-[140px]">{displayName}</span>
+                <span className="text-sm font-semibold text-brand-navy truncate max-w-[140px]">{displayName}</span>
               </Link>
             ) : (
               <>
-                <Link to="/login" className="text-sm font-semibold text-white hover:text-emerald-400 transition-colors">Sign In</Link>
-                <Link to="/register" className="relative group px-6 py-2.5 rounded-full bg-white text-slate-900 font-bold overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]">
+                <Link to="/login" className="text-sm font-semibold text-brand-navy hover:text-brand-gold-dark transition-colors">Sign In</Link>
+                <Link to="/register" className="relative group px-6 py-2.5 rounded-full bg-brand-navy text-white font-bold overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-lg shadow-brand-navy/25 hover:bg-brand-navy-deep">
                   <span className="relative z-10 flex items-center gap-2">Start Journey <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></span>
                 </Link>
               </>
@@ -115,21 +115,21 @@ export default function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <header className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 lg:px-12">
+      <header className="relative pt-24 pb-20 sm:pt-28 lg:pt-36 lg:pb-32 px-6 lg:px-12">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
           
           <div className="relative z-10 space-y-8 animate-fade-in-up">
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 backdrop-blur-md shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-brand-gold/30 bg-brand-gold/10 backdrop-blur-md shadow-[0_0_30px_rgba(193,163,118,0.2)]">
               <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold-light opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-brand-gold"></span>
               </span>
-              <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest">Dream Big, Hustle Few</span>
+              <span className="text-xs font-bold text-brand-gold uppercase tracking-widest">Dream Big, Hustle Few</span>
             </div>
             
             <h1 className="text-5xl lg:text-7xl font-display font-black text-white leading-[1.1] tracking-tight">
               Master Your <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 inline-block min-w-[300px]">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-gold via-brand-gold-light to-brand-navy-light inline-block min-w-[300px]">
                 {heroWords[heroWordIndex]}
               </span>
             </h1>
@@ -140,7 +140,7 @@ export default function Landing() {
             </p>
             
             <div className="flex flex-col sm:flex-row flex-wrap gap-4 pt-4">
-              <Link to="/register" className="group relative flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-bold text-lg overflow-hidden transition-transform hover:scale-105 shadow-[0_0_40px_rgba(16,185,129,0.3)]">
+              <Link to="/register" className="group relative flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-brand-navy to-brand-gold text-white font-bold text-lg overflow-hidden transition-transform hover:scale-105 shadow-[0_0_40px_rgba(27,54,93,0.45)]">
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
                 <GraduationCap className="w-6 h-6 relative z-10" />
                 <span className="relative z-10">I'm a Student</span>
@@ -161,7 +161,7 @@ export default function Landing() {
           </div>
 
           <div className="relative z-10 hidden lg:block animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            <div className="relative w-full aspect-square rounded-[2rem] overflow-hidden shadow-2xl shadow-emerald-500/20 border border-white/10 bg-white/5 backdrop-blur-3xl animate-float">
+            <div className="relative w-full aspect-square rounded-[2rem] overflow-hidden shadow-2xl shadow-brand-gold/20 border border-white/10 bg-white/5 backdrop-blur-3xl animate-float">
               <img 
                 src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80" 
                 alt="Students in Australia"
@@ -171,23 +171,23 @@ export default function Landing() {
               <div className="absolute top-10 left-10 right-10 p-6 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-400 to-sky-400 p-[2px]">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-gold to-sky-400 p-[2px]">
                       <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
                         <Users className="w-5 h-5 text-white" />
                       </div>
                     </div>
                     <div>
                       <p className="text-sm font-bold text-white">Application Status</p>
-                      <p className="text-xs text-emerald-400">Subclass 189 - Invited</p>
+                      <p className="text-xs text-brand-gold-light">Subclass 189 - Invited</p>
                     </div>
                   </div>
-                  <div className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
+                  <div className="px-3 py-1 rounded-full bg-brand-gold/20 text-brand-gold text-xs font-bold border border-brand-gold/30">
                     Active
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-[85%] bg-gradient-to-r from-emerald-400 to-sky-400 rounded-full relative">
+                    <div className="h-full w-[85%] bg-gradient-to-r from-brand-gold to-brand-navy-light rounded-full relative">
                       <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:1rem_1rem] animate-[move_1s_linear_infinite]" />
                     </div>
                   </div>
@@ -223,10 +223,10 @@ export default function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
             {/* Box 1 */}
             <div className="md:col-span-2 rounded-[2rem] bg-gradient-to-br from-slate-900 to-slate-800 border border-white/5 p-10 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] group-hover:bg-emerald-500/20 transition-colors duration-700" />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold/10 rounded-full blur-[80px] group-hover:bg-brand-gold/20 transition-colors duration-700" />
               <div className="relative z-10">
                 <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
-                  <GraduationCap className="w-7 h-7 text-emerald-400" />
+                  <GraduationCap className="w-7 h-7 text-brand-gold-light" />
                 </div>
                 <h3 className="text-3xl font-display font-bold text-white mb-4">The Student Hub</h3>
                 <p className="text-slate-400 text-lg max-w-md">Track your 500 visa, calculate your 189/190 PR points dynamically, access a community of peers, and interact with the AI Migration Compass.</p>
@@ -280,8 +280,8 @@ export default function Landing() {
           <h2 className="text-4xl font-display font-black text-white mb-16 text-center">Supported Pathways</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {visaTypes.map(({ code, name, desc }) => (
-              <div key={code} className="group p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 backdrop-blur-sm cursor-pointer hover:-translate-y-2">
-                <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20 mb-6 group-hover:from-emerald-400 group-hover:to-emerald-900/20 transition-all duration-300">
+              <div key={code} className="group p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 hover:border-brand-gold/30 transition-all duration-300 backdrop-blur-sm cursor-pointer hover:-translate-y-2">
+                <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20 mb-6 group-hover:from-brand-gold group-hover:to-brand-navy/30 transition-all duration-300">
                   {code}
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">{name}</h3>
@@ -296,7 +296,7 @@ export default function Landing() {
       <section id="enquiry" className="py-32 relative z-10 px-6 lg:px-12">
         <div className="max-w-3xl mx-auto">
           <div className="p-10 lg:p-16 rounded-[2.5rem] bg-gradient-to-b from-slate-800/80 to-slate-900/80 border border-white/10 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-gold/10 rounded-full blur-[100px] pointer-events-none" />
             
             <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl font-display font-black text-white mb-4">Get in Touch</h2>
@@ -306,22 +306,22 @@ export default function Landing() {
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">First Name</label>
-                    <input value={enquiry.firstName} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, firstName: e.target.value }))} required className="w-full px-5 py-4 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all" placeholder="John" />
+                    <input value={enquiry.firstName} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, firstName: e.target.value }))} required className="w-full px-5 py-4 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-brand-gold/50 focus:ring-1 focus:ring-brand-gold/50 transition-all" placeholder="John" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Last Name</label>
-                    <input value={enquiry.lastName} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, lastName: e.target.value }))} required className="w-full px-5 py-4 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all" placeholder="Doe" />
+                    <input value={enquiry.lastName} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, lastName: e.target.value }))} required className="w-full px-5 py-4 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-brand-gold/50 focus:ring-1 focus:ring-brand-gold/50 transition-all" placeholder="Doe" />
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Email Address</label>
-                  <input type="email" value={enquiry.email} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, email: e.target.value }))} required className="w-full px-5 py-4 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all" placeholder="your@email.com" />
+                  <input type="email" value={enquiry.email} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, email: e.target.value }))} required className="w-full px-5 py-4 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-brand-gold/50 focus:ring-1 focus:ring-brand-gold/50 transition-all" placeholder="your@email.com" />
                 </div>
                 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Interest</label>
-                  <select value={enquiry.interest} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, interest: e.target.value }))} className="w-full px-5 py-4 rounded-2xl bg-black/40 border border-white/10 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all appearance-none">
+                  <select value={enquiry.interest} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, interest: e.target.value }))} className="w-full px-5 py-4 rounded-2xl bg-black/40 border border-white/10 text-white focus:outline-none focus:border-brand-gold/50 focus:ring-1 focus:ring-brand-gold/50 transition-all appearance-none">
                     <option value="" className="bg-slate-900 text-slate-400">Select your focus pathway...</option>
                     {INTERESTS.map(i => <option key={i} value={i} className="bg-slate-900">{i}</option>)}
                   </select>
@@ -329,10 +329,10 @@ export default function Landing() {
                 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Message</label>
-                  <textarea value={enquiry.message} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, message: e.target.value }))} rows={4} className="w-full px-5 py-4 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all resize-none" placeholder="Tell us a bit about your situation..." />
+                  <textarea value={enquiry.message} onChange={(e: any) => setEnquiry((x: any) => ({ ...x, message: e.target.value }))} rows={4} className="w-full px-5 py-4 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-brand-gold/50 focus:ring-1 focus:ring-brand-gold/50 transition-all resize-none" placeholder="Tell us a bit about your situation..." />
                 </div>
                 
-                <button type="submit" disabled={enquiryStatus === 'sending'} className="w-full py-5 rounded-2xl bg-white text-black font-bold text-lg hover:bg-emerald-400 hover:text-white transition-colors flex items-center justify-center gap-2 group disabled:opacity-50 mt-4">
+                <button type="submit" disabled={enquiryStatus === 'sending'} className="w-full py-5 rounded-2xl bg-white text-black font-bold text-lg hover:bg-brand-gold-light hover:text-white transition-colors flex items-center justify-center gap-2 group disabled:opacity-50 mt-4">
                   {enquiryStatus === 'sending' ? 'Sending...' : enquiryStatus === 'success' ? 'Message Received!' : <>Send Message <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /></>}
                 </button>
                 {enquiryStatus === 'error' && <p className="text-red-400 text-sm text-center">Something went wrong. Please try again.</p>}
@@ -347,7 +347,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-12">
             <h2 className="text-4xl font-display font-black text-white">Latest Jobs</h2>
-            <Link to="/jobs" className="text-emerald-400 font-bold hover:text-emerald-300 transition-colors flex items-center gap-2">
+            <Link to="/jobs" className="text-brand-gold-light font-bold hover:text-brand-gold transition-colors flex items-center gap-2">
               View All Jobs <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -360,7 +360,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-12">
             <h2 className="text-4xl font-display font-black text-white">Latest News</h2>
-            <Link to="/news" className="text-emerald-400 font-bold hover:text-emerald-300 transition-colors flex items-center gap-2">
+            <Link to="/news" className="text-brand-gold-light font-bold hover:text-brand-gold transition-colors flex items-center gap-2">
               View All <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -371,14 +371,14 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t border-white/10 py-12 relative z-10 bg-black/50">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <AbroadUpLogo variant="wordmark" theme="dark" />
+          <div className="flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 shadow-md shadow-black/15 ring-1 ring-white/20">
+            <AbroadUpLogo variant="wordmark" theme="light" scale="md" />
           </div>
           <p className="text-slate-500 text-sm font-medium text-center sm:text-left">
             © {new Date().getFullYear()} {BRAND_NAME}. Australian migration & education platform.
           </p>
           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-slate-400 text-sm font-medium">
-            <Shield className="w-4 h-4 text-emerald-400" /> Secure Australian Data Hosting
+            <Shield className="w-4 h-4 text-brand-gold-light" /> Secure Australian Data Hosting
           </div>
         </div>
       </footer>
@@ -407,15 +407,15 @@ function JobsSection() {
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {jobs.map(job => (
-        <Link key={job._id} to="/jobs" className="group block rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:bg-white/10 hover:border-emerald-500/30 transition-all">
+        <Link key={job._id} to="/jobs" className="group block rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:bg-white/10 hover:border-brand-gold/30 transition-all">
           <div className="p-6">
-            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3 block">{formatType(job.type)}</span>
-            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-emerald-300 transition-colors">{job.title}</h3>
+            <span className="text-[10px] font-bold text-brand-gold-light uppercase tracking-widest mb-3 block">{formatType(job.type)}</span>
+            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-brand-gold transition-colors">{job.title}</h3>
             <p className="text-slate-400 text-sm mb-2">{job.company}</p>
             <p className="text-slate-500 text-sm line-clamp-2 mb-4">{job.location}</p>
             <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/10">
               <span className="text-xs text-slate-500">{job.salaryRange || 'Competitive'}</span>
-              <span className="text-xs font-bold text-emerald-400">View →</span>
+              <span className="text-xs font-bold text-brand-gold-light">View →</span>
             </div>
           </div>
         </Link>
@@ -444,17 +444,17 @@ function NewsSection() {
   return (
     <div className="grid md:grid-cols-3 gap-6">
       {news.map(article => (
-        <Link key={article._id} to={`/news/${article.slug}`} className="group block rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:bg-white/10 hover:border-emerald-500/30 transition-all">
+        <Link key={article._id} to={`/news/${article.slug}`} className="group block rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:bg-white/10 hover:border-brand-gold/30 transition-all">
           {article.coverImage && (
             <div className="h-48 overflow-hidden relative">
               <img src={resolveFileUrl(article.coverImage)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             </div>
           )}
           <div className="p-6">
-            <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3">
+            <div className="text-[10px] font-bold text-brand-gold-light uppercase tracking-widest mb-3">
               {article.categoryId?.name || article.category || 'Update'}
             </div>
-            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-emerald-300 transition-colors">{article.title}</h3>
+            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-brand-gold transition-colors">{article.title}</h3>
             <p className="text-slate-400 text-sm line-clamp-3 mb-4">{article.summary || article.content}</p>
             <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/10">
               <span className="text-xs text-slate-500">{new Date(article.publishedAt).toLocaleDateString()}</span>

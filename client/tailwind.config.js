@@ -4,6 +4,16 @@ export default {
   theme: {
     extend: {
       colors: {
+        brand: {
+          navy: '#1B365D',
+          'navy-deep': '#15304a',
+          'navy-light': '#234a78',
+          gold: '#C1A376',
+          'gold-light': '#d4bc94',
+          'gold-dark': '#a88b5a',
+          charcoal: '#333333',
+          cream: '#F8F9FA',
+        },
         ori: {
           50: '#f0fdfa',
           100: '#ccfbf1',
