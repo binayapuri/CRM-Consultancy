@@ -17,19 +17,23 @@ This sets up **dev-only** CI/CD:
 **Yes, with two parts:**
 
 1. **DNS** — In Namecheap (or your registrar), create **A** records for `abroadup.com` and `www` → your VPS IP. Until DNS propagates, browsers won’t reach your server on that hostname.
-2. **HTTPS** — Browsers expect a certificate that **includes** the hostname you visit.  
-   - **Now:** Issue a cert for `abroadup.online` + `www.abroadup.online` only, update `ssl_certificate` paths in Nginx to match Certbot output (often `/etc/letsencrypt/live/abroadup.online/`).  
-   - **Later:** When `abroadup.com` DNS works, **expand** the certificate so it lists all four names:
+2. **HTTPS** — The **repo Nginx template is HTTP-only** (port 80 → Node). It does **not** reference `/etc/letsencrypt/...` so **deploy never fails** when certs don’t exist yet.  
+   - After DNS works, SSH to the VPS and run **Certbot**; it will add HTTPS (port 443) to your Nginx config.  
+   - **Important:** so the next GitHub deploy **does not overwrite** Certbot’s changes, create a marker file once:
 
    ```bash
-   sudo certbot certonly --nginx --expand \
+   sudo touch /etc/nginx/.abroadup-keep-nginx
+   ```
+
+   While that file exists, the deploy script **skips** copying `nginx-abroadup-dev.conf`. Remove the file only when you intentionally want the repo template reapplied.
+
+   - **Later:** When `abroadup.com` DNS works, expand the cert:
+
+   ```bash
+   sudo certbot --nginx --expand \
      -d abroadup.online -d www.abroadup.online \
      -d abroadup.com -d www.abroadup.com
    ```
-
-   Then reload Nginx. The repo config already lists all four `server_name`s; after expand, **HTTPS for .com works** without changing Nginx server blocks.
-
-**If you add `abroadup.com` to Nginx before the cert includes it**, visitors will see a certificate warning until you run `certbot --expand` (or temporarily remove `.com` from `server_name` until ready).
 
 ### `FRONTEND_URL` (OAuth, emails, magic links)
 
@@ -79,14 +83,16 @@ For **abroadup.com** (when ready):
 
 ### Nginx site (from repo)
 
+CI/CD copies this automatically on deploy **unless** `/etc/nginx/.abroadup-keep-nginx` exists.
+
+Manual copy (first-time / debugging):
+
 ```bash
 cp /var/www/orivisa-dev/current/deploy/dev/nginx-abroadup-dev.conf /etc/nginx/sites-available/abroadup
 ln -sfn /etc/nginx/sites-available/abroadup /etc/nginx/sites-enabled/abroadup
 nginx -t
 systemctl reload nginx
 ```
-
-Edit `ssl_certificate` / `ssl_certificate_key` if Certbot used a different **certificate lineage** name.
 
 ### SSL (Let’s Encrypt)
 

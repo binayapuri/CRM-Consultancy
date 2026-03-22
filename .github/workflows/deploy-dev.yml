@@ -98,9 +98,13 @@ jobs:
 
             echo "Installing/refreshing Nginx site for abroadup.com + abroadup.online..."
             if command -v nginx >/dev/null 2>&1; then
-              cp "$APP_DIR/deploy/dev/nginx-abroadup-dev.conf" /etc/nginx/sites-available/abroadup
-              ln -sfn /etc/nginx/sites-available/abroadup /etc/nginx/sites-enabled/abroadup
-              nginx -t && systemctl reload nginx
+              if [ -f /etc/nginx/.abroadup-keep-nginx ]; then
+                echo "Skipping nginx config copy (found /etc/nginx/.abroadup-keep-nginx — Certbot or custom SSL active)."
+              else
+                cp "$APP_DIR/deploy/dev/nginx-abroadup-dev.conf" /etc/nginx/sites-available/abroadup
+                ln -sfn /etc/nginx/sites-available/abroadup /etc/nginx/sites-enabled/abroadup
+                nginx -t && systemctl reload nginx
+              fi
             else
               echo "Nginx not installed; skipping web server config."
             fi
