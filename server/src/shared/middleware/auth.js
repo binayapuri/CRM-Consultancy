@@ -1,9 +1,7 @@
-import dotenv from 'dotenv';
+import '../../loadEnv.js';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Consultancy from '../models/Consultancy.js';
-
-dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production';
 
 export async function getAuthenticatedUserFromToken(token) {

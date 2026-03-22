@@ -1,7 +1,7 @@
+import './loadEnv.js';
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -53,7 +53,6 @@ import appointmentsRoutes from './routes/appointments.js';
 import reviewsRoutes from './routes/reviews.js';
 import studentRoutes, { getPointsHandler, savePointsHandler } from './apps/student/routes.js';
 
-dotenv.config();
 configurePassport();
 
 // Student-only role check (must run after authenticate)
@@ -89,7 +88,9 @@ app.get('/api/health', (req, res) => res.json({ ok: true, timestamp: new Date().
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/orivisa';
 mongoose.connect(MONGODB_URI)
   .then(() => {
-    console.log('✓ MongoDB connected');
+    const dbName = mongoose.connection.db?.databaseName;
+    const host = mongoose.connection.host;
+    console.log('✓ MongoDB connected →', dbName || '(unknown db)', '@', host || '(unknown host)');
     CampaignSchedulerService.start();
   })
   .catch(err => console.error('MongoDB error:', err));

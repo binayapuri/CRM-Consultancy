@@ -1,5 +1,5 @@
+import './loadEnv.js';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import User from './shared/models/User.js';
 import Consultancy from './shared/models/Consultancy.js';
 import Client from './shared/models/Client.js';
@@ -18,8 +18,6 @@ import University from './shared/models/University.js';
 import UniversityRequest from './shared/models/UniversityRequest.js';
 import Course from './shared/models/Course.js';
 import OfferLetterApplication from './shared/models/OfferLetterApplication.js';
-
-dotenv.config();
 
 async function seed() {
   await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/orivisa');
