@@ -5,6 +5,8 @@ import { GraduationCap, Building2, Calculator, Compass, Shield, Users, Send, Arr
 import { useAuthStore } from '../store/auth';
 import { resolveFileUrl } from '../lib/imageUrl';
 import { getDashboardPathForRole } from '../lib/authHelpers';
+import { AbroadUpLogo } from '../components/brand/AbroadUpLogo';
+import { BRAND_NAME } from '../constants/brand';
 
 const INTERESTS = ['Student Visa (500)', 'Graduate Visa (485)', 'Skilled Migration (189/190/491)', 'Partner Visa', 'Visitor Visa', 'Other'];
 
@@ -57,10 +59,10 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-[#020617] selection:bg-emerald-500/30">
       <Helmet>
-        <title>Big Few | Australian Migration CRM & Student Hub</title>
+        <title>{BRAND_NAME} | Australian Migration CRM & Student Hub</title>
         <meta name="description" content="Experience the future of Australian migration. Manage student visas, PR pathways, and consultancy operations seamlessly." />
         <meta name="keywords" content="Australia, Visa, Student Visa, PR Pathways, Migration CRM, 189 Visa, 190 Visa, 485 Visa" />
-        <meta property="og:title" content="Big Few | Australian Migration CRM" />
+        <meta property="og:title" content={`${BRAND_NAME} | Australian Migration CRM`} />
         <meta property="og:description" content="Manage student visas, PR pathways, and consultancy operations seamlessly." />
       </Helmet>
       
@@ -74,14 +76,8 @@ export default function Landing() {
       {/* Nav */}
       <nav className="fixed w-full top-0 z-50 bg-[#020617]/50 backdrop-blur-xl border-b border-white/5">
         <div className="flex items-center justify-between px-6 lg:px-12 py-5 max-w-7xl mx-auto">
-          <Link to="/" className="group flex flex-col leading-tight">
-            <span className="text-2xl font-display font-black tracking-tighter text-white group-hover:drop-shadow-[0_0_15px_rgba(52,211,153,0.5)] transition-all">
-              <span className="text-white">BIG</span>
-              <span className="text-emerald-400">FEW</span>
-            </span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
-              Evolution of Migration
-            </span>
+          <Link to="/" className="group flex items-center gap-2 min-w-0 hover:opacity-95 transition-opacity">
+            <AbroadUpLogo variant="wordmark" theme="dark" className="group-hover:drop-shadow-[0_0_18px_rgba(52,211,153,0.35)]" />
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#about" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Our Vision</a>
@@ -375,12 +371,11 @@ export default function Landing() {
       <footer className="border-t border-white/10 py-12 relative z-10 bg-black/50">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-display font-black tracking-tighter text-white">
-              <span className="text-white">BIG</span>
-              <span className="text-emerald-400">FEW</span>
-            </span>
+            <AbroadUpLogo variant="wordmark" theme="dark" />
           </div>
-          <p className="text-slate-500 text-sm font-medium">© 2026 Dream Big, Hustle Few. Australian Migration CRM.</p>
+          <p className="text-slate-500 text-sm font-medium text-center sm:text-left">
+            © {new Date().getFullYear()} {BRAND_NAME}. Australian migration & education platform.
+          </p>
           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-slate-400 text-sm font-medium">
             <Shield className="w-4 h-4 text-emerald-400" /> Secure Australian Data Hosting
           </div>

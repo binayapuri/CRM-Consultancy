@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
 import { LogOut, FileText, Briefcase, ShieldPlus, Menu, Building2 } from 'lucide-react';
+import { AbroadUpLogo } from '../components/brand/AbroadUpLogo';
+import { BRAND_NAME } from '../constants/brand';
 
 export default function PartnerLayout() {
   const { user, logout } = useAuthStore();
@@ -47,9 +49,9 @@ export default function PartnerLayout() {
       )}
       <aside className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 w-64 bg-slate-900 text-white flex flex-col justify-between py-6 h-full fixed z-50 lg:z-20 transition-transform duration-300 ease-in-out`}>
         <div>
-          <div className="px-5 mb-8 flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-emerald-500 flex items-center justify-center font-black">P</div>
-            <span className="font-display font-black text-xl tracking-tight">Orivisa Partner</span>
+          <div className="px-5 mb-8 flex items-center gap-3 min-w-0">
+            <AbroadUpLogo variant="mark" className="scale-90" />
+            <span className="font-display font-black text-xl tracking-tight truncate">{BRAND_NAME} Partner</span>
           </div>
 
           <nav className="space-y-1 px-3">
@@ -96,7 +98,7 @@ export default function PartnerLayout() {
           <button type="button" onClick={() => setMobileMenuOpen(true)} className="p-2 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Open menu">
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-bold text-slate-900">Orivisa Partner</span>
+          <span className="font-bold text-slate-900">{BRAND_NAME} Partner</span>
         </header>
         <div className="min-h-full p-4 md:p-8 flex-1">
           <Outlet />

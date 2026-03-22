@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FileText, Building2, LogOut, Menu } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
+import { AbroadUpLogo } from '../components/brand/AbroadUpLogo';
+import { BRAND_NAME } from '../constants/brand';
 
 const nav = [
   { to: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -27,7 +29,10 @@ export default function SponsorLayout() {
       )}
       <aside className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 w-64 bg-slate-900 text-white flex flex-col fixed h-full z-50 lg:z-30 transition-transform duration-300 ease-in-out`}>
         <div className="p-5 border-b border-slate-700">
-          <h1 className="text-xl font-display font-bold text-ori-400">BIGFEW</h1>
+          <div className="flex items-center gap-2 mb-1">
+            <AbroadUpLogo variant="mark" />
+            <span className="text-xl font-display font-bold text-ori-400">{BRAND_NAME}</span>
+          </div>
           <p className="text-xs text-slate-400 mt-0.5">Sponsor Portal – Employers & Education Partners</p>
         </div>
         <nav className="flex-1 p-3 space-y-0.5">
@@ -57,7 +62,7 @@ export default function SponsorLayout() {
           <button type="button" onClick={() => setMobileMenuOpen(true)} className="p-2 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Open menu">
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-bold text-slate-900">BIGFEW Sponsor</span>
+          <span className="font-bold text-slate-900">{BRAND_NAME} Sponsor</span>
         </header>
         <main className="flex-1 p-4 sm:p-6 overflow-auto">
           <Outlet />

@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/auth';
 import { resolveFileUrl } from '../lib/imageUrl';
 import AIChatWidget from '../components/AIChatWidget';
 import Notifications from '../components/Notifications';
+import { AbroadUpLogo } from '../components/brand/AbroadUpLogo';
 
 const SIDEBAR_EXPANDED = 256; // w-64
 const SIDEBAR_COLLAPSED = 80;  // icon-only
@@ -127,12 +128,10 @@ export default function StudentLayout() {
         {/* Logo */}
         <div className={`border-b border-white/10 shrink-0 ${(sidebarCollapsed && !mobileMenuOpen) ? 'px-3 py-4' : 'px-6 py-5'}`}>
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-md flex items-center justify-center font-black text-white text-lg shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}>B</div>
-            {(!sidebarCollapsed || mobileMenuOpen) && (
-              <div className="min-w-0">
-                <h1 className="text-white font-black text-lg tracking-tight leading-none">BIGFEW</h1>
-                <p className="text-xs font-medium mt-0.5" style={{ color: '#6D7ECC' }}>Your Australian Journey</p>
-              </div>
+            {(sidebarCollapsed && !mobileMenuOpen) ? (
+              <AbroadUpLogo variant="mark" className="justify-center w-full" />
+            ) : (
+              <AbroadUpLogo variant="full" className="min-w-0" />
             )}
           </div>
         </div>
