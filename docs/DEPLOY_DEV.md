@@ -94,22 +94,65 @@ nginx -t
 systemctl reload nginx
 ```
 
-### SSL (Let’s Encrypt)
+### SSL (Let’s Encrypt) — go live on **https://**
+
+Prerequisites: **A records** for `@` and `www` → your VPS IP (e.g. `158.220.116.6`), and **wait for DNS** (TTL often 30 min).
+
+1. SSH in: `ssh root@YOUR_VPS_IP`
+
+2. Install Certbot (if not already):
 
 ```bash
-apt install -y certbot python3-certbot-nginx
+sudo apt update && sudo apt install -y certbot python3-certbot-nginx
 ```
 
-**Phase 1 — .online only (recommended first):**
+3. **One certificate for the domain you’re enabling** (repeat later for the other domain, or expand):
+
+**If this DNS panel is for `abroadup.online`:**
 
 ```bash
-sudo certbot --nginx -d abroadup.online -d www.abroadup.online
+sudo certbot --nginx -d abroadup.online -d www.abroadup.online --redirect
 ```
 
-**Phase 2 — add .com when DNS verifies:**
+**If this panel is for `abroadup.com`:**
 
 ```bash
-sudo certbot certonly --nginx --expand \
+sudo certbot --nginx -d abroadup.com -d www.abroadup.com --redirect
+```
+
+**All four names on one cert** (only when **both** domains resolve to this server):
+
+```bash
+sudo certbot --nginx \
+  -d abroadup.online -d www.abroadup.online \
+  -d abroadup.com -d www.abroadup.com \
+  --redirect
+```
+
+4. **Stop deploy from overwriting Nginx** after Certbot edits:
+
+```bash
+sudo touch /etc/nginx/.abroadup-keep-nginx
+```
+
+5. Set **`FRONTEND_URL`** to HTTPS in `/etc/orivisa-dev.env` (and mirror in GitHub `DEV_ENV`), e.g.:
+
+```text
+FRONTEND_URL=https://abroadup.online
+```
+
+Then: `sudo systemctl restart orivisa-dev.service`
+
+**Optional:** repo script (after deploy has extracted files):
+
+```bash
+sudo LETSENCRYPT_EMAIL=you@example.com bash /var/www/orivisa-dev/current/deploy/dev/enable-https-abroadup.sh abroadup.online www.abroadup.online
+```
+
+**Phase 2 — add `.com` to an existing cert** (when `.com` DNS is ready):
+
+```bash
+sudo certbot --nginx --expand \
   -d abroadup.online -d www.abroadup.online \
   -d abroadup.com -d www.abroadup.com
 sudo systemctl reload nginx
