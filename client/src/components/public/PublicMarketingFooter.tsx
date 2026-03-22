@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Mail, Phone, ExternalLink } from 'lucide-react';
 import { AbroadUpLogo } from '../brand/AbroadUpLogo';
+import { BrandMark } from '../brand/BrandMark';
 import {
   BRAND_NAME,
   COMPANY_EMAIL,
@@ -15,7 +16,10 @@ export function PublicMarketingFooter() {
     <footer className="border-t border-white/10 bg-gradient-to-b from-[#0a1628] to-[#050d18] mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-14 grid gap-10 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <div className="rounded-xl bg-white/95 px-3 py-2 inline-block shadow-md shadow-black/20 ring-1 ring-white/15 mb-4">
+          <div className="rounded-xl bg-white/95 px-3 py-2.5 inline-flex items-center gap-3 shadow-md shadow-black/20 ring-1 ring-white/15 mb-4">
+            <div className="rounded-lg bg-brand-gold/10 p-1.5 ring-1 ring-brand-gold/25 shrink-0">
+              <BrandMark size="md" />
+            </div>
             <AbroadUpLogo variant="wordmark" theme="light" scale="md" />
           </div>
           <p className="text-slate-400 text-sm leading-relaxed">

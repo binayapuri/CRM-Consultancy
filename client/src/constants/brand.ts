@@ -11,6 +11,9 @@ export const BRAND_LOGO_INCLUDES_TAGLINE = true;
 /** Raster logo in `client/public` */
 export const BRAND_LOGO_PATH = '/logo3.png';
 
+/** Bird / icon mark — favicon, UI accents, product mockups */
+export const BRAND_MARK_PATH = '/logo4.png';
+
 /** Brand palette — match logo (navy + antique gold + charcoal) */
 export const BRAND_COLOR_NAVY = '#1B365D';
 export const BRAND_COLOR_GOLD = '#C1A376';

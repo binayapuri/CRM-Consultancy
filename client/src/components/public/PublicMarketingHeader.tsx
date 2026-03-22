@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { AbroadUpLogo } from '../brand/AbroadUpLogo';
+import { BrandNavLogo } from '../brand/BrandNavLogo';
 
 type NavItem = { to: string; label: string };
 
@@ -26,9 +26,9 @@ export function PublicMarketingHeader({
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-10 py-2">
         <Link
           to="/"
-          className="flex items-center min-w-0 shrink leading-none hover:opacity-95 transition-opacity rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/50 -my-0.5"
+          className="group flex items-center min-w-0 shrink leading-none hover:opacity-95 transition-opacity rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/50 -my-0.5"
         >
-          <AbroadUpLogo variant="wordmark" theme="light" scale="header" />
+          <BrandNavLogo logoClassName="group-hover:drop-shadow-[0_4px_14px_rgba(27,54,93,0.12)]" />
         </Link>
         <nav className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-sm font-semibold">
           {nav.map((item) => (

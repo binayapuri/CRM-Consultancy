@@ -2,6 +2,7 @@ import { useId } from 'react';
 import {
   BRAND_LOGO_INCLUDES_TAGLINE,
   BRAND_LOGO_PATH,
+  BRAND_MARK_PATH,
   BRAND_NAME,
   BRAND_TAGLINE,
 } from '../../constants/brand';
@@ -79,7 +80,7 @@ export function AbroadUpLogo({
 
   const RasterMark = (
     <img
-      src={BRAND_LOGO_PATH}
+      src={BRAND_MARK_PATH}
       alt={BRAND_NAME}
       className={`block shrink-0 object-contain object-center rounded-xl ${RASTER_MARK[scale]}`}
       loading="eager"

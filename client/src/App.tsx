@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useAuthStore } from './store/auth';
 import { getDashboardPathForRole } from './lib/authHelpers';
 
@@ -139,6 +140,11 @@ function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <>
+      <Helmet>
+        <link rel="icon" type="image/png" href="/logo4.png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/logo4.png" />
+        <meta name="theme-color" content="#1B365D" />
+      </Helmet>
       <ToastContainer />
       <Modal />
       <ConfirmDialog />

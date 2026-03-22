@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { useAuthStore } from '../../store/auth';
 import { AbroadUpLogo } from '../../components/brand/AbroadUpLogo';
+import { BrandMark } from '../../components/brand/BrandMark';
 
 const API = '/api';
 
@@ -106,7 +107,10 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-brand-navy via-brand-navy-deep to-[#0a1628] p-4 gap-8">
-      <div className="rounded-2xl bg-white px-5 py-3 shadow-2xl shadow-black/40 ring-1 ring-white/20">
+      <div className="rounded-2xl bg-white px-5 py-3.5 shadow-2xl shadow-black/40 ring-1 ring-white/20 flex items-center gap-3">
+        <div className="rounded-xl bg-brand-gold/10 p-2 ring-1 ring-brand-gold/25 shrink-0">
+          <BrandMark size="lg" />
+        </div>
         <AbroadUpLogo variant="wordmark" theme="light" scale="lg" />
       </div>
       <div className="w-full max-w-md card bg-white/95 backdrop-blur">

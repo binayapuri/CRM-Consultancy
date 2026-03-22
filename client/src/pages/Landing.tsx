@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { GraduationCap, Building2, Calculator, Compass, Shield, Users, Send, ArrowRight, Briefcase, BookOpen } from 'lucide-react';
+import { GraduationCap, Building2, Calculator, Compass, Shield, Send, ArrowRight, Briefcase, BookOpen } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import { resolveFileUrl } from '../lib/imageUrl';
 import { getDashboardPathForRole } from '../lib/authHelpers';
 import { AbroadUpLogo } from '../components/brand/AbroadUpLogo';
+import { BrandMark } from '../components/brand/BrandMark';
+import { BrandNavLogo } from '../components/brand/BrandNavLogo';
 import { BRAND_NAME } from '../constants/brand';
 
 const INTERESTS = ['Student Visa (500)', 'Graduate Visa (485)', 'Skilled Migration (189/190/491)', 'Partner Visa', 'Visitor Visa', 'Other'];
@@ -59,6 +61,8 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-[#0f1f35] selection:bg-brand-gold/30">
       <Helmet>
+        <link rel="icon" type="image/png" href="/logo4.png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/logo4.png" />
         <title>{BRAND_NAME} | Australian Migration CRM & Student Hub</title>
         <meta name="description" content="Experience the future of Australian migration. Manage student visas, PR pathways, and consultancy operations seamlessly." />
         <meta name="keywords" content="Australia, Visa, Student Visa, PR Pathways, Migration CRM, 189 Visa, 190 Visa, 485 Visa" />
@@ -74,10 +78,13 @@ export default function Landing() {
       </div>
 
       {/* Nav */}
-      <nav className="fixed w-full top-0 z-50 bg-brand-cream/95 backdrop-blur-xl border-b border-slate-200/90 shadow-sm">
+      <nav className="fixed w-full top-0 z-50 overflow-visible bg-brand-cream/95 backdrop-blur-xl border-b border-slate-200/90 shadow-sm">
         <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 py-2 max-w-7xl mx-auto">
-          <Link to="/" className="group flex items-center min-w-0 shrink leading-none hover:opacity-95 transition-opacity rounded-lg -my-0.5">
-            <AbroadUpLogo variant="wordmark" theme="light" scale="header" className="group-hover:drop-shadow-[0_4px_14px_rgba(27,54,93,0.12)]" />
+          <Link
+            to="/"
+            className="group flex items-center min-w-0 shrink leading-none hover:opacity-95 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/50 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-cream"
+          >
+            <BrandNavLogo logoClassName="group-hover:drop-shadow-[0_4px_14px_rgba(27,54,93,0.14)]" />
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#about" className="text-sm font-semibold text-brand-navy/80 hover:text-brand-navy transition-colors">Our Vision</a>
@@ -119,12 +126,15 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
           
           <div className="relative z-10 space-y-8 animate-fade-in-up">
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-brand-gold/30 bg-brand-gold/10 backdrop-blur-md shadow-[0_0_30px_rgba(193,163,118,0.2)]">
+            <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 backdrop-blur-md shadow-[0_0_30px_rgba(193,163,118,0.2)]">
+              <div className="rounded-full bg-white/10 p-1 ring-1 ring-brand-gold/35 shrink-0">
+                <BrandMark size="sm" className="opacity-95" />
+              </div>
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold-light opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-brand-gold"></span>
               </span>
-              <span className="text-xs font-bold text-brand-gold uppercase tracking-widest">Dream Big, Hustle Few</span>
+              <span className="text-sm font-bold text-brand-gold uppercase tracking-widest">Dream Big, Hustle Few</span>
             </div>
             
             <h1 className="text-5xl lg:text-7xl font-display font-black text-white leading-[1.1] tracking-tight">
@@ -168,30 +178,30 @@ export default function Landing() {
                 className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-80"
               />
               {/* Glassmorphism UI mockups floating inside */}
-              <div className="absolute top-10 left-10 right-10 p-6 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-gold to-sky-400 p-[2px]">
-                      <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
-                        <Users className="w-5 h-5 text-white" />
+              <div className="absolute top-8 left-8 right-8 sm:top-10 sm:left-10 sm:right-10 p-7 sm:p-8 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl">
+                <div className="flex items-center justify-between mb-7">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-brand-gold to-sky-400 p-[2px] shrink-0">
+                      <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center p-1.5">
+                        <BrandMark size="lg" className="w-full h-full max-w-none max-h-none" />
                       </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">Application Status</p>
-                      <p className="text-xs text-brand-gold-light">Subclass 189 - Invited</p>
+                    <div className="min-w-0">
+                      <p className="text-base sm:text-lg font-bold text-white">Application Status</p>
+                      <p className="text-sm text-brand-gold-light">Subclass 189 - Invited</p>
                     </div>
                   </div>
-                  <div className="px-3 py-1 rounded-full bg-brand-gold/20 text-brand-gold text-xs font-bold border border-brand-gold/30">
+                  <div className="px-3.5 py-1.5 rounded-full bg-brand-gold/20 text-brand-gold text-xs sm:text-sm font-bold border border-brand-gold/30 shrink-0">
                     Active
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                <div className="space-y-4">
+                  <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
                     <div className="h-full w-[85%] bg-gradient-to-r from-brand-gold to-brand-navy-light rounded-full relative">
                       <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:1rem_1rem] animate-[move_1s_linear_infinite]" />
                     </div>
                   </div>
-                  <div className="flex justify-between text-xs text-slate-400 font-medium">
+                  <div className="flex justify-between text-sm text-slate-400 font-medium">
                     <span>Lodged</span>
                     <span>Grant Expected</span>
                   </div>
@@ -199,8 +209,8 @@ export default function Landing() {
               </div>
               
               <div className="absolute bottom-10 right-10 px-6 py-4 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 text-indigo-400">
-                  <Compass className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-full bg-indigo-500/15 flex items-center justify-center border border-indigo-500/25 p-1.5">
+                  <BrandMark size="md" className="h-8 w-8 min-h-0 min-w-0" />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-white">AI Compass Active</p>
@@ -216,6 +226,13 @@ export default function Landing() {
       <section className="py-32 relative z-10 px-6 lg:px-12">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
+            <div className="inline-flex items-center justify-center gap-3 mb-5">
+              <span className="h-px w-12 sm:w-16 bg-gradient-to-r from-transparent to-brand-gold/60" aria-hidden />
+              <div className="rounded-2xl bg-brand-gold/10 p-2 ring-1 ring-brand-gold/25 shadow-[0_0_24px_rgba(193,163,118,0.15)]">
+                <BrandMark size="md" />
+              </div>
+              <span className="h-px w-12 sm:w-16 bg-gradient-to-l from-transparent to-brand-gold/60" aria-hidden />
+            </div>
             <h2 className="text-4xl lg:text-5xl font-display font-black text-white mb-6">A New Era of Migration</h2>
             <p className="text-lg text-slate-400 max-w-2xl mx-auto font-light">Forget endless emails and scattered documents. We've brought the entire international student and migration journey into one masterpiece of an platform.</p>
           </div>
@@ -296,6 +313,9 @@ export default function Landing() {
       <section id="enquiry" className="py-32 relative z-10 px-6 lg:px-12">
         <div className="max-w-3xl mx-auto">
           <div className="p-10 lg:p-16 rounded-[2.5rem] bg-gradient-to-b from-slate-800/80 to-slate-900/80 border border-white/10 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+            <div className="absolute top-6 right-8 opacity-[0.07] pointer-events-none select-none" aria-hidden>
+              <BrandMark size="xl" className="h-24 w-24 sm:h-28 sm:w-28" />
+            </div>
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-gold/10 rounded-full blur-[100px] pointer-events-none" />
             
             <div className="relative z-10">
@@ -371,7 +391,10 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t border-white/10 py-12 relative z-10 bg-black/50">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 shadow-md shadow-black/15 ring-1 ring-white/20">
+          <div className="flex items-center gap-3 rounded-xl bg-white/95 px-3 py-2.5 shadow-md shadow-black/15 ring-1 ring-white/20">
+            <div className="rounded-lg bg-brand-gold/10 p-1.5 ring-1 ring-brand-gold/25 shrink-0">
+              <BrandMark size="sm" />
+            </div>
             <AbroadUpLogo variant="wordmark" theme="light" scale="md" />
           </div>
           <p className="text-slate-500 text-sm font-medium text-center sm:text-left">
