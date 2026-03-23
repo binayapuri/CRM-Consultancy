@@ -1,5 +1,13 @@
 import './loadEnv.js';
+import fs from 'fs';
+import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+
+/** VPS: systemd uses /etc/orivisa-dev.env but manual `npm run seed` does not — load it if MONGODB_URI still unset */
+const ETC_ENV = '/etc/orivisa-dev.env';
+if (!process.env.MONGODB_URI?.trim() && fs.existsSync(ETC_ENV)) {
+  dotenv.config({ path: ETC_ENV, override: true });
+}
 import User from './shared/models/User.js';
 import Consultancy from './shared/models/Consultancy.js';
 import Client from './shared/models/Client.js';
