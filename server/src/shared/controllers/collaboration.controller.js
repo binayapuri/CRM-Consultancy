@@ -1,4 +1,5 @@
 import { CollaborationService } from '../services/collaboration.service.js';
+import { fetchLinkPreview } from '../services/link-preview.service.js';
 
 export class CollaborationController {
   static async getMessages(req, res) {
@@ -17,8 +18,8 @@ export class CollaborationController {
   }
 
   static async getPosts(req, res) {
-    const posts = await CollaborationService.getPosts(req.query);
-    res.json(posts);
+    const data = await CollaborationService.getPosts(req.query, req.user || null);
+    res.json(data);
   }
 
   static async createPost(req, res) {
@@ -28,7 +29,7 @@ export class CollaborationController {
   }
 
   static async getPostById(req, res) {
-    const result = await CollaborationService.getPostById(req.params.id);
+    const result = await CollaborationService.getPostById(req.params.id, req.user || null);
     res.json(result);
   }
 
@@ -49,5 +50,43 @@ export class CollaborationController {
     if (!text) return res.status(400).json({ error: 'Message text is required' });
     const msg = await CollaborationService.sendMessageToPostAuthor(req.user, req.params.id, text);
     res.status(201).json(msg);
+  }
+
+  static async savePost(req, res) {
+    const userId = req.user._id || req.user.id;
+    const result = await CollaborationService.savePost(req.params.id, userId);
+    res.json(result);
+  }
+
+  static async unsavePost(req, res) {
+    const userId = req.user._id || req.user.id;
+    const result = await CollaborationService.unsavePost(req.params.id, userId);
+    res.json(result);
+  }
+
+  static async toggleFollowUser(req, res) {
+    const followerId = req.user._id || req.user.id;
+    const result = await CollaborationService.toggleFollowUser(followerId, req.params.userId);
+    res.json(result);
+  }
+
+  static async uploadPostImage(req, res) {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    if (req.file.mimetype && !req.file.mimetype.startsWith('image/')) {
+      return res.status(400).json({ error: 'File must be an image' });
+    }
+    res.json({ url: `/uploads/${req.file.filename}` });
+  }
+
+  static async getFollowing(req, res) {
+    const followerId = req.user._id || req.user.id;
+    const followingIds = await CollaborationService.getFollowingIds(followerId);
+    res.json({ followingIds: followingIds.map((id) => id.toString()) });
+  }
+
+  static async previewLink(req, res) {
+    const userId = req.user._id || req.user.id;
+    const result = await fetchLinkPreview({ url: req.body.url, userId });
+    res.json(result);
   }
 }

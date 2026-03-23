@@ -29,6 +29,24 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
+/** Sets req.user when a valid Bearer token is present; otherwise req.user is null. */
+export const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      req.user = null;
+      return next();
+    }
+    const token = authHeader.split(' ')[1];
+    const user = await getAuthenticatedUserFromToken(token);
+    req.user = user || null;
+    next();
+  } catch {
+    req.user = null;
+    next();
+  }
+};
+
 export const requireRole = (...roles) => (req, res, next) => {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
   if (!roles.includes(req.user.role)) {

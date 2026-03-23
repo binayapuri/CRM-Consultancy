@@ -46,6 +46,7 @@ import trackingRoutes from './routes/tracking.js';
 import { CampaignSchedulerService } from './shared/services/campaign-scheduler.service.js';
 
 import communityRoutes from './routes/community.js';
+import { CollaborationService } from './shared/services/collaboration.service.js';
 import newsRoutes from './routes/news.js';
 import jobsRoutes from './routes/jobs.js';
 import employersRoutes from './routes/employers.js';
@@ -181,6 +182,9 @@ async function start() {
     const dbName = mongoose.connection.db?.databaseName;
     const host = mongoose.connection.host;
     console.log('✓ MongoDB connected →', dbName || '(unknown db)', '@', host || '(unknown host)');
+    CollaborationService.syncCommentCountsFromComments().catch((e) =>
+      console.warn('Community commentCount sync:', e?.message || e)
+    );
     CampaignSchedulerService.start();
   } catch (err) {
     console.error('MongoDB connection failed — fix MONGODB_URI, Atlas Network Access (IP allowlist), and credentials.');

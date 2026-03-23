@@ -1,6 +1,8 @@
 import Message from '../models/Message.js';
 import CommunityPost from '../models/CommunityPost.js';
 import CommunityComment from '../models/CommunityComment.js';
+import CommunityPostSave from '../models/CommunityPostSave.js';
+import CommunityFollow from '../models/CommunityFollow.js';
 import { createNotification } from '../utils/notify.js';
 
 export class CollaborationService {
@@ -116,9 +118,9 @@ export class CollaborationService {
   }
 
   // --- Community ---
-  static async getPosts(queryData) {
+  static _buildPostMatch(queryData) {
     const { location, university, tag, category, search } = queryData;
-    let query = { status: 'ACTIVE' };
+    const query = { status: 'ACTIVE' };
     if (location) query.location = new RegExp(String(location), 'i');
     if (university) query.university = new RegExp(String(university), 'i');
     if (tag) query.tags = tag;
@@ -127,10 +129,114 @@ export class CollaborationService {
       const rx = new RegExp(String(search), 'i');
       query.$or = [{ title: rx }, { content: rx }, { tags: rx }, { location: rx }, { university: rx }];
     }
+    return query;
+  }
 
-    return CommunityPost.find(query)
-      .populate('authorId', 'profile.firstName profile.lastName profile.avatar')
-      .sort({ isPinned: -1, createdAt: -1 });
+  static async _attachSavedFlags(user, posts) {
+    if (!user || !posts.length) {
+      return posts.map((p) => {
+        const o = typeof p.toObject === 'function' ? p.toObject() : { ...p };
+        return { ...o, isSaved: false };
+      });
+    }
+    const ids = posts.map((p) => p._id);
+    const saved = await CommunityPostSave.find({ userId: user._id, postId: { $in: ids } })
+      .select('postId')
+      .lean();
+    const savedSet = new Set(saved.map((s) => s.postId.toString()));
+    return posts.map((p) => {
+      const o = typeof p.toObject === 'function' ? p.toObject() : { ...p };
+      return { ...o, isSaved: savedSet.has(p._id.toString()) };
+    });
+  }
+
+  /**
+   * @param {object} queryData — filters + page, limit, sort (recent|top|following|saved)
+   * @param {object|null} user — optional user for saved/following and isSaved flags
+   */
+  static async getPosts(queryData, user) {
+    const match = CollaborationService._buildPostMatch(queryData);
+    const page = Math.max(1, parseInt(String(queryData.page || '1'), 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(String(queryData.limit || '20'), 10) || 20));
+    const skip = (page - 1) * limit;
+    const sort = String(queryData.sort || 'recent').toLowerCase();
+
+    if (sort === 'saved') {
+      if (!user) throw Object.assign(new Error('Sign in to view saved posts'), { status: 401 });
+      const saves = await CommunityPostSave.find({ userId: user._id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit + 1)
+        .populate({
+          path: 'postId',
+          match,
+          populate: { path: 'authorId', select: 'profile.firstName profile.lastName profile.avatar' },
+        })
+        .lean();
+      let rows = saves.map((s) => s.postId).filter(Boolean);
+      const hasMore = rows.length > limit;
+      rows = rows.slice(0, limit);
+      const total = await CommunityPostSave.countDocuments({ userId: user._id });
+      const withFlags = await CollaborationService._attachSavedFlags(user, rows);
+      return { posts: withFlags, page, limit, hasMore, total };
+    }
+
+    if (sort === 'following') {
+      if (!user) throw Object.assign(new Error('Sign in to view posts from people you follow'), { status: 401 });
+      const followingIds = await CommunityFollow.find({ followerId: user._id }).distinct('followingId');
+      if (!followingIds.length) {
+        return { posts: [], page, limit, hasMore: false, total: 0 };
+      }
+      match.authorId = { $in: followingIds };
+    }
+
+    if (sort === 'top') {
+      const pipeline = [
+        { $match: match },
+        {
+          $addFields: {
+            score: {
+              $add: [
+                { $size: { $ifNull: ['$upvotes', []] } },
+                { $multiply: [{ $ifNull: ['$commentCount', 0] }, 2] },
+              ],
+            },
+          },
+        },
+        { $sort: { isPinned: -1, score: -1, createdAt: -1, _id: -1 } },
+        { $skip: skip },
+        { $limit: limit + 1 },
+      ];
+      const agg = await CommunityPost.aggregate(pipeline);
+      const hasMore = agg.length > limit;
+      const slice = agg.slice(0, limit);
+      const ids = slice.map((d) => d._id);
+      if (!ids.length) {
+        const total = await CommunityPost.countDocuments(match);
+        return { posts: [], page, limit, hasMore: false, total };
+      }
+      const found = await CommunityPost.find({ _id: { $in: ids } })
+        .populate('authorId', 'profile.firstName profile.lastName profile.avatar')
+        .lean();
+      const order = new Map(ids.map((id, i) => [id.toString(), i]));
+      found.sort((a, b) => order.get(a._id.toString()) - order.get(b._id.toString()));
+      const total = await CommunityPost.countDocuments(match);
+      const withFlags = await CollaborationService._attachSavedFlags(user, found);
+      return { posts: withFlags, page, limit, hasMore, total };
+    }
+
+    const [rows, total] = await Promise.all([
+      CommunityPost.find(match)
+        .populate('authorId', 'profile.firstName profile.lastName profile.avatar')
+        .sort({ isPinned: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit + 1),
+      CommunityPost.countDocuments(match),
+    ]);
+    const hasMore = rows.length > limit;
+    const pageRows = rows.slice(0, limit).map((r) => (typeof r.toObject === 'function' ? r.toObject() : r));
+    const withFlags = await CollaborationService._attachSavedFlags(user, pageRows);
+    return { posts: withFlags, page, limit, hasMore, total };
   }
 
   static async createPost(data, authorId) {
@@ -138,18 +244,33 @@ export class CollaborationService {
     return post.save();
   }
 
-  static async getPostById(id) {
+  static async getPostById(id, user) {
     const post = await CommunityPost.findById(id).populate('authorId', 'profile.firstName profile.lastName profile.avatar');
     if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
-    
+
     post.views += 1;
     await post.save();
 
     const comments = await CommunityComment.find({ postId: post._id })
       .populate('authorId', 'profile.firstName profile.lastName profile.avatar')
       .sort({ createdAt: 1 });
-      
-    return { post, comments };
+
+    let isSaved = false;
+    let isFollowingAuthor = false;
+    if (user) {
+      const authorOid = post.authorId?._id || post.authorId;
+      const [savedDoc, followDoc] = await Promise.all([
+        CommunityPostSave.findOne({ userId: user._id, postId: post._id }).select('_id').lean(),
+        authorOid && authorOid.toString() !== user._id.toString()
+          ? CommunityFollow.findOne({ followerId: user._id, followingId: authorOid }).select('_id').lean()
+          : null,
+      ]);
+      isSaved = !!savedDoc;
+      isFollowingAuthor = !!followDoc;
+    }
+
+    const postObj = post.toObject();
+    return { post: { ...postObj, isSaved }, comments, isFollowingAuthor };
   }
 
   static async addComment(postId, authorId, content) {
@@ -161,6 +282,7 @@ export class CollaborationService {
       content
     });
     const saved = await comment.save();
+    await CommunityPost.findByIdAndUpdate(postId, { $inc: { commentCount: 1 } });
     if (post.authorId && post.authorId.toString() !== authorId.toString()) {
       await createNotification({
         userId: post.authorId,
@@ -171,7 +293,10 @@ export class CollaborationService {
         relatedEntityId: postId,
       });
     }
-    return saved;
+    return await CommunityComment.findById(saved._id).populate(
+      'authorId',
+      'profile.firstName profile.lastName profile.avatar'
+    );
   }
 
   static async sendMessageToPostAuthor(user, postId, text) {
@@ -212,5 +337,49 @@ export class CollaborationService {
       post.upvotes.push(userId);
     }
     return post.save();
+  }
+
+  static async savePost(postId, userId) {
+    const post = await CommunityPost.findById(postId);
+    if (!post || post.status !== 'ACTIVE') throw Object.assign(new Error('Post not found'), { status: 404 });
+    await CommunityPostSave.updateOne({ userId, postId }, { $setOnInsert: { userId, postId } }, { upsert: true });
+    return { saved: true };
+  }
+
+  static async unsavePost(postId, userId) {
+    await CommunityPostSave.deleteOne({ userId, postId });
+    return { saved: false };
+  }
+
+  static async toggleFollowUser(followerId, targetUserId) {
+    if (followerId.toString() === targetUserId.toString()) {
+      throw Object.assign(new Error('Cannot follow yourself'), { status: 400 });
+    }
+    const existing = await CommunityFollow.findOne({ followerId, followingId: targetUserId });
+    if (existing) {
+      await CommunityFollow.deleteOne({ _id: existing._id });
+      return { following: false };
+    }
+    await CommunityFollow.create({ followerId, followingId: targetUserId });
+    return { following: true };
+  }
+
+  static async getFollowingIds(followerId) {
+    return CommunityFollow.find({ followerId }).distinct('followingId');
+  }
+
+  /** One-time style sync: align commentCount with actual comments (safe to run on startup). */
+  static async syncCommentCountsFromComments() {
+    const agg = await CommunityComment.aggregate([
+      { $group: { _id: '$postId', n: { $sum: 1 } } },
+    ]);
+    if (!agg.length) return;
+    const ops = agg.map(({ _id, n }) => ({
+      updateOne: {
+        filter: { _id },
+        update: { $set: { commentCount: n } },
+      },
+    }));
+    await CommunityPost.bulkWrite(ops);
   }
 }
