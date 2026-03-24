@@ -120,6 +120,9 @@ export class AdminService {
     if (body.notifications != null) {
       update.notifications = { ...doc.notifications?.toObject?.() ?? doc.notifications ?? {}, ...body.notifications };
     }
+    if (body.prEstimator != null) {
+      update.prEstimator = { ...doc.prEstimator?.toObject?.() ?? doc.prEstimator ?? {}, ...body.prEstimator };
+    }
 
     Object.keys(update).forEach(key => doc.set(key, update[key]));
     await doc.save();

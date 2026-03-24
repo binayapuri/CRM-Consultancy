@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
-import { User, ShieldCheck, GraduationCap, Briefcase, Plane, MapPin, Heart, Target, StickyNote } from 'lucide-react';
+import { User, ShieldCheck, GraduationCap, Briefcase, Plane, MapPin, Heart, Target, StickyNote, Award } from 'lucide-react';
 
 // Sub-components
 import { PersonalInfo } from './profile/Sections/PersonalInfo';
 import { ImmigrationInfo } from './profile/Sections/ImmigrationInfo';
+import { EnglishInfo } from './profile/Sections/EnglishInfo';
 import { EducationInfo } from './profile/Sections/EducationInfo';
 import { WorkInfo } from './profile/Sections/WorkInfo';
 import { AddressInfo } from './profile/Sections/AddressInfo';
@@ -19,6 +21,7 @@ import { StudentSectionTabs } from '../../components/StudentSectionTabs';
 const TABS = [
   { id: 'personal', label: 'Personal', icon: <User className="w-4 h-4" /> },
   { id: 'immigration', label: 'Immigration', icon: <Plane className="w-4 h-4" /> },
+  { id: 'english', label: 'English', icon: <Award className="w-4 h-4" /> },
   { id: 'address', label: 'Address', icon: <MapPin className="w-4 h-4" /> },
   { id: 'education', label: 'Education', icon: <GraduationCap className="w-4 h-4" /> },
   { id: 'experience', label: 'Work', icon: <Briefcase className="w-4 h-4" /> },
@@ -29,8 +32,14 @@ const TABS = [
   { id: 'notes', label: 'Notes', icon: <StickyNote className="w-4 h-4" /> },
 ];
 
+const VALID_TAB_IDS = new Set(TABS.map((t) => t.id));
+
 export default function StudentProfile() {
-  const [tab, setTab] = useState('personal');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const [tab, setTab] = useState(() =>
+    tabFromUrl && VALID_TAB_IDS.has(tabFromUrl) ? tabFromUrl : 'personal'
+  );
   const [profile, setProfile] = useState<any>({});
   const [english, setEnglish] = useState<any>({});
   const [address, setAddress] = useState<any>({ current: {}, previous: [] });
@@ -114,6 +123,19 @@ export default function StudentProfile() {
 
   useEffect(() => { refreshData(); }, []);
 
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t && VALID_TAB_IDS.has(t)) setTab(t);
+  }, [searchParams]);
+
+  const setTabAndUrl = useCallback(
+    (id: string) => {
+      setTab(id);
+      setSearchParams({ tab: id }, { replace: true });
+    },
+    [setSearchParams]
+  );
+
   // API Handlers (wrapped to refresh UI)
   const wrapSave = (url: string, method: string = 'PATCH') => async (data: any) => {
     setErrorBanner(null);
@@ -161,7 +183,8 @@ export default function StudentProfile() {
         <div className="flex-1 min-w-0 order-2 lg:order-1">
           <div className="animate-in slide-in-from-bottom-4 duration-500">
             {tab === 'personal' && <PersonalInfo data={profile} onSave={wrapSave('/api/student/profile')} />}
-            {tab === 'immigration' && <ImmigrationInfo profile={profile} english={english} onSaveImmigration={wrapSave('/api/student/immigration')} onSaveEnglish={wrapSave('/api/student/english-test')} />}
+            {tab === 'immigration' && <ImmigrationInfo profile={profile} onSaveImmigration={wrapSave('/api/student/immigration')} />}
+            {tab === 'english' && <EnglishInfo english={english} onSaveEnglish={wrapSave('/api/student/english-test')} />}
             {tab === 'address' && <AddressInfo current={address.current} previous={address.previous} onSaveCurrent={wrapSave('/api/student/addresses/current')} onAddPrevious={wrapSave('/api/student/addresses', 'POST')} onDeletePrevious={id => wrapSave(`/api/student/addresses/${id}`, 'DELETE')({})} />}
             {tab === 'education' && <EducationInfo items={education} onAdd={wrapSave('/api/student/education', 'POST')} onDelete={id => wrapSave(`/api/student/education/${id}`, 'DELETE')({})} />}
             {tab === 'experience' && <WorkInfo items={experience} onAdd={wrapSave('/api/student/experience', 'POST')} onDelete={id => wrapSave(`/api/student/experience/${id}`, 'DELETE')({})} />}
@@ -174,10 +197,10 @@ export default function StudentProfile() {
         </div>
         <aside className="order-1 lg:order-2 w-full lg:w-56 xl:w-60 shrink-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto pb-2 lg:pb-0">
           <div className="lg:hidden">
-            <StudentSectionTabs tabs={TABS} activeId={tab} onChange={setTab} mobilePicker />
+            <StudentSectionTabs tabs={TABS} activeId={tab} onChange={setTabAndUrl} mobilePicker />
           </div>
           <div className="hidden lg:block rounded-xl border border-slate-200/80 bg-white/90 p-3 shadow-sm backdrop-blur-sm">
-            <StudentSectionTabs tabs={TABS} activeId={tab} onChange={setTab} variant="vertical" />
+            <StudentSectionTabs tabs={TABS} activeId={tab} onChange={setTabAndUrl} variant="vertical" />
           </div>
         </aside>
       </div>

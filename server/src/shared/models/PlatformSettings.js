@@ -39,6 +39,8 @@ const platformSettingsSchema = new mongoose.Schema({
   smtp: { type: smtpSchema, default: () => ({}) },
   auth: { type: authSchema, default: () => ({}) },
   notifications: { type: notificationsSchema, default: () => ({}) },
+  /** Tunable weights for /api/student/pr-estimate (SkillSelect-style estimate) */
+  prEstimator: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
 }, { timestamps: true });
 
 export default mongoose.model('PlatformSettings', platformSettingsSchema);

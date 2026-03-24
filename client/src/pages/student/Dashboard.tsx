@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuthStore, authFetch } from '../../store/auth';
-import { ArrowRight, Star, Newspaper } from 'lucide-react';
+import { useAuthStore, authFetch, safeJson } from '../../store/auth';
+import { ArrowRight, Star, Newspaper, Footprints, MessageCircle, Sparkles as SparklesIcon, Briefcase, Calculator } from 'lucide-react';
 import { resolveFileUrl } from '../../lib/imageUrl';
 import { STAGE_ICONS, ACTION_ICONS, QUICK_TOOL_ICONS, Sparkles } from './icons';
 
@@ -125,6 +125,12 @@ export default function StudentDashboard() {
   const [newsLoading, setNewsLoading] = useState(true);
 
   const [authUser, setAuthUser] = useState<any>(null);
+  const [prEst, setPrEst] = useState<{
+    total: number;
+    breakdown?: { label: string; points: number; detail?: string }[];
+    suggestions?: { priority?: string; text: string }[];
+    disclaimer?: string;
+  } | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -137,6 +143,13 @@ export default function StudentDashboard() {
         setClient(prof?.client || null);
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    authFetch('/api/student/pr-estimate')
+      .then((r) => safeJson<any>(r))
+      .then((data) => setPrEst(data))
+      .catch(() => setPrEst(null));
   }, []);
 
   useEffect(() => {
@@ -158,31 +171,60 @@ export default function StudentDashboard() {
   };
 
   const firstname = profile?.firstName || user?.profile?.firstName || client?.profile?.firstName || 'there';
-  const prPoints = estimatePoints(profile || user?.profile || client?.profile);
+  const fallbackPts = estimatePoints(profile || user?.profile || client?.profile);
+  const prPoints = typeof prEst?.total === 'number' ? prEst.total : fallbackPts;
   const currentStageObj = JOURNEY_STAGES.find(s => s.id === stage)!;
   const { percent: profilePercent, missing: profileMissing } = profileCompleteness(authUser || user, client);
   const currentActions = STAGE_ACTIONS[stage] || [];
 
   const stageIndex = JOURNEY_STAGES.findIndex(s => s.id === stage);
 
+  const storyLinks = [
+    { to: '../community', label: 'Community', gradient: 'from-fuchsia-500 to-pink-600', icon: MessageCircle },
+    { to: '../news', label: 'News', gradient: 'from-sky-500 to-blue-600', icon: Newspaper },
+    { to: '../jobs', label: 'Jobs', gradient: 'from-amber-500 to-orange-600', icon: Briefcase },
+    { to: '../pr-map', label: 'PR Map', gradient: 'from-emerald-600 to-teal-700', icon: Footprints },
+    { to: '../journey', label: 'Journey', gradient: 'from-violet-500 to-indigo-600', icon: SparklesIcon },
+    { to: '../calculator', label: 'Points', gradient: 'from-rose-500 to-red-600', icon: Calculator },
+  ];
+
   return (
     <div className="w-full min-w-0 max-w-full space-y-6 sm:space-y-8 animate-fade-in-up">
+      {/* Social-style quick stories */}
+      <div className="-mx-1 sm:mx-0">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 px-1">Jump in</p>
+        <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
+          {storyLinks.map(({ to, label, gradient, icon: SIcon }) => (
+            <Link
+              key={to}
+              to={to}
+              className="flex flex-col items-center gap-1.5 shrink-0 w-[4.5rem] sm:w-[5rem]"
+            >
+              <span className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br ${gradient} shadow-md flex items-center justify-center text-white ring-2 ring-white`}>
+                <SIcon className="w-6 h-6 sm:w-7 sm:h-7 opacity-95" aria-hidden />
+              </span>
+              <span className="text-[10px] sm:text-xs font-bold text-slate-600 text-center leading-tight">{label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* ────────── Hero Banner ────────── */}
       <div
-        className="relative overflow-hidden rounded-xl p-6 sm:p-8 md:p-12"
+        className="relative overflow-hidden rounded-xl p-5 sm:p-7 md:p-10"
         style={{ background: 'linear-gradient(135deg, #0F0E2E 0%, #1a1560 50%, #0d2847 100%)' }}
       >
         {/* Glow orbs */}
         <div className="absolute top-0 right-0 w-80 h-80 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle, #6366F1, transparent)', filter: 'blur(64px)' }} />
         <div className="absolute bottom-0 left-24 w-60 h-60 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #10B981, transparent)', filter: 'blur(80px)' }} />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-widest mb-2" style={{ color: '#10B981' }}>Welcome Back</p>
-            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-none mb-3 flex items-center gap-2">
-              Hey, {firstname}! <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-amber-300 shrink-0" aria-hidden />
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-8">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm font-bold uppercase tracking-widest mb-2" style={{ color: '#10B981' }}>Welcome Back</p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-none mb-3 flex items-center gap-2">
+              Hey, {firstname}! <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-amber-300 shrink-0" aria-hidden />
             </h1>
-            <p className="text-lg font-medium" style={{ color: '#94A3B8' }}>
+            <p className="text-base sm:text-lg font-medium" style={{ color: '#94A3B8' }}>
               Your personal Australian migration companion.
             </p>
 
@@ -207,32 +249,60 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className="shrink-0 flex flex-col gap-4">
-            {/* Profile completeness */}
-            <div className="text-center p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#10B981' }}>Profile</p>
-              <div className="w-24 h-24 rounded-full mx-auto flex items-center justify-center font-black text-2xl text-white" style={{ background: profilePercent >= 80 ? 'linear-gradient(135deg,#10B981,#059669)' : profilePercent >= 50 ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'linear-gradient(135deg,#6366F1,#4F46E5)' }}>
+          <div className="shrink-0 flex flex-row lg:flex-col gap-3 sm:gap-4 w-full lg:w-auto justify-center lg:justify-end">
+            {/* Profile completeness — compact */}
+            <div className="text-center p-3 sm:p-4 rounded-xl flex-1 max-w-[11rem]" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#10B981' }}>Profile</p>
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full mx-auto flex items-center justify-center font-black text-xl sm:text-2xl text-white" style={{ background: profilePercent >= 80 ? 'linear-gradient(135deg,#10B981,#059669)' : profilePercent >= 50 ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'linear-gradient(135deg,#6366F1,#4F46E5)' }}>
                 {profilePercent}%
               </div>
-              <p className="text-xs mt-2" style={{ color: '#94A3B8' }}>{profilePercent >= 80 ? 'Complete!' : profileMissing.slice(0, 2).join(', ')}</p>
+              <p className="text-[10px] sm:text-xs mt-2 line-clamp-2" style={{ color: '#94A3B8' }}>{profilePercent >= 80 ? 'Looking good' : profileMissing.slice(0, 2).join(', ')}</p>
               {profilePercent < 100 && (
-                <Link to="../profile" className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-indigo-200 hover:underline">
-                  Complete profile <ArrowRight className="w-3 h-3" />
+                <Link to="../profile" className="mt-1 inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-indigo-200 hover:underline">
+                  Complete <ArrowRight className="w-3 h-3" />
                 </Link>
               )}
             </div>
-            {/* PR Points badge */}
-            <div className="text-center p-6 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}>
-              <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#10B981' }}>My PR Points</p>
-              <p className="text-6xl font-black text-white leading-none">{prPoints}</p>
-              <p className="text-xs mt-2" style={{ color: '#94A3B8' }}>Estimate · Complete profile for accuracy</p>
-              <Link to="../calculator" className="mt-3 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full transition hover:opacity-80" style={{ background: 'rgba(99,102,241,0.4)', color: '#C7D2FE' }}>
-                Full Calculator <ArrowRight className="w-3 h-3" />
+            {/* PR Points — server estimate */}
+            <div className="text-center p-3 sm:p-5 rounded-xl flex-1 max-w-[11rem]" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#10B981' }}>PR points</p>
+              <p className="text-4xl sm:text-5xl font-black text-white leading-none">{prPoints}</p>
+              <p className="text-[10px] sm:text-xs mt-2 leading-snug" style={{ color: '#94A3B8' }}>Indicative · from your profile</p>
+              <Link to="../calculator" className="mt-2 inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full transition hover:opacity-80" style={{ background: 'rgba(99,102,241,0.4)', color: '#C7D2FE' }}>
+                Calculator <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
           </div>
         </div>
       </div>
+
+      {prEst?.suggestions && prEst.suggestions.length > 0 && (
+        <div className="rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50/90 to-white px-4 py-4 sm:px-5 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-700 mb-2">Suggestions for a stronger estimate</p>
+          <ul className="space-y-2 mb-3">
+            {prEst.suggestions.map((s, i) => (
+              <li key={i} className="text-sm text-slate-700 flex gap-2 items-start">
+                <span className="text-indigo-500 font-bold shrink-0">→</span>
+                <span>{s.text}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap gap-3 items-center">
+            <Link to="../profile?tab=personal" className="text-sm font-bold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1">
+              Personal <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link to="../profile?tab=english" className="text-sm font-bold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1">
+              English <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link to="../profile?tab=education" className="text-sm font-bold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1">
+              Education <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          {prEst.disclaimer && (
+            <p className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-indigo-100/80 pt-3">{prEst.disclaimer}</p>
+          )}
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
         {/* ────────── Left col: Stage picker + Actions ────────── */}

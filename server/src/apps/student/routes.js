@@ -18,6 +18,8 @@ import InvoiceCounter from '../../shared/models/InvoiceCounter.js';
 import { renderInvoicePdfBuffer } from '../../shared/utils/invoicePdf.js';
 import { encryptStudentSecret, sendStudentMail } from '../../shared/utils/mailer.js';
 import archiver from 'archiver';
+import PlatformSettings from '../../shared/models/PlatformSettings.js';
+import { computePrEstimate } from '../../shared/services/prEstimator.service.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '../../uploads');
@@ -93,6 +95,20 @@ router.get('/profile', async (req, res) => {
       return res.json({ user, client: updatedClient });
     }
     res.json({ user, client });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── GET /api/student/pr-estimate — indicative SkillSelect-style points ───────
+router.get('/pr-estimate', async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    const baseProfile = { ...(user?.profile || {}), email: user?.email || user?.profile?.email || '' };
+    const client = await getOrCreateStudentClient(req.user._id, baseProfile);
+    const platform = await PlatformSettings.findOne().lean();
+    const data = computePrEstimate(user, client, platform);
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

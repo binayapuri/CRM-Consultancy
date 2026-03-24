@@ -57,6 +57,7 @@ import OfferLetters from './pages/student/OfferLetters';
 import StudentInsurance from './pages/student/Insurance';
 import VisaGuide from './pages/student/VisaGuide';
 import Journey from './pages/student/Journey';
+import PRMap from './pages/student/PRMap';
 import Settings from './pages/student/Settings';
 import CVGenerator from './pages/student/CVGenerator';
 import StudentApplications from './pages/student/Applications';
@@ -84,6 +85,7 @@ import UniversityDetail from './pages/super/UniversityDetail';
 import UniversityEdit from './pages/super/UniversityEdit';
 import UniversityRequestsAdmin from './pages/super/UniversityRequests';
 import AdminAdvancedSettings from './pages/super/AdminAdvancedSettings';
+import AdminPrEstimator from './pages/super/AdminPrEstimator';
 import AdminNewsManager from './pages/super/AdminNewsManager';
 import AdminNewsForm from './pages/super/AdminNewsForm';
 import AdminStudentManager from './pages/super-admin/StudentManager';
@@ -217,6 +219,7 @@ export default function App() {
         <Route path="visa-guide" element={<VisaGuide />} />
         <Route path="roadmap" element={<VisaGuide />} />
         <Route path="journey" element={<Journey />} />
+        <Route path="pr-map" element={<PRMap />} />
         <Route path="settings" element={<Settings />} />
         <Route path="cv" element={<CVGenerator />} />
       </Route>
@@ -257,6 +260,7 @@ export default function App() {
         <Route path="news/add" element={<AdminNewsForm />} />
         <Route path="news/:id/edit" element={<AdminNewsForm />} />
         <Route path="settings" element={<AdminAdvancedSettings />} />
+        <Route path="pr-estimator" element={<AdminPrEstimator />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

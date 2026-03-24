@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, MessageSquare, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt, Menu } from 'lucide-react';
+import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, MessageSquare, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt, Menu, Footprints } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import { resolveFileUrl } from '../lib/imageUrl';
 import AIChatWidget from '../components/AIChatWidget';
@@ -18,6 +18,7 @@ const navSections = [
       { to: 'profile', icon: User, label: 'My Profile' },
       { to: 'cv', icon: FileText, label: 'CV Generator' },
       { to: 'journey', icon: Map, label: 'My Journey' },
+      { to: 'pr-map', icon: Footprints, label: 'My PR Map' },
     ],
   },
   {
@@ -126,12 +127,12 @@ export default function StudentLayout() {
         }}
       >
         {/* Logo */}
-        <div className={`border-b border-white/10 shrink-0 ${(sidebarCollapsed && !mobileMenuOpen) ? 'px-3 py-3' : 'px-5 py-4'}`}>
+        <div className={`border-b border-white/10 shrink-0 ${(sidebarCollapsed && !mobileMenuOpen) ? 'px-3 py-3' : 'px-4 py-3'}`}>
           <div className="flex items-center gap-3 min-w-0">
             {(sidebarCollapsed && !mobileMenuOpen) ? (
-              <AbroadUpLogo variant="mark" scale="lg" className="justify-center w-full" />
+              <AbroadUpLogo variant="mark" scale="md" className="justify-center w-full drop-shadow-[0_0_12px_rgba(251,191,36,0.35)]" />
             ) : (
-              <AbroadUpLogo variant="full" scale="lg" className="min-w-0" />
+              <AbroadUpLogo variant="full" scale="md" useRasterLogo className="min-w-0 drop-shadow-[0_0_14px_rgba(255,255,255,0.12)]" />
             )}
           </div>
         </div>
@@ -188,11 +189,19 @@ export default function StudentLayout() {
 
       {/* Main: topbar + full-width content */}
       <div className={`flex-1 flex flex-col min-h-screen transition-[margin-left] duration-200 ease-in-out ml-0 min-w-0 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 flex-nowrap min-h-[3.25rem]">
-          <button type="button" onClick={() => setMobileMenuOpen(true)} className="lg:hidden shrink-0 p-2 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Open menu">
-            <Menu className="w-5 h-5" />
-          </button>
-          {/* One toolbar only: search + notifications + profile, aligned right */}
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-4 flex-nowrap min-h-[3.5rem]">
+          <div className="flex items-center gap-2 shrink-0">
+            <button type="button" onClick={() => setMobileMenuOpen(true)} className="lg:hidden shrink-0 p-2 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Open menu">
+              <Menu className="w-5 h-5" />
+            </button>
+            <Link
+              to="/student/dashboard"
+              className="flex items-center min-w-0 max-w-[min(220px,42vw)] sm:max-w-[260px]"
+              title="Home"
+            >
+              <AbroadUpLogo variant="wordmark" theme="light" scale="header" className="min-w-0" />
+            </Link>
+          </div>
           <div className="flex flex-1 min-w-0 justify-end items-center gap-2 sm:gap-3 flex-nowrap">
             <div className="flex items-center gap-2 min-w-0 max-w-[min(100%,20rem)] sm:max-w-xs md:max-w-md">
               <SearchIcon className="w-5 h-5 text-slate-400 shrink-0 hidden sm:block" aria-hidden />

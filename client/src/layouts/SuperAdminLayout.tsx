@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, History, LogOut, GraduationCap, BookOpen, CheckSquare, Settings, Newspaper, Menu, Briefcase, FileCheck } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, History, LogOut, GraduationCap, BookOpen, CheckSquare, Settings, Newspaper, Menu, Briefcase, FileCheck, Calculator } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import { AbroadUpLogo } from '../components/brand/AbroadUpLogo';
 import { BRAND_NAME } from '../constants/brand';
@@ -16,6 +16,7 @@ const nav = [
   { to: 'university-requests', icon: FileCheck, label: 'University Requests' },
   { to: 'trace-history', icon: History, label: 'Trace History' },
   { to: 'news', icon: Newspaper, label: 'News' },
+  { to: 'pr-estimator', icon: Calculator, label: 'PR estimator' },
   { to: 'settings', icon: Settings, label: 'Settings' },
 ];
 
