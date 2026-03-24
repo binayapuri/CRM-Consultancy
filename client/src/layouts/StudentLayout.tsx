@@ -6,6 +6,7 @@ import { resolveFileUrl } from '../lib/imageUrl';
 import AIChatWidget from '../components/AIChatWidget';
 import Notifications from '../components/Notifications';
 import { AbroadUpLogo } from '../components/brand/AbroadUpLogo';
+import { BrandMark } from '../components/brand/BrandMark';
 
 const SIDEBAR_EXPANDED = 256; // w-64
 const SIDEBAR_COLLAPSED = 80;  // icon-only
@@ -126,15 +127,26 @@ export default function StudentLayout() {
           boxShadow: mobileMenuOpen ? '4px 0 24px rgba(0,0,0,0.35)' : '4px 0 24px rgba(27,54,93,0.4)',
         }}
       >
-        {/* Logo */}
-        <div className={`border-b border-white/10 shrink-0 ${(sidebarCollapsed && !mobileMenuOpen) ? 'px-3 py-3' : 'px-4 py-3'}`}>
-          <div className="flex items-center gap-3 min-w-0">
+        {/* Logo — same treatment as landing footer (light tile + wordmark) so it stays readable on navy */}
+        <div className={`border-b border-white/10 shrink-0 ${(sidebarCollapsed && !mobileMenuOpen) ? 'px-2 py-3' : 'px-3 py-3'}`}>
+          <Link to="/student/dashboard" className="block min-w-0" title="Dashboard">
             {(sidebarCollapsed && !mobileMenuOpen) ? (
-              <AbroadUpLogo variant="mark" scale="md" className="justify-center w-full drop-shadow-[0_0_12px_rgba(251,191,36,0.35)]" />
+              <div className="flex justify-center w-full">
+                <div className="rounded-xl bg-white/95 p-2 shadow-md shadow-black/25 ring-1 ring-white/20">
+                  <div className="rounded-lg bg-brand-gold/10 p-1.5 ring-1 ring-brand-gold/30">
+                    <BrandMark size="md" />
+                  </div>
+                </div>
+              </div>
             ) : (
-              <AbroadUpLogo variant="full" scale="md" useRasterLogo className="min-w-0 drop-shadow-[0_0_14px_rgba(255,255,255,0.12)]" />
+              <div className="rounded-xl bg-white/95 px-2.5 py-2 sm:px-3 flex items-center gap-2.5 min-w-0 shadow-md shadow-black/20 ring-1 ring-white/15">
+                <div className="rounded-lg bg-brand-gold/10 p-1.5 ring-1 ring-brand-gold/25 shrink-0">
+                  <BrandMark size="md" />
+                </div>
+                <AbroadUpLogo variant="wordmark" theme="light" scale="md" className="min-w-0 flex-1" />
+              </div>
             )}
-          </div>
+          </Link>
         </div>
 
         {/* Nav */}
