@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import PlatformSettings from '../models/PlatformSettings.js';
 import Client from '../models/Client.js';
 import crypto from 'crypto';
+import { nodemailerOptionsFromSmtpFields } from './smtpNormalize.js';
 
 function getStudentKey() {
   const key = process.env.STUDENT_SMTP_ENC_KEY || '';
@@ -37,6 +38,27 @@ export function decryptStudentSecret(payload) {
   return dec.toString('utf8');
 }
 
+/** Returns platform SMTP transport when enabled and complete; otherwise null (no throw). Used by sendEmail fallback. */
+export async function tryGetPlatformSmtpTransport() {
+  try {
+    const doc = await PlatformSettings.findOne();
+    const smtp = doc?.smtp || {};
+    if (!smtp.enabled || !smtp.host || !smtp.user || !smtp.pass) return null;
+    const transport = nodemailer.createTransport(
+      nodemailerOptionsFromSmtpFields({
+        host: smtp.host,
+        port: smtp.port || 587,
+        secure: smtp.secure,
+        user: smtp.user,
+        pass: smtp.pass,
+      })
+    );
+    return { transport, from: smtp.from || smtp.user };
+  } catch {
+    return null;
+  }
+}
+
 export async function getSmtpTransport() {
   const doc = await PlatformSettings.findOne();
   const smtp = doc?.smtp || {};
@@ -50,12 +72,15 @@ export async function getSmtpTransport() {
     err.statusCode = 503;
     throw err;
   }
-  const transport = nodemailer.createTransport({
-    host: smtp.host,
-    port: smtp.port || 587,
-    secure: !!smtp.secure,
-    auth: { user: smtp.user, pass: smtp.pass },
-  });
+  const transport = nodemailer.createTransport(
+    nodemailerOptionsFromSmtpFields({
+      host: smtp.host,
+      port: smtp.port || 587,
+      secure: smtp.secure,
+      user: smtp.user,
+      pass: smtp.pass,
+    })
+  );
   return { transport, from: smtp.from || smtp.user };
 }
 
@@ -91,12 +116,15 @@ export async function sendStudentMail(userId, { to, subject, text, html, attachm
     throw err;
   }
 
-  const transport = nodemailer.createTransport({
-    host: smtp.host,
-    port: smtp.port || 587,
-    secure: !!smtp.secure,
-    auth: { user: smtp.user, pass },
-  });
+  const transport = nodemailer.createTransport(
+    nodemailerOptionsFromSmtpFields({
+      host: smtp.host,
+      port: smtp.port || 587,
+      secure: smtp.secure,
+      user: smtp.user,
+      pass,
+    })
+  );
   const from = smtp.from || smtp.user;
   await transport.sendMail({ from, to, subject, text, html, attachments });
 }

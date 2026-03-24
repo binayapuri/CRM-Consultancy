@@ -6,7 +6,7 @@ import Client from '../../shared/models/Client.js';
 import Sponsor from '../../shared/models/Sponsor.js';
 import Consultancy from '../../shared/models/Consultancy.js';
 import Application from '../../shared/models/Application.js';
-import { isEmailConfigured, sendEmail } from '../../shared/utils/email.js';
+import { isEmailConfiguredAsync, sendEmail } from '../../shared/utils/email.js';
 import { logAudit } from '../../shared/utils/audit.js';
 import { EMAIL_TEMPLATES } from '../../constants.js';
 import { WorkflowAutomationService } from './workflow-automation.service.js';
@@ -325,7 +325,7 @@ export class PortalService {
     return issues;
   }
 
-  static assertCommunicationReady({ consultancy, user, to, subject, contextLabel, requireSignature = false, requireForm956Details = false }) {
+  static async assertCommunicationReady({ consultancy, user, to, subject, contextLabel, requireSignature = false, requireForm956Details = false }) {
     const issues = this.getCommunicationSetupIssues(consultancy, { requireSignature, requireForm956Details });
     if (issues.length) {
       throw this.createHttpError(
@@ -355,11 +355,11 @@ export class PortalService {
     }
 
     const emailProfile = this.getEmailProfile(consultancy, user);
-    if (!emailProfile && !isEmailConfigured()) {
+    if (!emailProfile && !(await isEmailConfiguredAsync())) {
       throw this.createHttpError(
         `${contextLabel} cannot be sent because email delivery is not configured.`,
         400,
-        [{ path: 'consultancy.emailProfiles', message: 'Add an active SMTP profile in Settings > Email Configuration, or configure SMTP environment variables on the server.' }],
+        [{ path: 'consultancy.emailProfiles', message: 'Add an active SMTP profile in Consultancy Settings > Email Configuration, set platform SMTP in Super Admin > Advanced Settings, or configure SMTP_* environment variables on the server.' }],
         'EMAIL_NOT_CONFIGURED'
       );
     }
@@ -403,7 +403,7 @@ export class PortalService {
   }
 
   static async sendWorkflowEmail({ contextLabel, consultancy, user, to, subject, html, replyTo, attachments = [], requireSignature = false, requireForm956Details = false }) {
-    this.assertCommunicationReady({ consultancy, user, to, subject, contextLabel, requireSignature, requireForm956Details });
+    await this.assertCommunicationReady({ consultancy, user, to, subject, contextLabel, requireSignature, requireForm956Details });
 
     try {
       return await sendEmail({
