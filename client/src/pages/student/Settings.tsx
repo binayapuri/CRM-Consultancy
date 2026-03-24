@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuthStore, authFetch } from '../../store/auth';
 import { resolveFileUrl } from '../../lib/imageUrl';
 import { useUiStore } from '../../store/ui';
@@ -15,10 +16,42 @@ const TABS = [
   { id: 'danger', label: 'Danger Zone', icon: Trash2 },
 ];
 
+const VALID_TAB_IDS = new Set(TABS.map((t) => t.id));
+
 export default function Settings() {
   const { user, logout } = useAuthStore();
   const { showToast } = useUiStore();
-  const [tab, setTab] = useState('security');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState(() => {
+    const p = searchParams.get('tab');
+    return p && VALID_TAB_IDS.has(p) ? p : 'security';
+  });
+
+  const setTabFromUrl = useCallback(
+    (id: string) => {
+      if (!VALID_TAB_IDS.has(id)) return;
+      setTab(id);
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (id === 'security') next.delete('tab');
+          else next.set('tab', id);
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  useEffect(() => {
+    const p = searchParams.get('tab');
+    if (p && VALID_TAB_IDS.has(p)) {
+      if (p !== tab) setTab(p);
+    } else if (!p && tab !== 'security') {
+      setTab('security');
+    }
+  }, [searchParams, tab]);
 
   // Security
   const [currentPw, setCurrentPw] = useState('');
@@ -252,7 +285,7 @@ export default function Settings() {
           return { id: t.id, label: t.label, icon: <Icon className="w-4 h-4" aria-hidden /> };
         })}
         activeId={tab}
-        onChange={setTab}
+        onChange={setTabFromUrl}
       />
 
       {/* Security Tab */}
