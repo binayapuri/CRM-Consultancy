@@ -92,4 +92,6 @@ router.post(
 
 router.get('/following', authenticate, asyncHandler(CollaborationController.getFollowing));
 
+router.get('/peers-nearby', authenticate, asyncHandler(CollaborationController.getPeersNearby));
+
 export default router;

@@ -84,6 +84,13 @@ export class CollaborationController {
     res.json({ followingIds: followingIds.map((id) => id.toString()) });
   }
 
+  static async getPeersNearby(req, res) {
+    const location = req.query?.location;
+    const userId = req.user?._id || req.user?.id;
+    const data = await CollaborationService.getPeersNearby(location, userId);
+    res.json(data);
+  }
+
   static async previewLink(req, res) {
     const userId = req.user._id || req.user.id;
     const result = await fetchLinkPreview({ url: req.body.url, userId });

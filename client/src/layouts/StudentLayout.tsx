@@ -1,12 +1,13 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, MessageSquare, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt, Menu, Footprints } from 'lucide-react';
+import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, MessageSquare, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt, Menu, Footprints, Mail } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import { resolveFileUrl } from '../lib/imageUrl';
 import AIChatWidget from '../components/AIChatWidget';
 import Notifications from '../components/Notifications';
 import { AbroadUpLogo } from '../components/brand/AbroadUpLogo';
 import { BrandMark } from '../components/brand/BrandMark';
+import { StudentJumpIn } from '../components/student/StudentJumpIn';
 
 const SIDEBAR_EXPANDED = 256; // w-64
 const SIDEBAR_COLLAPSED = 80;  // icon-only
@@ -201,35 +202,59 @@ export default function StudentLayout() {
 
       {/* Main: topbar + full-width content */}
       <div className={`flex-1 flex flex-col min-h-screen transition-[margin-left] duration-200 ease-in-out ml-0 min-w-0 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-4 flex-nowrap min-h-[3.5rem]">
-          <div className="flex items-center gap-2 shrink-0">
-            <button type="button" onClick={() => setMobileMenuOpen(true)} className="lg:hidden shrink-0 p-2 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Open menu">
+        <header className="sticky top-0 z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur-md shadow-sm shadow-slate-200/40 px-2 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 flex-nowrap min-h-[3.5rem]">
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden shrink-0 p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/45"
+              aria-label="Open menu"
+            >
               <Menu className="w-5 h-5" />
             </button>
             <Link
               to="/student/dashboard"
-              className="flex items-center min-w-0 max-w-[min(220px,42vw)] sm:max-w-[260px]"
-              title="Home"
+              className="hidden sm:flex 2xl:hidden items-center min-w-0 max-w-[140px] shrink-0 rounded-lg hover:bg-slate-50/80 transition p-1 -m-1"
+              title="Dashboard — Abroad Up"
             >
-              <AbroadUpLogo variant="wordmark" theme="light" scale="header" className="min-w-0" />
+              <BrandMark size="sm" className="opacity-95" />
             </Link>
           </div>
-          <div className="flex flex-1 min-w-0 justify-end items-center gap-2 sm:gap-3 flex-nowrap">
-            <div className="flex items-center gap-2 min-w-0 max-w-[min(100%,20rem)] sm:max-w-xs md:max-w-md">
-              <SearchIcon className="w-5 h-5 text-slate-400 shrink-0 hidden sm:block" aria-hidden />
+          <StudentJumpIn />
+          <div
+            className="flex shrink-0 items-center gap-1 sm:gap-2 flex-nowrap pl-2 ml-1 border-l border-slate-200/90"
+            role="toolbar"
+            aria-label="Account and notifications"
+          >
+            <div className="hidden md:flex items-center gap-2 min-w-0 max-w-[min(100%,12rem)] lg:max-w-[14rem]">
+              <SearchIcon className="w-4 h-4 text-slate-400 shrink-0" aria-hidden />
               <input
                 type="search"
                 placeholder="Search…"
-                aria-label="Search"
-                className="w-full min-w-0 px-3 py-2 rounded-md border border-slate-200 bg-white text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-brand-gold/35 focus:border-brand-navy"
+                aria-label="Search in app"
+                className="w-full min-w-0 px-2.5 py-1.5 rounded-lg border border-slate-200/90 bg-white text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 outline-none transition focus:ring-2 focus:ring-brand-gold/35 focus:border-brand-navy"
               />
             </div>
+            <NavLink
+              to="/student/messages"
+              className={({ isActive }) =>
+                `p-2 rounded-xl shrink-0 transition outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/45 ${
+                  isActive ? 'bg-brand-gold/15 text-brand-navy shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                }`
+              }
+              title="Messages"
+              aria-label="Messages"
+            >
+              <Mail className="w-5 h-5" />
+            </NavLink>
             <Notifications />
             <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-100 transition"
+                aria-expanded={profileOpen}
+                aria-haspopup="menu"
+                className="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-100 transition outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/45"
               >
                 {user?.profile?.avatar ? (
                   <img src={resolveFileUrl(user.profile.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-slate-200" />
@@ -282,7 +307,11 @@ export default function StudentLayout() {
             </div>
           </div>
         </header>
-        <main ref={mainScrollRef} className="flex-1 min-w-0 px-3 sm:px-6 py-5 sm:py-8 overflow-auto">
+        <main
+          ref={mainScrollRef}
+          className="flex-1 min-w-0 px-3 sm:px-6 py-5 sm:py-8 overflow-auto"
+          id="student-main"
+        >
           <Outlet />
         </main>
       </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore, authFetch, safeJson } from '../../store/auth';
-import { ArrowRight, Star, Newspaper, Footprints, MessageCircle, Sparkles as SparklesIcon, Briefcase, Calculator } from 'lucide-react';
+import { ArrowRight, Star, Newspaper } from 'lucide-react';
 import { resolveFileUrl } from '../../lib/imageUrl';
 import { STAGE_ICONS, ACTION_ICONS, QUICK_TOOL_ICONS, Sparkles } from './icons';
 
@@ -179,36 +179,8 @@ export default function StudentDashboard() {
 
   const stageIndex = JOURNEY_STAGES.findIndex(s => s.id === stage);
 
-  const storyLinks = [
-    { to: '../community', label: 'Community', gradient: 'from-fuchsia-500 to-pink-600', icon: MessageCircle },
-    { to: '../news', label: 'News', gradient: 'from-sky-500 to-blue-600', icon: Newspaper },
-    { to: '../jobs', label: 'Jobs', gradient: 'from-amber-500 to-orange-600', icon: Briefcase },
-    { to: '../pr-map', label: 'PR Map', gradient: 'from-emerald-600 to-teal-700', icon: Footprints },
-    { to: '../journey', label: 'Journey', gradient: 'from-violet-500 to-indigo-600', icon: SparklesIcon },
-    { to: '../calculator', label: 'Points', gradient: 'from-rose-500 to-red-600', icon: Calculator },
-  ];
-
   return (
     <div className="w-full min-w-0 max-w-full space-y-6 sm:space-y-8 animate-fade-in-up">
-      {/* Social-style quick stories */}
-      <div className="-mx-1 sm:mx-0">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 px-1">Jump in</p>
-        <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
-          {storyLinks.map(({ to, label, gradient, icon: SIcon }) => (
-            <Link
-              key={to}
-              to={to}
-              className="flex flex-col items-center gap-1.5 shrink-0 w-[4.5rem] sm:w-[5rem]"
-            >
-              <span className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br ${gradient} shadow-md flex items-center justify-center text-white ring-2 ring-white`}>
-                <SIcon className="w-6 h-6 sm:w-7 sm:h-7 opacity-95" aria-hidden />
-              </span>
-              <span className="text-[10px] sm:text-xs font-bold text-slate-600 text-center leading-tight">{label}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
       {/* ────────── Hero Banner ────────── */}
       <div
         className="relative overflow-hidden rounded-xl p-5 sm:p-7 md:p-10"

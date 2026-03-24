@@ -1,8 +1,11 @@
+import mongoose from 'mongoose';
 import Message from '../models/Message.js';
 import CommunityPost from '../models/CommunityPost.js';
 import CommunityComment from '../models/CommunityComment.js';
 import CommunityPostSave from '../models/CommunityPostSave.js';
 import CommunityFollow from '../models/CommunityFollow.js';
+import User from '../models/User.js';
+import Client from '../models/Client.js';
 import { createNotification } from '../utils/notify.js';
 
 export class CollaborationService {
@@ -366,6 +369,76 @@ export class CollaborationService {
 
   static async getFollowingIds(followerId) {
     return CommunityFollow.find({ followerId }).distinct('followingId');
+  }
+
+  /**
+   * Students with a city/suburb/state on profile that matches the search (e.g. "Melbourne").
+   * Privacy: only users who saved address data appear; not a guarantee of current location.
+   */
+  static async getPeersNearby(location, currentUserId) {
+    const loc = String(location || '').trim();
+    if (loc.length < 2) return { peers: [] };
+    const safe = loc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rx = new RegExp(safe, 'i');
+    const exclude = currentUserId ? new mongoose.Types.ObjectId(String(currentUserId)) : null;
+
+    const userQuery = {
+      role: 'STUDENT',
+      ...(exclude ? { _id: { $ne: exclude } } : {}),
+      $or: [
+        { 'profile.address.city': rx },
+        { 'profile.address.state': rx },
+      ],
+    };
+
+    const users = await User.find(userQuery)
+      .select('profile.firstName profile.lastName profile.avatar profile.address')
+      .limit(30)
+      .lean();
+
+    const fromUsers = users.map((u) => ({
+      userId: u._id,
+      firstName: u.profile?.firstName || '',
+      lastName: u.profile?.lastName || '',
+      avatar: u.profile?.avatar || '',
+      city: u.profile?.address?.city || u.profile?.address?.state || '',
+    }));
+
+    const clientQuery = {
+      userId: { $exists: true, ...(exclude ? { $ne: exclude } : {}) },
+      $or: [
+        { 'profile.address.city': rx },
+        { 'profile.address.suburb': rx },
+        { 'profile.address.state': rx },
+      ],
+    };
+
+    const clients = await Client.find(clientQuery)
+      .populate('userId', 'profile.firstName profile.lastName profile.avatar profile.address')
+      .select('profile.firstName profile.lastName profile.address userId')
+      .limit(30)
+      .lean();
+
+    const fromClients = [];
+    for (const c of clients) {
+      const uid = c.userId?._id || c.userId;
+      if (!uid) continue;
+      if (exclude && uid.toString() === exclude.toString()) continue;
+      fromClients.push({
+        userId: uid,
+        firstName: c.userId?.profile?.firstName || c.profile?.firstName || '',
+        lastName: c.userId?.profile?.lastName || c.profile?.lastName || '',
+        avatar: c.userId?.profile?.avatar || '',
+        city: c.profile?.address?.city || c.profile?.address?.suburb || '',
+      });
+    }
+
+    const map = new Map();
+    [...fromUsers, ...fromClients].forEach((p) => {
+      const id = String(p.userId);
+      if (!map.has(id)) map.set(id, p);
+    });
+    return { peers: [...map.values()].slice(0, 24) };
   }
 
   /** One-time style sync: align commentCount with actual comments (safe to run on startup). */

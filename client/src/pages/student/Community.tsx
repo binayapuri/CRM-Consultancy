@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Sparkles } from 'lucide-react';
+import { Plus, Search, Sparkles, MapPin, Users, UserPlus } from 'lucide-react';
 import { useAuthStore } from '../../store/auth';
 import { authFetch } from '../../store/auth';
 import CommunityPostCard, { type FeedPost } from '../../components/student/CommunityPostCard';
 import CommunityComposer from '../../components/student/CommunityComposer';
+import { resolveFileUrl } from '../../lib/imageUrl';
 
 const LOCATIONS = ['', 'Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Canberra', 'Gold Coast'];
 const CATEGORIES = [
@@ -17,6 +18,14 @@ const CATEGORIES = [
 ];
 
 type SortKey = 'recent' | 'top' | 'following' | 'saved';
+
+type PeerRow = {
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  avatar?: string;
+  city?: string;
+};
 
 export default function Community() {
   const navigate = useNavigate();
@@ -31,6 +40,9 @@ export default function Community() {
   const [sort, setSort] = useState<SortKey>('recent');
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const { user } = useAuthStore();
+  const [peerSearch, setPeerSearch] = useState('Melbourne');
+  const [peers, setPeers] = useState<PeerRow[]>([]);
+  const [peerLoading, setPeerLoading] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setFilters((f) => ({ ...f, search: searchInput })), 400);
@@ -54,6 +66,30 @@ export default function Community() {
   useEffect(() => {
     loadFollowing();
   }, [loadFollowing]);
+
+  useEffect(() => {
+    const q = peerSearch.trim();
+    if (q.length < 2) {
+      setPeers([]);
+      return;
+    }
+    let cancelled = false;
+    setPeerLoading(true);
+    authFetch(`/api/community/peers-nearby?location=${encodeURIComponent(q)}`)
+      .then((r) => r.json())
+      .then((d: { peers?: PeerRow[] }) => {
+        if (!cancelled) setPeers(Array.isArray(d.peers) ? d.peers : []);
+      })
+      .catch(() => {
+        if (!cancelled) setPeers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setPeerLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [peerSearch]);
 
   const fetchPosts = useCallback(
     async (opts: { reset: boolean; pageOverride?: number }) => {
@@ -146,6 +182,26 @@ export default function Community() {
     }
   };
 
+  const handleFollowPeer = async (targetId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const res = await authFetch(`/api/community/follow/${targetId}`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        const on = data.following === true;
+        setFollowingIds((prev) => {
+          const next = new Set(prev);
+          if (on) next.add(targetId);
+          else next.delete(targetId);
+          return next;
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleFollowAuthor = async (authorId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -180,6 +236,72 @@ export default function Community() {
             <h1 className="text-3xl font-display font-black text-slate-900 tracking-tight">Community</h1>
             <p className="text-slate-500 mt-1">Share updates, ask questions, and connect with other students.</p>
           </header>
+
+          <section className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/80 p-4 sm:p-5 mb-6 shadow-sm">
+            <div className="flex items-center gap-2 text-ori-700 font-black text-sm mb-1">
+              <Users className="w-5 h-5 shrink-0" /> People nearby
+            </div>
+            <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+              Find others who saved a <strong className="text-slate-700">city or suburb</strong> on their profile (try Melbourne, Sydney, or your campus area). Add yours under{' '}
+              <strong>Profile → Address</strong> to appear here.
+            </p>
+            <div className="flex flex-wrap gap-2 items-center mb-4">
+              <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-md">
+                <MapPin className="w-4 h-4 text-slate-400 shrink-0" aria-hidden />
+                <input
+                  type="text"
+                  value={peerSearch}
+                  onChange={(e) => setPeerSearch(e.target.value)}
+                  placeholder="e.g. Melbourne, Perth, Clayton…"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-ori-500/40"
+                />
+              </div>
+            </div>
+            {peerLoading ? (
+              <div className="flex justify-center py-6">
+                <div className="w-8 h-8 rounded-full border-4 border-ori-500 border-t-transparent animate-spin" />
+              </div>
+            ) : peers.length === 0 && peerSearch.trim().length >= 2 ? (
+              <p className="text-sm text-slate-500 py-2">No profiles match this area yet. Widen your search or invite friends to add their city.</p>
+            ) : (
+              <ul className="flex flex-wrap gap-2">
+                {peers.map((peer) => {
+                  const id = String(peer.userId);
+                  const name = [peer.firstName, peer.lastName].filter(Boolean).join(' ') || 'Student';
+                  const following = followingIds.has(id);
+                  return (
+                    <li
+                      key={id}
+                      className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white pl-2 pr-1 py-1.5 shadow-sm"
+                    >
+                      {peer.avatar ? (
+                        <img src={resolveFileUrl(peer.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border border-slate-100" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-ori-500 to-slate-600 text-white text-xs font-bold flex items-center justify-center">
+                          {(peer.firstName?.[0] || '?').toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 pr-1">
+                        <p className="text-sm font-bold text-slate-900 truncate max-w-[9rem]">{name}</p>
+                        {peer.city && <p className="text-[10px] text-slate-500 truncate max-w-[9rem]">{peer.city}</p>}
+                      </div>
+                      {user && id !== userId && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleFollowPeer(id, e)}
+                          className={`shrink-0 px-2 py-1 rounded-lg text-xs font-bold transition ${
+                            following ? 'bg-slate-100 text-slate-600' : 'bg-ori-600 text-white hover:bg-ori-700'
+                          }`}
+                        >
+                          {following ? 'Following' : <span className="inline-flex items-center gap-0.5"><UserPlus className="w-3 h-3" /> Follow</span>}
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm mb-6 overflow-hidden">
             <CommunityComposer
