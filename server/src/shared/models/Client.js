@@ -143,6 +143,7 @@ const retentionSchema = new mongoose.Schema({
 
 const clientSchema = new mongoose.Schema({
   consultancyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultancy', required: true },
+  branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'ConsultancyBranch', default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   leadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead' },
   clientType: { type: String, enum: ['INDIVIDUAL', 'COMPANY'], default: 'INDIVIDUAL' },

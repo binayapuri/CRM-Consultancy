@@ -25,6 +25,8 @@ export default function Clients() {
   const [q, setQ] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterAgent, setFilterAgent] = useState('');
+  const [filterBranch, setFilterBranch] = useState('');
+  const [branches, setBranches] = useState<any[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [showRequestAccess, setShowRequestAccess] = useState(false);
   const [requestEmail, setRequestEmail] = useState('');
@@ -43,12 +45,15 @@ export default function Clients() {
   const fetchData = () => {
     setLoading(true);
     const url = consultancyId ? `/api/clients?consultancyId=${consultancyId}` : '/api/clients';
+    const bq = consultancyId ? `?consultancyId=${encodeURIComponent(consultancyId)}` : '';
     Promise.all([
       authFetch(url).then(r => r.json()),
       authFetch(consultancyId ? `/api/employees?consultancyId=${consultancyId}` : '/api/employees').then(r => r.json()).catch(() => []),
-    ]).then(([data, agentsData]) => {
+      authFetch(`/api/branches${bq}`).then(r => r.json()).catch(() => []),
+    ]).then(([data, agentsData, branchesData]) => {
       setClients(Array.isArray(data) ? data : []);
       setAgents(Array.isArray(agentsData) ? agentsData : []);
+      setBranches(Array.isArray(branchesData) ? branchesData : []);
       setLoading(false);
     });
   };
@@ -96,12 +101,14 @@ export default function Clients() {
     const matchSearch = `${c.profile?.firstName} ${c.profile?.lastName} ${c.profile?.email} ${c.profile?.currentVisa}`.toLowerCase().includes(q.toLowerCase());
     const matchStatus = !filterStatus || (c.status || 'ACTIVE') === filterStatus;
     const matchAgent = !filterAgent || (c.assignedAgentId?._id || c.assignedAgentId) === filterAgent;
-    return matchSearch && matchStatus && matchAgent;
+    const bid = c.branchId?._id || c.branchId;
+    const matchBranch = !filterBranch || (bid && String(bid) === filterBranch);
+    return matchSearch && matchStatus && matchAgent && matchBranch;
   });
 
   useEffect(() => {
     setSelectedClientIds((current) => current.filter((id) => filtered.some((client: any) => client._id === id)));
-  }, [q, filterStatus, filterAgent, clients.length]);
+  }, [q, filterStatus, filterAgent, filterBranch, clients.length]);
 
   const toggleClientSelection = (clientId: string) => {
     setSelectedClientIds((current) => current.includes(clientId) ? current.filter((id) => id !== clientId) : [...current, clientId]);
@@ -202,7 +209,15 @@ export default function Clients() {
               <option value="">All agents</option>
               {(Array.isArray(agents) ? agents : []).map(a => <option key={a._id} value={a._id}>{a.profile?.firstName} {a.profile?.lastName}</option>)}
             </select>
-            {(filterStatus || filterAgent) && <button onClick={() => { setFilterStatus(''); setFilterAgent(''); }} className="text-slate-500 hover:text-slate-700 text-sm flex items-center gap-1"><X className="w-4 h-4" /> Clear</button>}
+            {branches.length > 0 && (
+              <select value={filterBranch} onChange={(e) => setFilterBranch(e.target.value)} className="input w-full md:w-44">
+                <option value="">All branches</option>
+                {branches.map((b: any) => (
+                  <option key={b._id} value={b._id}>{b.name}</option>
+                ))}
+              </select>
+            )}
+            {(filterStatus || filterAgent || filterBranch) && <button onClick={() => { setFilterStatus(''); setFilterAgent(''); setFilterBranch(''); }} className="text-slate-500 hover:text-slate-700 text-sm flex items-center gap-1"><X className="w-4 h-4" /> Clear</button>}
           </div>
         )}
       </div>
@@ -219,6 +234,7 @@ export default function Clients() {
               <th className="text-left px-4 py-3 font-medium text-slate-700">Name</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Email</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Visa</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-700">Branch</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Status</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Last Activity</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Actions</th>
@@ -238,6 +254,9 @@ export default function Clients() {
                 </td>
                 <td className="px-4 py-3 text-slate-600">{c.profile?.email}</td>
                 <td className="px-4 py-3 text-slate-600">{c.profile?.currentVisa || '-'}</td>
+                <td className="px-4 py-3 text-slate-600 text-sm">
+                  {c.branchId?.name || (typeof c.branchId === 'object' && c.branchId?.name) || '—'}
+                </td>
                 <td className="px-4 py-3"><StatusBadge status={c.status || 'ACTIVE'} /></td>
                 <td className="px-4 py-3 text-slate-500 text-sm">
                   {c.lastActivityAt ? format(new Date(c.lastActivityAt), 'dd MMM yyyy') : '-'}

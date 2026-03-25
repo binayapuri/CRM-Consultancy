@@ -9,6 +9,7 @@ const recruiterEmployerProfileSchema = new mongoose.Schema({
   contactPhone: String,
   website: String,
   address: String,
+  logoUrl: { type: String, default: '' },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 

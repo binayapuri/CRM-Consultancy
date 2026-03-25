@@ -36,6 +36,7 @@ import ConsultancyBilling from './pages/consultancy/Billing';
 import Sponsors from './pages/consultancy/Sponsors';
 import ConsultancyProfile from './pages/consultancy/Profile';
 import ConsultancySettings from './pages/consultancy/Settings';
+import ConsultancyBranches from './pages/consultancy/Branches';
 import ClientEnroll from './pages/consultancy/ClientEnroll';
 import Employees from './pages/consultancy/Employees';
 import EmployeeDetail from './pages/consultancy/EmployeeDetail';
@@ -193,6 +194,7 @@ export default function App() {
         <Route path="sponsors" element={<Sponsors />} />
         <Route path="university-requests" element={<UniversityRequests />} />
         <Route path="profile" element={<ConsultancyProfile />} />
+        <Route path="branches" element={<ConsultancyBranches />} />
         <Route path="settings" element={<ConsultancySettings />} />
       </Route>
 

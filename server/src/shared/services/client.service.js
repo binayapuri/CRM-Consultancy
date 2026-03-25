@@ -27,6 +27,19 @@ function getEmailProfileForUser(consultancy, user) {
 
 const getConsultancyId = (user) => user.profile?.consultancyId || user._id;
 
+function assertConsultancyClientAccess(client, user) {
+  if (!user || user.role === 'STUDENT') return;
+  if (user.role === 'SUPER_ADMIN') return;
+  const cid = getConsultancyId(user);
+  if (!client.consultancyId || client.consultancyId.toString() !== cid?.toString()) {
+    throw Object.assign(new Error('Not authorized'), { status: 403 });
+  }
+  const ub = user.profile?.branchId;
+  if (ub && (!client.branchId || client.branchId.toString() !== ub.toString())) {
+    throw Object.assign(new Error('Not authorized for this branch'), { status: 403 });
+  }
+}
+
 const addYears = (date, years) => {
   const next = new Date(date || Date.now());
   next.setFullYear(next.getFullYear() + years);
@@ -135,7 +148,11 @@ export class ClientService {
     if (user.role === 'SUPER_ADMIN' && queryCid) {
       filter = { consultancyId: queryCid };
     }
-    return Client.find(filter).populate('assignedAgentId', 'profile').sort({ lastActivityAt: -1 });
+    const ub = user.profile?.branchId;
+    if (ub && user.role !== 'SUPER_ADMIN') {
+      filter = { ...filter, branchId: ub };
+    }
+    return Client.find(filter).populate('assignedAgentId', 'profile').populate('branchId').sort({ lastActivityAt: -1 });
   }
 
   static async getTasks(clientId, user) {
@@ -181,13 +198,15 @@ export class ClientService {
     return merged;
   }
 
-  static async getById(id) {
+  static async getById(id, user) {
     const client = await Client.findById(id)
       .populate('assignedAgentId', 'profile')
       .populate('consultancyId')
+      .populate('branchId')
       .populate('notes.addedBy', 'profile')
       .populate('notes.editedBy', 'profile');
     if (!client) throw Object.assign(new Error('Not found'), { status: 404 });
+    if (user) assertConsultancyClientAccess(client, user);
     return client;
   }
 
@@ -204,6 +223,9 @@ export class ClientService {
     if (!cid) throw Object.assign(new Error('No consultancy assigned.'), { status: 400 });
     const enrollNote = { text: `Enrolled on ${new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} at ${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}`, type: 'GENERAL', addedBy: user._id, addedAt: new Date() };
     const body = normalizeComplianceFields({ ...data, consultancyId: cid });
+    if (!body.branchId && user.profile?.branchId) {
+      body.branchId = user.profile.branchId;
+    }
     if (!body.notes || !Array.isArray(body.notes)) body.notes = [];
     body.notes.unshift(enrollNote);
 
@@ -257,6 +279,7 @@ export class ClientService {
     if (user.role === 'STUDENT' && oldClient.userId?.toString() !== user._id.toString()) {
       throw Object.assign(new Error('You can only edit your own profile'), { status: 403 });
     }
+    if (user.role !== 'STUDENT') assertConsultancyClientAccess(oldClient, user);
     const cid = user.role === 'STUDENT' ? oldClient.consultancyId : getConsultancyId(user);
     const body = user.role === 'STUDENT'
       ? { profile: data.profile, education: data.education, experience: data.experience, lastActivityAt: new Date() }
@@ -288,6 +311,12 @@ export class ClientService {
   static async delete(id, user) {
     const client = await Client.findById(id);
     if (!client) throw Object.assign(new Error('Not found'), { status: 404 });
+    if (user.role !== 'SUPER_ADMIN') {
+      assertConsultancyClientAccess(client, user);
+      if (user.role !== 'CONSULTANCY_ADMIN') {
+        throw Object.assign(new Error('Only consultancy admin can delete a client record'), { status: 403 });
+      }
+    }
     const cid = getConsultancyId(user);
     await logAudit(cid, 'Client', client._id, 'DELETE', user._id, {
       description: `Client ${client.profile?.firstName} ${client.profile?.lastName} deleted`,

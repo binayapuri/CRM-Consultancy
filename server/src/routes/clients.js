@@ -22,7 +22,7 @@ router.get('/:id/applications', authenticate, validate(schemas.getByIdSchema), a
 // --- Core Client Mutations ---
 router.post('/', authenticate, validate(schemas.createClientSchema), asyncHandler(ClientController.create));
 router.patch('/:id', authenticate, validate(schemas.updateClientSchema), asyncHandler(ClientController.update));
-router.delete('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER'), validate(schemas.deleteClientSchema), asyncHandler(ClientController.delete));
+router.delete('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN'), validate(schemas.deleteClientSchema), asyncHandler(ClientController.delete));
 
 // --- Auth & Access Management ---
 router.post('/:id/accept-access', authenticate, validate(schemas.getByIdSchema), asyncHandler(ClientController.acceptAccess));

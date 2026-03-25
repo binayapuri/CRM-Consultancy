@@ -1,7 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Award } from 'lucide-react';
 import { ProfileCard } from '../ProfileCard';
-import { SI, SS, F, formGridClassWide } from '../shared';
+import {
+  SI,
+  SS,
+  F,
+  formGridClassWide,
+  ENGLISH_TEST_TYPE_OPTIONS,
+  formatEnglishTestTypeLabel,
+  dateExpiryUrgency,
+  DateExpiryAlertBanner,
+  buildEnglishTestPatchBody,
+} from '../shared';
 
 interface EnglishInfoProps {
   english: any;
@@ -12,13 +22,15 @@ export const EnglishInfo: React.FC<EnglishInfoProps> = ({ english, onSaveEnglish
   const [eForm, setEForm] = useState({ ...english });
   const [isSaving, setIsSaving] = useState(false);
 
+  const englishExpiryUrgency = useMemo(() => dateExpiryUrgency(english?.expiryDate), [english?.expiryDate]);
+
   useEffect(() => {
     setEForm({ ...english });
   }, [english]);
 
   const handleSave = async () => {
     setIsSaving(true);
-    await onSaveEnglish(eForm);
+    await onSaveEnglish(buildEnglishTestPatchBody(eForm as Record<string, unknown>));
     setIsSaving(false);
   };
 
@@ -39,16 +51,22 @@ export const EnglishInfo: React.FC<EnglishInfoProps> = ({ english, onSaveEnglish
           <F label="Test Type">
             <SS value={eForm.testType || ''} onChange={e => setEForm({ ...eForm, testType: e.target.value })}>
               <option value="">Select</option>
-              <option>IELTS_AC</option>
-              <option>IELTS_GT</option>
-              <option>PTE</option>
-              <option>TOEFL</option>
-              <option>OET</option>
-              <option>CAE</option>
+              {ENGLISH_TEST_TYPE_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {formatEnglishTestTypeLabel(opt)}
+                </option>
+              ))}
             </SS>
           </F>
           <F label="Overall Score"><SI value={eForm.score || ''} onChange={e => setEForm({ ...eForm, score: e.target.value })} /></F>
           <F label="Test Date"><SI type="date" value={eForm.testDate ? eForm.testDate.split('T')[0] : ''} onChange={e => setEForm({ ...eForm, testDate: e.target.value })} /></F>
+          <F label="Result valid until">
+            <SI
+              type="date"
+              value={eForm.expiryDate ? eForm.expiryDate.split('T')[0] : ''}
+              onChange={(e) => setEForm({ ...eForm, expiryDate: e.target.value })}
+            />
+          </F>
           <F label="Listening"><SI value={eForm.listening || ''} onChange={e => setEForm({ ...eForm, listening: e.target.value })} /></F>
           <F label="Reading"><SI value={eForm.reading || ''} onChange={e => setEForm({ ...eForm, reading: e.target.value })} /></F>
           <F label="Writing"><SI value={eForm.writing || ''} onChange={e => setEForm({ ...eForm, writing: e.target.value })} /></F>
@@ -61,11 +79,18 @@ export const EnglishInfo: React.FC<EnglishInfoProps> = ({ english, onSaveEnglish
         <p className="text-sm text-slate-500 font-medium">
           Skilled migration usually needs <strong className="text-indigo-700">competent English</strong> at minimum; <strong>proficient</strong> or <strong>superior</strong> scores attract more points.
         </p>
+        <DateExpiryAlertBanner iso={english?.expiryDate} urgency={englishExpiryUrgency} kind="english" />
         {english.testType ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4">
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
               <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Type</p>
-              <p className="text-sm font-black text-indigo-600">{english.testType.replace('_', ' ')}</p>
+              <p className="text-sm font-black text-indigo-600">{formatEnglishTestTypeLabel(english.testType)}</p>
+            </div>
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Valid until</p>
+              <p className="text-sm font-black text-slate-700">
+                {english.expiryDate ? new Date(english.expiryDate).toLocaleDateString() : '—'}
+              </p>
             </div>
             <div className="bg-indigo-600 p-3 rounded-lg shadow-lg shadow-indigo-200">
               <p className="text-[10px] font-black text-indigo-200 uppercase leading-none mb-1">Overall</p>

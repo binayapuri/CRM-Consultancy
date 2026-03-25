@@ -12,6 +12,7 @@ import OSHC from '../../../shared/models/OSHC.js';
 import Attendance from '../../../shared/models/Attendance.js';
 import AuditLog from '../../../shared/models/AuditLog.js';
 import ConsultancyBilling from '../../../shared/models/ConsultancyBilling.js';
+import ConsultancyBranch from '../../../shared/models/ConsultancyBranch.js';
 import { isBusinessEmail } from '../../../shared/utils/emailValidation.js';
 import { normalizeCampaignAutomation } from '../../../shared/services/campaign-scheduler.service.js';
 import jwt from 'jsonwebtoken';
@@ -62,7 +63,7 @@ export class ConsultancyService {
     const now = new Date();
     const inNinetyDays = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-    const [clients, employees, applications, tasks, leads, documents, trustEntries, sponsors, colleges, oshc, attendanceToday, clientRecords, applicationRecords, overdueTasks, expiringDocuments, recentAudit] = await Promise.all([
+    const [clients, employees, applications, tasks, leads, documents, trustEntries, sponsors, colleges, oshc, attendanceToday, branches, clientRecords, applicationRecords, overdueTasks, expiringDocuments, recentAudit] = await Promise.all([
       Client.countDocuments({ consultancyId: cid }),
       User.countDocuments({ 'profile.consultancyId': cid }),
       Application.countDocuments({ consultancyId: cid }),
@@ -74,6 +75,7 @@ export class ConsultancyService {
       College.countDocuments({ $or: [{ consultancyId: cid }, { consultancyIds: cid }] }),
       OSHC.countDocuments({ $or: [{ consultancyId: cid }, { consultancyIds: cid }] }),
       Attendance.countDocuments({ consultancyId: cid, date: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) } }),
+      ConsultancyBranch.countDocuments({ consultancyId: cid }),
       Client.find({ consultancyId: cid }).select('profile notes immigrationHistory lastActivityAt updatedAt status assignedAgentId').lean(),
       Application.find({ consultancyId: cid })
         .populate('clientId', 'profile')
@@ -242,7 +244,7 @@ export class ConsultancyService {
 
     return {
       consultancy,
-      stats: { clients, employees, applications, tasks, leads, documents, trustEntries, sponsors, colleges, oshc, attendanceToday, trustBalance: trustBalance[0]?.total ?? 0 },
+      stats: { clients, employees, applications, tasks, leads, documents, trustEntries, sponsors, colleges, oshc, attendanceToday, branches, trustBalance: trustBalance[0]?.total ?? 0 },
       recentClients, recentApplications, employeesList,
       appStatusBreakdown: appStatusBreakdown.reduce((acc, x) => { acc[x._id] = x.count; return acc; }, {}),
       complianceSummary: {

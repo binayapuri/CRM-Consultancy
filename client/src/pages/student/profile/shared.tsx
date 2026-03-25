@@ -1,4 +1,116 @@
 import React from 'react';
+import { AlertTriangle } from 'lucide-react';
+
+/** Matches `englishTest.testType` enum on Client model */
+export const ENGLISH_TEST_TYPE_OPTIONS = [
+  'IELTS_AC',
+  'IELTS_GT',
+  'PTE',
+  'TOEFL',
+  'OET',
+  'CAE',
+  'PEARSON',
+  'NAATI',
+  'NONE',
+] as const;
+
+export function formatEnglishTestTypeLabel(code: string | undefined) {
+  return code ? code.replace(/_/g, ' ') : '';
+}
+
+/** Urgency for any ISO date (visa expiry, English result expiry, etc.) */
+export function dateExpiryUrgency(iso?: string | null): 'none' | 'expired' | 'critical' | 'soon' | 'ok' {
+  if (!iso) return 'none';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 'none';
+  const now = new Date();
+  const ms = d.getTime() - now.getTime();
+  const days = ms / (24 * 60 * 60 * 1000);
+  if (days < 0) return 'expired';
+  if (days <= 30) return 'critical';
+  if (days <= 90) return 'soon';
+  return 'ok';
+}
+
+const IMMIGRATION_PATCH_KEYS = [
+  'onshore',
+  'currentVisa',
+  'visaExpiry',
+  'targetVisa',
+  'anzscoCode',
+  'visaRefusalHistory',
+] as const;
+
+/** Body for PATCH `/api/student/immigration` and consultancy `PATCH .../immigration` (profile fields only). */
+export function buildImmigrationPatchBody(p: Record<string, unknown>) {
+  const out: Record<string, unknown> = {};
+  for (const k of IMMIGRATION_PATCH_KEYS) {
+    if (p[k] !== undefined) out[k] = p[k];
+  }
+  return out;
+}
+
+const ENGLISH_TEST_PATCH_KEYS = [
+  'testType',
+  'score',
+  'listening',
+  'reading',
+  'writing',
+  'speaking',
+  'trf',
+  'testDate',
+  'expiryDate',
+] as const;
+
+/** Body for PATCH `/api/student/english-test` and consultancy `PATCH .../english-test`. */
+export function buildEnglishTestPatchBody(e: Record<string, unknown>) {
+  const out: Record<string, unknown> = {};
+  for (const k of ENGLISH_TEST_PATCH_KEYS) {
+    if (e[k] !== undefined) out[k] = e[k];
+  }
+  return out;
+}
+
+const expiryBannerClass: Record<'expired' | 'critical' | 'soon', string> = {
+  expired: 'bg-red-50 border-red-200 text-red-900',
+  critical: 'bg-amber-50 border-amber-200 text-amber-950',
+  soon: 'bg-sky-50 border-sky-200 text-sky-950',
+};
+
+export function DateExpiryAlertBanner({
+  iso,
+  urgency,
+  kind,
+}: {
+  iso?: string | null;
+  urgency: ReturnType<typeof dateExpiryUrgency>;
+  kind: 'visa' | 'english';
+}) {
+  if (!iso || urgency === 'none' || urgency === 'ok') return null;
+  const copy =
+    kind === 'visa'
+      ? {
+          expired:
+            'Your recorded visa expiry date is in the past. Update the date or speak to your migration agent urgently.',
+          critical: 'Visa expires within 30 days — confirm your status and plan the next step with your agent.',
+          soon: 'Visa expires within 90 days — worth planning extensions or the next visa pathway now.',
+        }
+      : {
+          expired:
+            'Your recorded English test validity date is in the past. Update the expiry or add a new test result if you need a current score.',
+          critical:
+            'English test validity expires within 30 days — plan a retest if you need valid scores for a visa application.',
+          soon: 'English test validity expires within 90 days — check if you need a fresh test for your timeline.',
+        };
+  const msg = copy[urgency as keyof typeof copy];
+  if (!msg) return null;
+  return (
+    <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${expiryBannerClass[urgency]}`}>
+      <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden />
+      <p>{msg}</p>
+    </div>
+  );
+}
 
 // Uniform form and button tokens for all profile tabs
 export const formCardClass =

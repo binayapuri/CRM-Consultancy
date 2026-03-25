@@ -37,7 +37,7 @@ export class ClientController {
   }
 
   static async getById(req, res) {
-    const data = await ClientService.getById(req.params.id);
+    const data = await ClientService.getById(req.params.id, req.user);
     res.json(data);
   }
 

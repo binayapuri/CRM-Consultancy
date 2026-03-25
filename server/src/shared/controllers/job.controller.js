@@ -32,7 +32,7 @@ export class JobController {
   }
 
   static async getJobById(req, res) {
-    const job = await JobService.getJobById(req.params.id);
+    const job = await JobService.getJobById(req.params.id, req.user);
     res.json(job);
   }
 

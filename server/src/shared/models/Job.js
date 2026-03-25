@@ -23,7 +23,13 @@ const jobSchema = new mongoose.Schema({
   moderationState: { type: String, enum: ['ACTIVE', 'FLAGGED', 'REMOVED'], default: 'ACTIVE' },
   views: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
-  tags: [String] // e.g., 'hospitality', 'IT', 'warehouse'
+  tags: [String], // e.g., 'hospitality', 'IT', 'warehouse'
+  /** When set, listing is hidden from public/student browse until this time (scheduled publish) */
+  goLiveAt: { type: Date, default: null },
+  /** When set, listing stops appearing after this time */
+  listingEndsAt: { type: Date, default: null },
+  /** Denormalized from recruiter employer profile for cards / listings */
+  companyLogoUrl: { type: String, default: '' },
 }, { timestamps: true });
 
 export default mongoose.model('Job', jobSchema);

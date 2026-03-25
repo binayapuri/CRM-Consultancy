@@ -16,6 +16,8 @@ const userSchema = new mongoose.Schema({
     avatar: String,
     marnNumber: String,
     consultancyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultancy' },
+    /** When set, this staff member only sees clients assigned to this branch (CONSULTANCY_ADMIN may omit = all branches) */
+    branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'ConsultancyBranch' },
     universityId: { type: mongoose.Schema.Types.ObjectId, ref: 'University' }, // when role=UNIVERSITY_PARTNER
     insuranceProviderId: { type: mongoose.Schema.Types.ObjectId, ref: 'InsuranceProvider' }, // when role=INSURANCE_PARTNER
     employerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employer' }, // when role=EMPLOYER

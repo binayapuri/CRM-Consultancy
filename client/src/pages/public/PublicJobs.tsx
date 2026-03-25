@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Briefcase, MapPin, Building2, Search, DollarSign } from 'lucide-react';
+import { Briefcase, Search } from 'lucide-react';
+import PublicJobCard from '../../job-platform/components/PublicJobCard';
 import { useAuthStore } from '../../store/auth';
 import { getDashboardPathForRole } from '../../lib/authHelpers';
 import { PublicMarketingHeader } from '../../components/public/PublicMarketingHeader';
@@ -14,7 +15,7 @@ export default function PublicJobs() {
   const { token, user } = useAuthStore();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ search: '', location: '', type: '' });
+  const [filters, setFilters] = useState({ search: '', location: '', type: '', visaSponsorship: '' });
 
   useEffect(() => {
     setLoading(true);
@@ -22,6 +23,7 @@ export default function PublicJobs() {
     if (filters.search) params.set('search', filters.search);
     if (filters.location) params.set('location', filters.location);
     if (filters.type) params.set('type', filters.type);
+    if (filters.visaSponsorship === 'true') params.set('visaSponsorship', 'true');
     params.set('limit', '50');
     fetch(`/api/jobs/public?${params}`)
       .then(res => res.json())
@@ -33,9 +35,7 @@ export default function PublicJobs() {
         setJobs([]);
         setLoading(false);
       });
-  }, [filters.search, filters.location, filters.type]);
-
-  const formatType = (t: string) => (t || '').replace('_', ' ');
+  }, [filters.search, filters.location, filters.type, filters.visaSponsorship]);
 
   return (
     <div className="min-h-screen bg-[#020617] selection:bg-emerald-500/30 flex flex-col">
@@ -75,8 +75,11 @@ export default function PublicJobs() {
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-10 py-12 relative z-10">
         <div className="mb-10 text-center max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-display font-black text-white tracking-tight mb-4">Jobs for Students & Graduates</h1>
-          <p className="text-slate-400 text-lg">Find part-time, casual, and full-time roles suited for international students and visa holders.</p>
+          <p className="text-emerald-400/90 text-xs font-black uppercase tracking-[0.2em] mb-3">Australia · Free to browse</p>
+          <h1 className="text-4xl md:text-5xl font-display font-black text-white tracking-tight mb-4">Find work that fits your visa</h1>
+          <p className="text-slate-400 text-lg">
+            Part-time, casual, and full-time roles — filter by location, role type, and sponsorship. Sign in as a student to apply in one click.
+          </p>
         </div>
 
         {/* Filters */}
@@ -105,8 +108,16 @@ export default function PublicJobs() {
           >
             <option value="" className="bg-slate-900">All types</option>
             {JOB_TYPES.map(t => (
-              <option key={t} value={t} className="bg-slate-900">{formatType(t)}</option>
+              <option key={t} value={t} className="bg-slate-900">{t.replace(/_/g, ' ')}</option>
             ))}
+          </select>
+          <select
+            value={filters.visaSponsorship}
+            onChange={(e) => setFilters((f) => ({ ...f, visaSponsorship: e.target.value }))}
+            className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500/50"
+          >
+            <option value="" className="bg-slate-900">Sponsorship: any</option>
+            <option value="true" className="bg-slate-900">Sponsorship available</option>
           </select>
         </div>
 
@@ -126,49 +137,11 @@ export default function PublicJobs() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {jobs.map((job) => (
-              <div
+              <PublicJobCard
                 key={job._id}
-                className="group flex flex-col bg-white/5 rounded-2xl border border-white/10 overflow-hidden hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300"
-              >
-                <div className="p-6 flex-1 flex flex-col">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-lg font-display font-bold text-white leading-tight group-hover:text-emerald-400 transition-colors line-clamp-2">
-                        {job.title}
-                      </h2>
-                      <p className="text-slate-400 text-sm mt-1 flex items-center gap-1.5">
-                        <Building2 className="w-4 h-4 shrink-0" />
-                        <span className="truncate">{job.company}</span>
-                      </p>
-                    </div>
-                    <span className="shrink-0 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
-                      {formatType(job.type)}
-                    </span>
-                  </div>
-                  <p className="text-slate-400 text-sm flex items-center gap-1.5 mb-3">
-                    <MapPin className="w-4 h-4 shrink-0" />
-                    {job.location}
-                  </p>
-                  {job.salaryRange && (
-                    <p className="text-slate-400 text-sm flex items-center gap-1.5 mb-3">
-                      <DollarSign className="w-4 h-4 shrink-0" />
-                      {job.salaryRange}
-                    </p>
-                  )}
-                  <p className="text-slate-500 text-sm line-clamp-3 flex-1">{job.description}</p>
-                  <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/10">
-                    {job.visaSponsorshipAvailable && (
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-md">
-                        Visa sponsorship
-                      </span>
-                    )}
-                    {job.partTimeAllowed && (
-                      <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-1 rounded-md">Part-time OK</span>
-                    )}
-                  </div>
-                </div>
-                <div className="p-4 bg-black/20 border-t border-white/5">
-                  {token && user?.role === 'STUDENT' ? (
+                job={job}
+                applySlot={
+                  token && user?.role === 'STUDENT' ? (
                     <Link
                       to={`/student/jobs?apply=${job._id}`}
                       className="block w-full text-center py-3 rounded-xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition-colors"
@@ -189,9 +162,9 @@ export default function PublicJobs() {
                     >
                       Sign in to apply
                     </Link>
-                  )}
-                </div>
-              </div>
+                  )
+                }
+              />
             ))}
           </div>
         )}

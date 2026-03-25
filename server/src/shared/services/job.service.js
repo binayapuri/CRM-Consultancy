@@ -6,9 +6,26 @@ import JobAlert from '../models/JobAlert.js';
 import { createNotification } from '../utils/notify.js';
 
 export class JobService {
+  static buildListingVisibilityClauses() {
+    const t = new Date();
+    return [
+      { $or: [{ goLiveAt: null }, { goLiveAt: { $exists: false } }, { goLiveAt: { $lte: t } }] },
+      { $or: [{ listingEndsAt: null }, { listingEndsAt: { $exists: false } }, { listingEndsAt: { $gte: t } }] },
+    ];
+  }
+
+  static isJobPubliclyVisible(job) {
+    if (!job || !job.isActive || job.moderationState === 'REMOVED') return false;
+    const t = new Date();
+    if (job.goLiveAt && new Date(job.goLiveAt) > t) return false;
+    if (job.listingEndsAt && new Date(job.listingEndsAt) < t) return false;
+    return true;
+  }
+
   /** Public jobs listing - no auth required */
   static async getPublicJobs(query = {}) {
     const q = { isActive: true, moderationState: { $ne: 'REMOVED' } };
+    q.$and = [...(q.$and || []), ...JobService.buildListingVisibilityClauses()];
     const limit = Math.min(parseInt(query.limit, 10) || 50, 100);
     const skip = Math.max(0, parseInt(query.skip, 10) || 0);
     if (query.search) {
@@ -23,6 +40,7 @@ export class JobService {
 
   static async getActiveJobs(user, query = {}) {
     const q = { isActive: true, moderationState: { $ne: 'REMOVED' } };
+    q.$and = [...(q.$and || []), ...JobService.buildListingVisibilityClauses()];
     if (query.search) {
       const rx = new RegExp(String(query.search).trim(), 'i');
       q.$or = [{ title: rx }, { company: rx }, { location: rx }, { tags: rx }];
@@ -85,18 +103,24 @@ export class JobService {
   }
 
   static async applyToJob(jobId, studentId, data) {
-    const { resumeUrl, coverLetterUrl } = data;
+    const { resumeUrl, coverLetterUrl, resumeText, coverLetterText } = data;
     const job = await Job.findById(jobId);
     if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
 
     const exists = await JobApplication.findOne({ studentId, jobId: job._id });
     if (exists) throw Object.assign(new Error('Already applied for this job'), { status: 400 });
 
+    if (!JobService.isJobPubliclyVisible(job)) {
+      throw Object.assign(new Error('This job is not accepting applications yet'), { status: 400 });
+    }
+
     const created = await JobApplication.create({
       jobId: job._id,
       studentId,
-      resumeUrl,
-      coverLetterUrl
+      resumeUrl: resumeUrl || undefined,
+      resumeText: resumeText ? String(resumeText).trim() : '',
+      coverLetterUrl: coverLetterUrl || undefined,
+      coverLetterText: coverLetterText ? String(coverLetterText).trim() : '',
     });
     if (job.postedBy) {
       await createNotification({
@@ -111,9 +135,13 @@ export class JobService {
     return created;
   }
 
-  static async getJobById(id) {
+  static async getJobById(id, viewer = null) {
     const job = await Job.findById(id);
     if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
+    const isOwner = viewer && job.postedBy && String(job.postedBy) === String(viewer._id);
+    if (!isOwner && !JobService.isJobPubliclyVisible(job) && viewer?.role !== 'SUPER_ADMIN') {
+      throw Object.assign(new Error('Job not found'), { status: 404 });
+    }
     return job;
   }
 
@@ -122,9 +150,16 @@ export class JobService {
     if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
     const canEdit = user.role === 'SUPER_ADMIN' || String(job.postedBy) === String(user._id);
     if (!canEdit) throw Object.assign(new Error('Not allowed to edit this job'), { status: 403 });
-    const allowed = ['title', 'company', 'location', 'type', 'description', 'salaryRange', 'requirements', 'visaSponsorshipAvailable', 'partTimeAllowed', 'workRights', 'tags', 'isActive'];
+    const allowed = ['title', 'company', 'location', 'type', 'description', 'salaryRange', 'requirements', 'visaSponsorshipAvailable', 'partTimeAllowed', 'workRights', 'tags', 'isActive', 'goLiveAt', 'listingEndsAt', 'companyLogoUrl'];
     const update = {};
-    allowed.forEach(k => { if (data[k] !== undefined) update[k] = data[k]; });
+    allowed.forEach((k) => {
+      if (data[k] === undefined) return;
+      if (k === 'goLiveAt' || k === 'listingEndsAt') {
+        update[k] = data[k] === null || data[k] === '' ? null : new Date(data[k]);
+        return;
+      }
+      update[k] = data[k];
+    });
     return Job.findByIdAndUpdate(jobId, update, { new: true });
   }
 
@@ -152,8 +187,15 @@ export class JobService {
       });
       if (!profile) throw Object.assign(new Error('Recruiter employer profile not found'), { status: 404 });
       payload.company = profile.companyName;
+      if (profile.logoUrl) payload.companyLogoUrl = profile.logoUrl;
     }
     if (!payload.company) throw Object.assign(new Error('Company is required'), { status: 400 });
+    if (payload.goLiveAt !== undefined) {
+      payload.goLiveAt = payload.goLiveAt === null || payload.goLiveAt === '' ? null : new Date(payload.goLiveAt);
+    }
+    if (payload.listingEndsAt !== undefined) {
+      payload.listingEndsAt = payload.listingEndsAt === null || payload.listingEndsAt === '' ? null : new Date(payload.listingEndsAt);
+    }
     const job = new Job({ ...payload, postedBy: postedBy._id, postedByRole: postedBy.role });
     return job.save();
   }
@@ -180,6 +222,7 @@ export class JobService {
       contactPhone: data.contactPhone || '',
       website: data.website || '',
       address: data.address || '',
+      logoUrl: data.logoUrl || '',
       isActive: data.isActive !== false,
     });
   }
@@ -198,6 +241,7 @@ export class JobService {
       contactPhone: data.contactPhone ?? row.contactPhone,
       website: data.website ?? row.website,
       address: data.address ?? row.address,
+      logoUrl: data.logoUrl ?? row.logoUrl,
       isActive: data.isActive ?? row.isActive,
     });
     await row.save();
@@ -223,6 +267,9 @@ export class JobService {
   static async saveJob(userId, jobId) {
     const job = await Job.findById(jobId);
     if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
+    if (!JobService.isJobPubliclyVisible(job)) {
+      throw Object.assign(new Error('This listing is not available to save'), { status: 400 });
+    }
     const existing = await SavedJob.findOne({ userId, jobId });
     if (existing) return existing;
     return SavedJob.create({ userId, jobId });

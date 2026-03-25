@@ -28,6 +28,7 @@ const nav = [
   { to: 'billing', icon: ReceiptText, label: 'Billing & Quotes', perm: 'billing' },
   { to: 'sponsors', icon: Building2, label: 'Sponsors', perm: 'sponsors' },
   { to: 'profile', icon: User, label: 'Profile', perm: null },
+  { to: 'branches', icon: Building2, label: 'Branches', adminOnly: true, perm: 'settings' },
   { to: 'settings', icon: Settings, label: 'Settings', adminOnly: true, perm: 'settings' },
 ];
 

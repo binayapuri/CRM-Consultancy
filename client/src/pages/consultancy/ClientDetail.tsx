@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type FormEvent } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { authFetch, safeJson } from '../../store/auth';
+import { authFetch, safeJson, useAuthStore } from '../../store/auth';
 import { 
   ArrowLeft, Trash2, Mail, Pencil, FileText, Download, 
   CheckCircle, StickyNote, ClipboardList, Award, History, 
@@ -49,10 +49,12 @@ const COUNTRY_OPTIONS = [
 ];
 
 export default function ClientDetail() {
+  const { user } = useAuthStore();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const consultancyId = searchParams.get('consultancyId');
   const navigate = useNavigate();
+  const [branches, setBranches] = useState<any[]>([]);
   const [tab, setTab] = useState<Tab>('overview');
   
   // Data States
@@ -111,6 +113,7 @@ export default function ClientDetail() {
   const [composerTarget, setComposerTarget] = useState<{ clientId?: string; sponsorId?: string; applicationId?: string }>({});
   const [composerPreview, setComposerPreview] = useState<any>(null);
   const [workflowHelpOpen, setWorkflowHelpOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [composerDraft, setComposerDraft] = useState<any>({
     applicationId: '',
     subject: '',
@@ -177,6 +180,29 @@ export default function ClientDetail() {
     if (id && tab === 'documents') fetchDocuments();
     if (id && tab === 'task-sheet') fetchActivity();
   }, [id, tab]);
+
+  useEffect(() => {
+    if (!user?.role || !['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPER_ADMIN'].includes(user.role)) return;
+    authFetch('/api/branches')
+      .then((r) => r.json())
+      .then((d) => setBranches(Array.isArray(d) ? d : []))
+      .catch(() => setBranches([]));
+  }, [user?.role]);
+
+  const handleDeleteClient = async () => {
+    if (!confirm('Delete this client record? This cannot be undone.')) return;
+    setDeleting(true);
+    try {
+      const res = await authFetch(`/api/clients/${id}`, { method: 'DELETE' });
+      const data = await safeJson<any>(res);
+      if (!res.ok) throw new Error(data.error || 'Failed to delete');
+      navigate(consultancyId ? `/consultancy/clients?consultancyId=${consultancyId}` : '/consultancy/clients');
+    } catch (e: any) {
+      alert(e.message || 'Delete failed');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const wrapSave = (urlSuffix: string, method: string = 'PATCH') => async (data: any) => {
     const res = await authFetch(`/api/clients/${id}${urlSuffix}`, { 
@@ -564,7 +590,25 @@ export default function ClientDetail() {
           <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight break-words">{p.firstName} {p.lastName}</h1>
           <p className="text-slate-500 font-bold">{p.email} · Registered {client.createdAt ? new Date(client.createdAt).toLocaleDateString() : 'N/A'}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {branches.length > 0 && ['CONSULTANCY_ADMIN', 'SUPER_ADMIN'].includes(user?.role || '') && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-black text-slate-500 uppercase">Branch</label>
+              <select
+                className="px-3 py-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-800 bg-white"
+                value={typeof client.branchId === 'object' && client.branchId?._id ? client.branchId._id : client.branchId || ''}
+                onChange={async (e) => {
+                  const v = e.target.value;
+                  await wrapSave('')({ branchId: v || null });
+                }}
+              >
+                <option value="">— Unassigned —</option>
+                {branches.map((b: any) => (
+                  <option key={b._id} value={b._id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
            {!client.userId && (
              <button onClick={async () => {
                setSendingInvite(true);
@@ -574,6 +618,16 @@ export default function ClientDetail() {
                setSendingInvite(false);
              }} disabled={sendingInvite} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all">
                {sendingInvite ? 'Sending...' : 'Invite to Portal'}
+             </button>
+           )}
+           {['CONSULTANCY_ADMIN', 'SUPER_ADMIN'].includes(user?.role || '') && (
+             <button
+               type="button"
+               onClick={handleDeleteClient}
+               disabled={deleting}
+               className="px-5 py-3 bg-white border border-rose-200 text-rose-700 rounded-2xl font-black text-xs uppercase hover:bg-rose-50 transition-all inline-flex items-center gap-2"
+             >
+               <Trash2 className="w-4 h-4" /> {deleting ? 'Deleting…' : 'Delete client'}
              </button>
            )}
         </div>

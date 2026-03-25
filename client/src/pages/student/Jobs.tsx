@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { authFetch, useAuthStore } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
+import StudentApplyModal from '../../job-platform/components/StudentApplyModal';
 import { Briefcase, MapPin, Building2, Search, DollarSign, CheckCircle, Bookmark, Bell, BookmarkCheck, X, Plus } from 'lucide-react';
 
 type Tab = 'browse' | 'saved' | 'applications' | 'alerts';
@@ -8,6 +10,8 @@ type Tab = 'browse' | 'saved' | 'applications' | 'alerts';
 export default function Jobs() {
   const { user } = useAuthStore();
   const { openModal, closeModal, showToast } = useUiStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const applyHandled = useRef(false);
   const [activeTab, setActiveTab] = useState<Tab>('browse');
   const [jobs, setJobs] = useState<any[]>([]);
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
@@ -16,7 +20,6 @@ export default function Jobs() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState({ search: '', location: '', type: '', visaSponsorship: '' });
   const [loading, setLoading] = useState(true);
-  const [applyJobId, setApplyJobId] = useState<string | null>(null);
   const [alertsLoading, setAlertsLoading] = useState(false);
 
   const fetchAll = useCallback(async () => {
@@ -65,87 +68,58 @@ export default function Jobs() {
     }
   };
 
-  const openApplyModal = (jobId: string) => {
-    setApplyJobId(jobId);
-    authFetch('/api/student/documents')
-      .then(r => r.json())
-      .then((docs: any[]) => {
-        const docList = Array.isArray(docs) ? docs : [];
-        const content = (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600">Select documents from your vault to attach to your application.</p>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Resume / CV *</label>
-              <select id="apply-resume" className="w-full px-4 py-3 rounded-xl border border-slate-200">
-                <option value="">-- Select document --</option>
-                {docList.filter((d: any) => !d.mimeType || d.mimeType.includes('pdf') || d.mimeType.includes('word')).map((d: any) => (
-                  <option key={d._id} value={d.fileUrl || d.url || ''}>{d.name || d.originalName || 'Document'}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Cover Letter (optional)</label>
-              <select id="apply-cover" className="w-full px-4 py-3 rounded-xl border border-slate-200">
-                <option value="">-- None --</option>
-                {docList.map((d: any) => (
-                  <option key={d._id} value={d.fileUrl || d.url || ''}>{d.name || d.originalName || 'Document'}</option>
-                ))}
-              </select>
-            </div>
-            {docList.length === 0 && (
-              <p className="text-amber-600 text-sm font-medium">No documents in vault. Upload a resume in Documents first.</p>
-            )}
-            <div className="flex gap-2 justify-end pt-4">
-              <button type="button" onClick={() => { closeModal(); setApplyJobId(null); }} className="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50">
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  const resumeEl = document.getElementById('apply-resume') as HTMLSelectElement;
-                  const coverEl = document.getElementById('apply-cover') as HTMLSelectElement;
-                  const resumeUrl = resumeEl?.value || '';
-                  if (!resumeUrl) {
-                    showToast('Please select a resume', 'error');
-                    return;
-                  }
-                  const origin = window.location.origin;
-                  const resume = resumeUrl.startsWith('http') ? resumeUrl : `${origin}${resumeUrl.startsWith('/') ? '' : '/'}${resumeUrl}`;
-                  const cover = coverEl?.value ? (coverEl.value.startsWith('http') ? coverEl.value : `${origin}${coverEl.value.startsWith('/') ? '' : '/'}${coverEl.value}`) : undefined;
-                  try {
-                    const res = await authFetch(`/api/jobs/${applyJobId}/apply`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ resumeUrl: resume, coverLetterUrl: cover }),
-                    });
-                    if (res.ok) {
-                      closeModal();
-                      setApplyJobId(null);
-                      showToast('Application submitted!', 'success');
-                      fetchAll();
-                    } else {
-                      const err = await res.json();
-                      showToast(err.error || 'Apply failed', 'error');
-                    }
-                  } catch (e) {
-                    showToast('Apply failed', 'error');
-                  }
-                }}
-                className="px-6 py-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700"
-              >
-                Submit Application
-              </button>
-            </div>
-          </div>
-        );
-        openModal('Apply with Document Vault', () => content);
-      })
-      .catch(() => {
-        openModal('Apply with Document Vault', () => (
-          <p className="text-slate-500">Could not load documents. Upload a resume in Documents first, then try again.</p>
-        ));
-      });
-  };
+  const openApplyModal = useCallback(
+    (jobId: string) => {
+      authFetch('/api/student/documents')
+        .then((r) => r.json())
+        .then((docs: unknown) => {
+          const docList = Array.isArray(docs) ? docs : [];
+          openModal('Apply for this job', () => (
+            <StudentApplyModal
+              jobId={jobId}
+              documents={docList as any[]}
+              onSuccess={() => {
+                closeModal();
+                fetchAll();
+              }}
+              onCancel={() => {
+                closeModal();
+              }}
+            />
+          ));
+        })
+        .catch(() => {
+          openModal('Apply for this job', () => (
+            <StudentApplyModal
+              jobId={jobId}
+              documents={[]}
+              onSuccess={() => {
+                closeModal();
+                fetchAll();
+              }}
+              onCancel={() => {
+                closeModal();
+              }}
+            />
+          ));
+        });
+    },
+    [openModal, closeModal, fetchAll]
+  );
+
+  useEffect(() => {
+    const applyId = searchParams.get('apply');
+    if (!applyId) {
+      applyHandled.current = false;
+      return;
+    }
+    if (applyHandled.current) return;
+    applyHandled.current = true;
+    openApplyModal(applyId);
+    const next = new URLSearchParams(searchParams);
+    next.delete('apply');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, openApplyModal, setSearchParams]);
 
   const createAlert = () => {
     const content = (
