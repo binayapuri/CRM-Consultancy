@@ -91,18 +91,8 @@ function uniLocation(uni: Uni | null | undefined): string {
   return 'Australia';
 }
 
-function displayFee(c: CourseRow): string {
-  if (c.tuitionFee != null && !Number.isNaN(Number(c.tuitionFee))) {
-    return `$${Number(c.tuitionFee).toLocaleString()}/yr`;
-  }
-  if (c.fees?.length) {
-    const m = Math.min(...c.fees.map((f) => f.amount));
-    return `From $${Number(m).toLocaleString()}/yr`;
-  }
-  return 'Contact';
-}
-
 export default function TrainingCourses() {
+  const [currencyDisplay, setCurrencyDisplay] = useState(() => readStudentUiPrefs().currencyDisplay || 'AUD');
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
@@ -404,7 +394,9 @@ export default function TrainingCourses() {
                     <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-[10px] font-black uppercase text-slate-400">Indicative fee</p>
-                        <p className="text-lg font-black text-slate-900">{displayFee(c)}</p>
+                        <p className="text-lg font-black text-slate-900 leading-snug">
+                          {formatAnnualFeeDisplay(c, currencyDisplay)}
+                        </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
