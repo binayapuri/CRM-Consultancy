@@ -3,13 +3,33 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuthStore, authFetch } from '../../store/auth';
 import { resolveFileUrl } from '../../lib/imageUrl';
 import { useUiStore } from '../../store/ui';
-import { KeyRound, User, Camera, Shield, Trash2, Eye, EyeOff, CheckCircle2, AlertTriangle, LogOut, Settings as SettingsIcon, Mail, CreditCard } from 'lucide-react';
+import { readStudentUiPrefs, writeStudentUiPrefs } from '../../lib/studentUiPrefs';
+import {
+  KeyRound,
+  User,
+  Camera,
+  Shield,
+  Trash2,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  AlertTriangle,
+  LogOut,
+  Settings as SettingsIcon,
+  Mail,
+  CreditCard,
+  Bell,
+  Monitor,
+  Send,
+} from 'lucide-react';
 import { StudentSectionTabs } from '../../components/StudentSectionTabs';
 
 const TABS = [
   { id: 'security', label: 'Security', icon: KeyRound },
   { id: 'account', label: 'Account', icon: User },
   { id: 'avatar', label: 'Avatar', icon: Camera },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'preferences', label: 'Display & region', icon: Monitor },
   { id: 'email', label: 'Email (SMTP)', icon: Mail },
   { id: 'invoices', label: 'Invoices (Payment)', icon: CreditCard },
   { id: 'privacy', label: 'Privacy', icon: Shield },
@@ -93,6 +113,55 @@ export default function Settings() {
   const [payIdType, setPayIdType] = useState<'EMAIL' | 'PHONE' | ''>('');
   const [payId, setPayId] = useState('');
   const [reference, setReference] = useState('');
+
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifMsg, setNotifMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [inApp, setInApp] = useState(true);
+  const [emailNotif, setEmailNotif] = useState(false);
+  const [smsNotif, setSmsNotif] = useState(false);
+  const [cat, setCat] = useState({
+    tasks: true,
+    deadlines: true,
+    documents: true,
+    billing: true,
+    messages: true,
+    community: true,
+    jobs: true,
+    access: true,
+    marketing: false,
+    system: true,
+  });
+
+  const [prefTimezone, setPrefTimezone] = useState('Australia/Sydney');
+  const [prefCurrency, setPrefCurrency] = useState('AUD');
+  const [prefCompact, setPrefCompact] = useState(false);
+  const [prefMotion, setPrefMotion] = useState(false);
+  const [prefFont, setPrefFont] = useState(100);
+  const [prefMsg, setPrefMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [testEmailLoading, setTestEmailLoading] = useState(false);
+
+  useEffect(() => {
+    const np = user?.profile?.notificationPreferences;
+    if (!np) return;
+    setInApp(np.inApp !== false);
+    setEmailNotif(!!np.email);
+    setSmsNotif(!!np.sms);
+    if (np.categories && typeof np.categories === 'object') {
+      setCat((c) => ({ ...c, ...np.categories }));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (tab !== 'preferences') return;
+    const p = readStudentUiPrefs();
+    setPrefTimezone(p.timezone || 'Australia/Sydney');
+    setPrefCurrency(p.currencyDisplay || 'AUD');
+    setPrefCompact(!!p.compactNav);
+    setPrefMotion(!!p.reduceMotion);
+    setPrefFont(p.fontScale || 100);
+    setPrefMsg(null);
+  }, [tab]);
 
   useEffect(() => {
     if (tab !== 'invoices' && tab !== 'email') return;
@@ -257,6 +326,66 @@ export default function Settings() {
     }
   };
 
+  const saveNotifications = async () => {
+    setNotifLoading(true);
+    setNotifMsg(null);
+    try {
+      const res = await authFetch('/api/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profile: {
+            notificationPreferences: {
+              inApp,
+              email: emailNotif,
+              sms: smsNotif,
+              categories: cat,
+            },
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save');
+      showToast('Notification preferences saved', 'success');
+      useAuthStore.getState().fetchUser();
+      setNotifMsg({ type: 'success', text: 'Saved.' });
+    } catch (e: any) {
+      setNotifMsg({ type: 'error', text: e.message });
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const savePreferences = () => {
+    writeStudentUiPrefs({
+      timezone: prefTimezone,
+      currencyDisplay: prefCurrency,
+      compactNav: prefCompact,
+      reduceMotion: prefMotion,
+      fontScale: prefFont,
+    });
+    showToast('Display preferences applied', 'success');
+    setPrefMsg({ type: 'success', text: 'Saved. Font and motion settings apply on this device immediately.' });
+  };
+
+  const sendTestEmail = async () => {
+    setTestEmailLoading(true);
+    try {
+      const res = await authFetch('/api/student/invoice-settings/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: user?.email || '' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not send test email');
+      showToast('Test email sent — check your inbox', 'success');
+    } catch (e: any) {
+      showToast(e.message || 'Failed', 'error');
+    } finally {
+      setTestEmailLoading(false);
+    }
+  };
+
   return (
     <div className="w-full min-w-0 max-w-full animate-fade-in-up">
       <div className="mb-8">
@@ -317,7 +446,7 @@ export default function Settings() {
           <hr className="border-slate-100" />
           <div>
             <h3 className="font-black text-slate-800 mb-2">Session</h3>
-            <p className="text-sm text-slate-500 font-medium mb-3">You are logged in as <strong>{user?.email}</strong>. Tokens expire after 7 days.</p>
+            <p className="text-sm text-slate-500 font-medium mb-3">You are logged in as <strong>{user?.email}</strong>. Sessions expire after 24 hours of inactivity (JWT).</p>
             <button onClick={() => logout()} className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors">
               <LogOut className="w-4 h-4" /> Sign out of all sessions
             </button>
@@ -386,6 +515,140 @@ export default function Settings() {
         </div>
       )}
 
+      {/* Notifications */}
+      {tab === 'notifications' && (
+        <div className="bg-white rounded-xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
+          <h2 className="font-black text-slate-900 text-xl flex items-center gap-2">
+            <Bell className="w-6 h-6 text-indigo-600 shrink-0" aria-hidden /> Notifications
+          </h2>
+          <p className="text-sm text-slate-500 font-medium">
+            Choose how Abroad Up reaches you for tasks, documents, jobs, and system updates. Email/SMS delivery depends on platform configuration.
+          </p>
+          <div className="space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={inApp} onChange={(e) => setInApp(e.target.checked)} />
+              <span className="font-bold text-slate-800">In-app notifications</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={emailNotif} onChange={(e) => setEmailNotif(e.target.checked)} />
+              <span className="font-bold text-slate-800">Email digests & alerts</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={smsNotif} onChange={(e) => setSmsNotif(e.target.checked)} />
+              <span className="font-bold text-slate-800">SMS (where available)</span>
+            </label>
+          </div>
+          <div className="border-t border-slate-100 pt-4">
+            <p className="text-xs font-black uppercase text-slate-500 mb-3">Categories</p>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {(
+                [
+                  ['tasks', 'Tasks & reminders'],
+                  ['deadlines', 'Deadlines'],
+                  ['documents', 'Documents'],
+                  ['billing', 'Billing & invoices'],
+                  ['messages', 'Messages'],
+                  ['community', 'Community'],
+                  ['jobs', 'Jobs & careers'],
+                  ['access', 'Account & security'],
+                  ['marketing', 'Product tips & news'],
+                  ['system', 'System & maintenance'],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={!!(cat as any)[key]}
+                    onChange={(e) => setCat((c) => ({ ...c, [key]: e.target.checked }))}
+                  />
+                  <span className="text-slate-700 font-medium">{label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={saveNotifications}
+            disabled={notifLoading}
+            className="px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}
+          >
+            {notifLoading ? 'Saving…' : 'Save notifications'}
+          </button>
+          <Alert msg={notifMsg} />
+        </div>
+      )}
+
+      {/* Display & region */}
+      {tab === 'preferences' && (
+        <div className="bg-white rounded-xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
+          <h2 className="font-black text-slate-900 text-xl flex items-center gap-2">
+            <Monitor className="w-6 h-6 text-indigo-600 shrink-0" aria-hidden /> Display & region
+          </h2>
+            <p className="text-sm text-slate-500 font-medium">
+            These preferences are stored on <strong>this browser</strong> for a more comfortable experience (timezone labels, fee display on{' '}
+            <strong>Training &amp; courses</strong>, spacing, and accessibility).
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Timezone</label>
+              <select value={prefTimezone} onChange={(e) => setPrefTimezone(e.target.value)} className={inp}>
+                <option value="Australia/Sydney">Australia — Sydney</option>
+                <option value="Australia/Melbourne">Australia — Melbourne</option>
+                <option value="Australia/Brisbane">Australia — Brisbane</option>
+                <option value="Australia/Adelaide">Australia — Adelaide</option>
+                <option value="Australia/Perth">Australia — Perth</option>
+                <option value="Australia/Hobart">Australia — Hobart</option>
+                <option value="Australia/Darwin">Australia — Darwin</option>
+                <option value="Pacific/Auckland">New Zealand — Auckland</option>
+                <option value="Asia/Kathmandu">Nepal — Kathmandu</option>
+                <option value="Asia/Kolkata">India — Kolkata</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Currency display</label>
+              <select value={prefCurrency} onChange={(e) => setPrefCurrency(e.target.value)} className={inp}>
+                <option value="AUD">AUD ($)</option>
+                <option value="USD">USD ($)</option>
+                <option value="NPR">NPR (₨)</option>
+                <option value="INR">INR (₹)</option>
+                <option value="NZD">NZD ($)</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+              Interface size ({prefFont}%)
+            </label>
+            <input
+              type="range"
+              min={90}
+              max={130}
+              step={5}
+              value={prefFont}
+              onChange={(e) => setPrefFont(Number(e.target.value))}
+              className="w-full"
+            />
+            <p className="text-xs text-slate-400 mt-1">Scales text in the student portal main area.</p>
+          </div>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={prefCompact} onChange={(e) => setPrefCompact(e.target.checked)} />
+            <span className="font-bold text-slate-800">Tighter vertical spacing</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={prefMotion} onChange={(e) => setPrefMotion(e.target.checked)} />
+            <span className="font-bold text-slate-800">Reduce motion (limits animations)</span>
+          </label>
+          <button
+            onClick={savePreferences}
+            className="px-6 py-3 rounded-lg font-black text-white text-sm"
+            style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}
+          >
+            Save display preferences
+          </button>
+          <Alert msg={prefMsg} />
+        </div>
+      )}
+
       {/* Email (SMTP) Tab */}
       {tab === 'email' && (
         <div
@@ -441,6 +704,23 @@ export default function Settings() {
                 </span>
               </div>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 p-4">
+            <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+              <Send className="w-4 h-4 text-indigo-600" aria-hidden /> Send test email
+            </h3>
+            <p className="text-xs text-slate-600 mt-1 mb-3">
+              Sends a message to <strong>{user?.email}</strong> using your saved SMTP. Save settings first if you just changed them.
+            </p>
+            <button
+              type="button"
+              onClick={sendTestEmail}
+              disabled={testEmailLoading || !smtpEnabled}
+              className="px-4 py-2 rounded-lg font-bold text-sm bg-white border border-indigo-200 text-indigo-800 hover:bg-indigo-50 disabled:opacity-40"
+            >
+              {testEmailLoading ? 'Sending…' : 'Send test email'}
+            </button>
           </div>
 
           <button

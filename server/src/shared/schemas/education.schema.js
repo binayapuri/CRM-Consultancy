@@ -46,3 +46,22 @@ export const updateCourseSchema = z.object({
   params: z.object({ courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ID') }),
   body: z.record(z.string(), z.any())
 });
+
+export const courseCatalogQuerySchema = z.object({
+  query: z.object({
+    q: z.string().optional(),
+    level: z.string().optional(),
+    feeMin: z.string().optional(),
+    feeMax: z.string().optional(),
+    state: z.string().optional(),
+    prPathway: z.string().optional(),
+    sort: z.string().optional(),
+    limit: z.string().optional(),
+  }),
+});
+
+export const compareCoursesQuerySchema = z.object({
+  query: z.object({
+    ids: z.string().min(1),
+  }),
+});

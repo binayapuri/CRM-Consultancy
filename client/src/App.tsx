@@ -71,6 +71,7 @@ import Messages from './pages/student/Messages';
 import Jobs from './pages/student/Jobs';
 import News from './pages/student/News';
 import NewsDetail from './pages/student/NewsDetail';
+import TrainingCourses from './pages/student/TrainingCourses';
 import Bookings from './pages/student/Bookings';
 import InvoicesPage from './pages/student/Invoices';
 
@@ -228,6 +229,7 @@ export default function App() {
         <Route path="jobs" element={<Jobs />} />
         <Route path="news" element={<News />} />
         <Route path="news/:slug" element={<NewsDetail />} />
+        <Route path="training-courses" element={<TrainingCourses />} />
         <Route path="bookings" element={<Bookings />} />
         <Route path="offer-letters" element={<OfferLetters />} />
         <Route path="insurance" element={<StudentInsurance />} />

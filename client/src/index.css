@@ -18,6 +18,16 @@ body {
   @apply bg-brand-cream text-slate-900 font-sans antialiased;
 }
 
+/* Student portal: accessibility — toggled from Settings → Display */
+html.student-reduce-motion *,
+html.student-reduce-motion *::before,
+html.student-reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
 @layer components {
   .card {
     @apply bg-white rounded-xl shadow-sm border border-slate-200/80 p-5;

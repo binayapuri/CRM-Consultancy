@@ -109,4 +109,14 @@ export class EducationController {
     const uni = await EducationService.updateUniversityForPartner(req.user, { logoUrl: fileUrl });
     res.json(uni);
   }
+
+  static async getCourseCatalog(req, res) {
+    const list = await EducationService.getCourseCatalog(req.query);
+    res.json(list);
+  }
+
+  static async compareCourses(req, res) {
+    const list = await EducationService.compareCoursesByIds(req.query.ids);
+    res.json(list);
+  }
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, MessageSquare, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt, Menu, Footprints, Mail } from 'lucide-react';
+import { LayoutDashboard, User, FileText, Calculator, Compass, Search as SearchIcon, LogOut, Map, Briefcase, Newspaper, MessageSquare, ChevronRight, Settings, PanelLeftClose, PanelLeft, Receipt, Menu, Footprints, Mail, GraduationCap } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 import { resolveFileUrl } from '../lib/imageUrl';
 import AIChatWidget from '../components/AIChatWidget';
@@ -9,6 +9,7 @@ import { AbroadUpLogo } from '../components/brand/AbroadUpLogo';
 import { BrandMark } from '../components/brand/BrandMark';
 import { StudentJumpIn } from '../components/student/StudentJumpIn';
 import SwitchUserControl from '../components/SwitchUserControl';
+import { readStudentUiPrefs } from '../lib/studentUiPrefs';
 
 const SIDEBAR_EXPANDED = 256; // w-64
 const SIDEBAR_COLLAPSED = 80;  // icon-only
@@ -37,6 +38,7 @@ const navSections = [
   {
     label: 'Explore',
     items: [
+      { to: 'training-courses', icon: GraduationCap, label: 'Training & courses' },
       { to: 'jobs', icon: Briefcase, label: 'Job Board' },
       { to: 'community', icon: MessageSquare, label: 'Community' },
       { to: 'news', icon: Newspaper, label: 'News & Rules' },
@@ -59,6 +61,7 @@ export default function StudentLayout() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [uiPrefs, setUiPrefs] = useState(() => readStudentUiPrefs());
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
   const initials = `${user?.profile?.firstName?.[0] ?? ''}${user?.profile?.lastName?.[0] ?? ''}`.toUpperCase() || 'S';
 
@@ -88,6 +91,18 @@ export default function StudentLayout() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    const sync = () => {
+      setUiPrefs(readStudentUiPrefs());
+    };
+    window.addEventListener('student-prefs-updated', sync);
+    return () => window.removeEventListener('student-prefs-updated', sync);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('student-reduce-motion', !!uiPrefs.reduceMotion);
+  }, [uiPrefs.reduceMotion]);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -311,8 +326,11 @@ export default function StudentLayout() {
         </header>
         <main
           ref={mainScrollRef}
-          className="flex-1 min-w-0 px-3 sm:px-6 py-5 sm:py-8 overflow-auto"
+          className={`flex-1 min-w-0 px-3 sm:px-6 py-5 sm:py-8 overflow-auto ${uiPrefs.compactNav ? 'py-3 sm:py-5' : ''}`}
           id="student-main"
+          style={{
+            fontSize: uiPrefs.fontScale && uiPrefs.fontScale !== 100 ? `${(uiPrefs.fontScale / 100) * 16}px` : undefined,
+          }}
         >
           <Outlet />
         </main>

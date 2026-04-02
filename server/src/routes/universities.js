@@ -34,6 +34,18 @@ router.post('/me/logo', authenticate, requireRole('UNIVERSITY_PARTNER'), upload.
 // Public: Get all active universities
 router.get('/', asyncHandler(EducationController.getUniversities));
 
+// Public: Course catalog (filters) + compare — must be before /:id
+router.get(
+  '/catalog/courses',
+  validate(schemas.courseCatalogQuerySchema),
+  asyncHandler(EducationController.getCourseCatalog)
+);
+router.get(
+  '/compare/courses',
+  validate(schemas.compareCoursesQuerySchema),
+  asyncHandler(EducationController.compareCourses)
+);
+
 // Admin: Get all universities (even inactive)
 router.get('/admin', authenticate, requireRole('SUPER_ADMIN'), asyncHandler(EducationController.getUniversities));
 

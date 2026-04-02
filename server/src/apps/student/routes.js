@@ -614,6 +614,25 @@ router.get('/invoice-settings', async (req, res) => {
   }
 });
 
+router.post('/invoice-settings/test-email', async (req, res) => {
+  try {
+    const to = String(req.body?.to || req.user?.email || '').trim();
+    if (!to) return res.status(400).json({ error: 'Recipient email is required' });
+    await sendStudentMail(req.user._id, {
+      to,
+      subject: 'Abroad Up — SMTP test',
+      text:
+        'This is a test email from your Abroad Up student SMTP settings. If you received this, your configuration works.',
+      html:
+        '<p>This is a <strong>test email</strong> from your Abroad Up student SMTP settings.</p><p>If you received this, your configuration works.</p>',
+    });
+    res.json({ success: true });
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({ error: err.message });
+  }
+});
+
 router.put('/invoice-settings', async (req, res) => {
   try {
     const client = await getOrCreateStudentClient(req.user._id, req.user.profile);
