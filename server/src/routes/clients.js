@@ -24,6 +24,8 @@ router.post('/', authenticate, validate(schemas.createClientSchema), asyncHandle
 router.patch('/:id', authenticate, validate(schemas.updateClientSchema), asyncHandler(ClientController.update));
 router.delete('/:id', authenticate, requireRole('SUPER_ADMIN', 'CONSULTANCY_ADMIN'), validate(schemas.deleteClientSchema), asyncHandler(ClientController.delete));
 
+router.post('/:id/remove-portal', authenticate, validate(schemas.getByIdSchema), asyncHandler(ClientController.removeFromPortal));
+
 // --- Auth & Access Management ---
 router.post('/:id/accept-access', authenticate, validate(schemas.getByIdSchema), asyncHandler(ClientController.acceptAccess));
 router.post('/:id/invite', authenticate, requireRole('CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPER_ADMIN'), validate(schemas.getByIdSchema), asyncHandler(ClientController.invite));

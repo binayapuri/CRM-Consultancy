@@ -2,6 +2,7 @@ import College from '../../shared/models/College.js';
 import University from '../../shared/models/University.js';
 import Course from '../../shared/models/Course.js';
 import OfferLetterApplication from '../../shared/models/OfferLetterApplication.js';
+import User from '../../shared/models/User.js';
 
 export class EducationService {
   // --- Colleges ---
@@ -127,5 +128,16 @@ export class EducationService {
     const uni = await University.findByIdAndUpdate(universityId, data, { new: true });
     if (!uni) throw Object.assign(new Error('University not found'), { status: 404 });
     return uni;
+  }
+
+  /** Super admin: permanently remove university, courses, and offer-app links; unlinks partner users. */
+  static async deleteUniversity(id) {
+    const uni = await University.findById(id);
+    if (!uni) throw Object.assign(new Error('University not found'), { status: 404 });
+    await OfferLetterApplication.deleteMany({ universityId: id });
+    await Course.deleteMany({ universityId: id });
+    await User.updateMany({ 'profile.universityId': id }, { $unset: { 'profile.universityId': 1 } });
+    await University.findByIdAndDelete(id);
+    return { success: true };
   }
 }

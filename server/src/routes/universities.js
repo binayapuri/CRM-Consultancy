@@ -49,6 +49,9 @@ router.post('/', authenticate, requireRole('SUPER_ADMIN'), validate(schemas.crea
 // Admin: Update University
 router.patch('/:id', authenticate, requireRole('SUPER_ADMIN'), validate(schemas.updateUniversitySchema), asyncHandler(EducationController.updateUniversity));
 
+// Admin: Permanently delete university (courses, offer applications, unlink partners)
+router.delete('/:id', authenticate, requireRole('SUPER_ADMIN'), asyncHandler(EducationController.deleteUniversity));
+
 // Public: Get courses for a university
 router.get('/:id/courses', asyncHandler(EducationController.getCoursesByUniversity));
 

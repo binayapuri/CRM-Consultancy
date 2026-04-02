@@ -327,6 +327,32 @@ export class ClientService {
     return { success: true };
   }
 
+  /**
+   * Disconnect linked student user from the CRM client record — they lose portal access;
+   * consultancy keeps the file. Super admin or consultancy staff (admin/manager/agent).
+   */
+  static async removeFromPortal(id, user) {
+    const client = await Client.findById(id);
+    if (!client) throw Object.assign(new Error('Not found'), { status: 404 });
+    if (user.role !== 'SUPER_ADMIN') {
+      assertConsultancyClientAccess(client, user);
+      if (!['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT'].includes(user.role)) {
+        throw Object.assign(new Error('Only admins or agents can remove portal access'), { status: 403 });
+      }
+    }
+    client.userId = null;
+    client.status = 'DISCONNECTED';
+    client.invitationToken = undefined;
+    await client.save();
+    if (client.consultancyId) {
+      await logAudit(client.consultancyId, 'Client', client._id, 'PORTAL_REMOVED', user._id, {
+        description: `Portal access removed for ${client.profile?.firstName} ${client.profile?.lastName}`,
+        clientId: client._id,
+      });
+    }
+    return client;
+  }
+
   static async acceptAccess(id, user) {
     if (user.role !== 'STUDENT') throw Object.assign(new Error('Only students can accept access requests'), { status: 403 });
     const client = await Client.findById(id);

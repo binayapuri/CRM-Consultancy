@@ -57,6 +57,11 @@ export class EducationController {
     res.json(uni);
   }
 
+  static async deleteUniversity(req, res) {
+    const result = await EducationService.deleteUniversity(req.params.id);
+    res.json(result);
+  }
+
   static async getCoursesByUniversity(req, res) {
     const isAdmin = req.user?.role === 'SUPER_ADMIN';
     const courses = await EducationService.getCoursesByUniversity(req.params.id, isAdmin);

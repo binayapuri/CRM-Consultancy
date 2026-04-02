@@ -2,7 +2,7 @@ import { useEffect, useId, useState, type FormEvent } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authFetch, safeJson, useAuthStore } from '../../store/auth';
 import { 
-  ArrowLeft, Trash2, Mail, Pencil, FileText, Download, 
+  ArrowLeft, Trash2, Mail, Pencil, FileText, Download, UserMinus,
   CheckCircle, StickyNote, ClipboardList, Award, History, 
   User, GraduationCap, Send, FileSignature, CheckCircle2, Eye, X, Briefcase, ShieldCheck, CircleHelp
 } from 'lucide-react';
@@ -114,6 +114,7 @@ export default function ClientDetail() {
   const [composerPreview, setComposerPreview] = useState<any>(null);
   const [workflowHelpOpen, setWorkflowHelpOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [removingPortal, setRemovingPortal] = useState(false);
   const [composerDraft, setComposerDraft] = useState<any>({
     applicationId: '',
     subject: '',
@@ -201,6 +202,22 @@ export default function ClientDetail() {
       alert(e.message || 'Delete failed');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleRemoveFromPortal = async () => {
+    if (!confirm('Remove portal access? The student can no longer open this client in the app; your CRM case file stays.')) return;
+    setRemovingPortal(true);
+    try {
+      const res = await authFetch(`/api/clients/${id}/remove-portal`, { method: 'POST' });
+      const data = await safeJson<any>(res);
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      await refreshClient();
+      showToast('Portal access removed');
+    } catch (e: any) {
+      alert(e.message || 'Failed');
+    } finally {
+      setRemovingPortal(false);
     }
   };
 
@@ -618,6 +635,16 @@ export default function ClientDetail() {
                setSendingInvite(false);
              }} disabled={sendingInvite} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all">
                {sendingInvite ? 'Sending...' : 'Invite to Portal'}
+             </button>
+           )}
+           {client.userId && ['CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SUPER_ADMIN'].includes(user?.role || '') && (
+             <button
+               type="button"
+               onClick={handleRemoveFromPortal}
+               disabled={removingPortal}
+               className="px-5 py-3 bg-white border border-amber-200 text-amber-900 rounded-2xl font-black text-xs uppercase hover:bg-amber-50 transition-all inline-flex items-center gap-2"
+             >
+               <UserMinus className="w-4 h-4" /> {removingPortal ? 'Removing…' : 'Remove from portal'}
              </button>
            )}
            {['CONSULTANCY_ADMIN', 'SUPER_ADMIN'].includes(user?.role || '') && (

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, Users, ArrowRight, UserCheck, UserPlus, Activity, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Building2, Users, ArrowRight, UserCheck, UserPlus, Activity, ShieldCheck, RefreshCw, Briefcase } from 'lucide-react';
 import { authFetch } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
 
@@ -261,6 +261,27 @@ export default function SuperDashboard() {
                 <div className="p-6 flex-1 flex flex-col justify-end">
                   <span className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center gap-2 group-hover:bg-emerald-700 transition shadow-md shadow-emerald-600/20">
                     Manage Users <ArrowRight className="w-5 h-5" />
+                  </span>
+                </div>
+              </Link>
+
+              <Link
+                to="jobs"
+                className="bg-white rounded-xl border overflow-hidden shadow-sm flex flex-col transition-all hover:shadow-lg hover:-translate-y-1 group"
+                style={{ borderColor: '#E8EDFB' }}
+              >
+                <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: '#E8EDFB' }}>
+                  <div>
+                    <h3 className="font-display font-black text-slate-900 text-lg">Job listings</h3>
+                    <p className="text-sm text-slate-500 mt-0.5">Moderate, deactivate, or delete postings</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-lime-600 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                    <Briefcase className="w-6 h-6" />
+                  </div>
+                </div>
+                <div className="p-6 flex-1 flex flex-col justify-end">
+                  <span className="w-full py-3 rounded-xl bg-emerald-700 text-white font-bold flex items-center justify-center gap-2 group-hover:bg-emerald-800 transition shadow-md shadow-emerald-700/20">
+                    Open jobs admin <ArrowRight className="w-5 h-5" />
                   </span>
                 </div>
               </Link>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { authFetch } from '../../store/auth';
 import { safeJson } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
-import { Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink } from 'lucide-react';
 
 type ArticleRow = {
   _id: string;
@@ -160,9 +160,20 @@ export default function AdminNewsManager() {
                   </td>
                   <td className="px-4 py-3 text-slate-500">{a.views ?? 0}</td>
                   <td className="px-4 py-3 flex gap-1">
-                    <button type="button" onClick={() => handlePublishToggle(a)} className="p-2 text-slate-500 hover:bg-slate-100 rounded" title={a.isPublished ? 'Unpublish' : 'Publish'}>
+                    <button type="button" onClick={() => handlePublishToggle(a)} className="p-2 text-slate-500 hover:bg-slate-100 rounded" title={a.isPublished ? 'Unpublish (hide from public)' : 'Publish'}>
                       {a.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
+                    {a.slug && (
+                      <a
+                        href={`/news/${a.slug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-2 text-sky-600 hover:bg-sky-50 rounded inline-flex"
+                        title="View on public site"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
                     <Link to={`/admin/news/${a._id}/edit`} className="p-2 text-ori-600 hover:bg-ori-50 rounded" title="Edit">
                       <Pencil className="w-4 h-4" />
                     </Link>

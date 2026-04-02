@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { resolveFileUrl } from '../../lib/imageUrl';
 import { authFetch } from '../../store/auth';
+import { useUiStore } from '../../store/ui';
 import {
   ArrowLeft,
   Building2,
@@ -12,6 +13,7 @@ import {
   Edit2,
   FileText,
   UserCheck,
+  Trash2,
 } from 'lucide-react';
 
 interface Branch {
@@ -36,6 +38,8 @@ interface DiscountRule {
 
 export default function UniversityDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { openConfirm, showToast } = useUiStore();
   const [university, setUniversity] = useState<any>(null);
   const [courses, setCourses] = useState<any[]>([]);
   const [offerApps, setOfferApps] = useState<any[]>([]);
@@ -103,6 +107,31 @@ export default function UniversityDetail() {
     }
   };
 
+  const handleDeleteUniversity = () => {
+    if (!id) return;
+    openConfirm({
+      title: 'Permanently delete university?',
+      message:
+        'This removes the institution, all linked courses, and offer-letter application links. Partner users are unlinked. This cannot be undone.',
+      confirmLabel: 'Delete permanently',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await authFetch(`/api/universities/${id}`, { method: 'DELETE' });
+          const data = res.ok ? null : await res.json().catch(() => ({}));
+          if (res.ok) {
+            showToast('University deleted', 'success');
+            navigate('/admin/universities');
+          } else {
+            showToast((data as any)?.error || 'Delete failed', 'error');
+          }
+        } catch {
+          showToast('Delete failed', 'error');
+        }
+      },
+    });
+  };
+
   const handleToggleDiscount = async (index: number) => {
     if (!university) return;
     const rules = [...(university.discountRules || [])];
@@ -150,9 +179,18 @@ export default function UniversityDetail() {
             </div>
           </div>
         </div>
-        <Link to={`/admin/universities/${id}/edit`} className="flex items-center gap-2 px-4 py-2 bg-sky-600 text-white font-bold rounded-xl hover:bg-sky-700">
-          <Edit2 className="w-4 h-4" /> Edit University
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleDeleteUniversity}
+            className="flex items-center gap-2 px-4 py-2 border border-rose-200 text-rose-700 font-bold rounded-xl hover:bg-rose-50"
+          >
+            <Trash2 className="w-4 h-4" /> Delete permanently
+          </button>
+          <Link to={`/admin/universities/${id}/edit`} className="flex items-center gap-2 px-4 py-2 bg-sky-600 text-white font-bold rounded-xl hover:bg-sky-700">
+            <Edit2 className="w-4 h-4" /> Edit University
+          </Link>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">

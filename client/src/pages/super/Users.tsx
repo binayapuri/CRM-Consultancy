@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { authFetch } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
-import { Plus, Pencil, UserX } from 'lucide-react';
+import { Plus, Pencil, UserX, UserCheck } from 'lucide-react';
 
 const emptyForm = () => ({
   email: '',
@@ -188,8 +188,8 @@ export default function SuperUsers() {
 
   const handleDeactivate = (u: any) => {
     openConfirm({
-      title: 'Deactivate User',
-      message: `Deactivate ${u.email}? They will not be able to login.`,
+      title: 'Deactivate user',
+      message: `Deactivate ${u.email}? They will not be able to log in.`,
       confirmLabel: 'Deactivate',
       danger: true,
       onConfirm: async () => {
@@ -207,6 +207,25 @@ export default function SuperUsers() {
         }
       },
     });
+  };
+
+  const handleReactivate = async (u: any) => {
+    try {
+      const res = await authFetch(`/api/users/${u._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: true }),
+      });
+      const data = res.ok ? null : await res.json().catch(() => ({}));
+      if (res.ok) {
+        showToast('User reactivated', 'success');
+        fetchUsers();
+      } else {
+        showToast((data as any)?.error || 'Reactivate failed', 'error');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Request failed', 'error');
+    }
   };
 
   return (
@@ -243,10 +262,13 @@ export default function SuperUsers() {
                 <td className="px-4 py-3">
                   {!u.isActive ? <span className="text-xs text-red-600">Inactive</span> : u.isTestAccount ? <span className="text-xs text-ori-600">Test</span> : '—'}
                 </td>
-                <td className="px-4 py-3 flex gap-1">
+                <td className="px-4 py-3 flex gap-1 flex-wrap">
                   <button onClick={() => openEditModal(u)} className="p-2 text-ori-600 hover:bg-ori-50 rounded" title="Edit"><Pencil className="w-4 h-4" /></button>
                   {u.role !== 'SUPER_ADMIN' && u.isActive !== false && (
-                    <button onClick={() => handleDeactivate(u)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Deactivate"><UserX className="w-4 h-4" /></button>
+                    <button onClick={() => handleDeactivate(u)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Deactivate (cannot log in)"><UserX className="w-4 h-4" /></button>
+                  )}
+                  {u.role !== 'SUPER_ADMIN' && u.isActive === false && (
+                    <button onClick={() => handleReactivate(u)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded" title="Reactivate"><UserCheck className="w-4 h-4" /></button>
                   )}
                 </td>
               </tr>

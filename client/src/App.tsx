@@ -81,6 +81,7 @@ import SuperUsers from './pages/super/Users';
 import SuperTraceHistory from './pages/super/TraceHistory';
 import Verifications from './pages/super/Verifications';
 import SuperEmployers from './pages/super/Employers';
+import SuperJobs from './pages/super/SuperJobs';
 import Universities from './pages/super/Universities';
 import UniversityDetail from './pages/super/UniversityDetail';
 import UniversityEdit from './pages/super/UniversityEdit';
@@ -253,6 +254,7 @@ export default function App() {
         <Route path="trace-history" element={<SuperTraceHistory />} />
         <Route path="verifications" element={<Verifications />} />
         <Route path="employers" element={<SuperEmployers />} />
+        <Route path="jobs" element={<SuperJobs />} />
         <Route path="universities" element={<Universities />} />
         <Route path="universities/:id/edit" element={<UniversityEdit />} />
         <Route path="universities/:id" element={<UniversityDetail />} />

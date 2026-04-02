@@ -61,6 +61,9 @@ export const updateJobSchema = z.object({
     goLiveAt: z.union([z.string(), z.null()]).optional(),
     listingEndsAt: z.union([z.string(), z.null()]).optional(),
     companyLogoUrl: z.string().optional(),
+    recruiterEmployerProfileId: z.string().optional(),
+    anzscoCode: z.string().optional(),
+    moderationState: z.enum(['ACTIVE', 'FLAGGED', 'REMOVED']).optional(),
   })
 });
 

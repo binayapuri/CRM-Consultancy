@@ -8,14 +8,17 @@ import * as schemas from '../shared/schemas/job.schema.js';
 
 const router = express.Router();
 
+/** Roles that can post and manage their own job listings */
+const JOB_OWNER_ROLES = ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'];
+
 // Public jobs - no auth (for landing, public /jobs page)
 router.get('/public', asyncHandler(JobController.getPublicJobs));
 
 // Get active jobs, sorted by ANZSCO match if student
 router.get('/', authenticate, asyncHandler(JobController.getActiveJobs));
 
-// Employer Dashboard: Get Jobs + Applications
-router.get('/employer/dashboard', authenticate, requireRole('EMPLOYER', 'RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.getEmployerDashboard));
+// Employer Dashboard: Get Jobs + Applications (scoped by poster except super admin)
+router.get('/employer/dashboard', authenticate, requireRole(...JOB_OWNER_ROLES), asyncHandler(JobController.getEmployerDashboard));
 
 // Recruiter employer profiles (multi-company management)
 router.get('/recruiter/employers', authenticate, requireRole('RECRUITER', 'SUPER_ADMIN'), asyncHandler(JobController.listRecruiterEmployers));
@@ -46,10 +49,13 @@ router.post('/:id/apply', authenticate, requireRole('STUDENT'), validate(schemas
 router.get('/:id', authenticate, asyncHandler(JobController.getJobById));
 
 // Close job (must be before :id to match /:id/close)
-router.patch('/:id/close', authenticate, authorize('SUPER_ADMIN', 'EMPLOYER', 'RECRUITER'), asyncHandler(JobController.closeJob));
+router.patch('/:id/close', authenticate, requireRole(...JOB_OWNER_ROLES), asyncHandler(JobController.closeJob));
 
-// Update job (Employer/Recruiter/Admin)
-router.patch('/:id', authenticate, authorize('SUPER_ADMIN', 'EMPLOYER', 'RECRUITER'), validate(schemas.updateJobSchema), asyncHandler(JobController.updateJob));
+// Update job — creator or super admin enforced in service
+router.patch('/:id', authenticate, requireRole(...JOB_OWNER_ROLES), validate(schemas.updateJobSchema), asyncHandler(JobController.updateJob));
+
+// Delete job — creator or super admin (soft-remove from listings)
+router.delete('/:id', authenticate, requireRole(...JOB_OWNER_ROLES), asyncHandler(JobController.deleteJob));
 
 // Create job (Admin/Agent/Employer)
 router.post('/', authenticate, authorize('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'), validate(schemas.createJobSchema), asyncHandler(JobController.createJob));

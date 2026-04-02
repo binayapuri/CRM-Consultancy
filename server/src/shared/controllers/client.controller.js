@@ -61,6 +61,11 @@ export class ClientController {
     res.json(data);
   }
 
+  static async removeFromPortal(req, res) {
+    const data = await ClientService.removeFromPortal(req.params.id, req.user);
+    res.json(data);
+  }
+
   static async acceptAccess(req, res) {
     const data = await ClientService.acceptAccess(req.params.id, req.user);
     res.json(data);

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { authFetch, useAuthStore } from '../../store/auth';
+import { useUiStore } from '../../store/ui';
 import { resolveFileUrl } from '../../lib/imageUrl';
-import { XCircle, Briefcase, Users, Plus, Building2, Pencil, Archive, FileText, CalendarClock, ImageIcon } from 'lucide-react';
+import { XCircle, Briefcase, Users, Plus, Building2, Pencil, Archive, FileText, CalendarClock, ImageIcon, Trash2 } from 'lucide-react';
 
 function toLocalInput(d?: string) {
   if (!d) return '';
@@ -13,6 +14,7 @@ function toLocalInput(d?: string) {
 
 export default function EmployerJobPortal() {
   const { user } = useAuthStore();
+  const { openConfirm, showToast } = useUiStore();
   const [jobs, setJobs] = useState<any[]>([]);
   const [employers, setEmployers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -222,6 +224,26 @@ export default function EmployerJobPortal() {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const deleteJobListing = (jobId: string) => {
+    openConfirm({
+      title: 'Delete this job?',
+      message: 'Removes the listing from the job board. Your applicant history stays on file.',
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await authFetch(`/api/jobs/${jobId}`, { method: 'DELETE' });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data?.error || 'Delete failed');
+          showToast('Job removed', 'success');
+          fetchDashboardData();
+        } catch (e: any) {
+          setError(e?.message || 'Delete failed');
+        }
+      },
+    });
   };
 
   const saveJobEdit = async (e: React.FormEvent) => {
@@ -467,10 +489,15 @@ export default function EmployerJobPortal() {
                     <Users className="w-4 h-4 text-emerald-600" />
                     <span className="font-bold text-slate-700">{job.applications?.length || 0} Applicants</span>
                   </div>
-                  {job.isActive !== false && (
+                  {job.moderationState !== 'REMOVED' && (
                     <>
-                      <button onClick={() => setEditingJob({ ...job })} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50" title="Edit"><Pencil className="w-4 h-4 text-slate-600" /></button>
-                      <button onClick={() => closeJob(job._id)} className="p-2 rounded-lg border border-slate-200 hover:bg-rose-50 transition" title="Close job"><Archive className="w-4 h-4 text-slate-600" /></button>
+                      {job.isActive !== false && (
+                        <>
+                          <button onClick={() => setEditingJob({ ...job })} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50" title="Edit"><Pencil className="w-4 h-4 text-slate-600" /></button>
+                          <button onClick={() => closeJob(job._id)} className="p-2 rounded-lg border border-slate-200 hover:bg-rose-50 transition" title="Close job (hide from search)"><Archive className="w-4 h-4 text-slate-600" /></button>
+                        </>
+                      )}
+                      <button onClick={() => deleteJobListing(job._id)} className="p-2 rounded-lg border border-slate-200 hover:bg-rose-100 transition" title="Delete listing permanently"><Trash2 className="w-4 h-4 text-rose-600" /></button>
                     </>
                   )}
                 </div>

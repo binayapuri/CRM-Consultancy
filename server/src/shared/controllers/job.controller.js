@@ -51,6 +51,11 @@ export class JobController {
     res.json(job);
   }
 
+  static async deleteJob(req, res) {
+    const job = await JobService.deleteJob(req.params.id, req.user);
+    res.json(job);
+  }
+
   static async listRecruiterEmployers(req, res) {
     const rows = await JobService.listRecruiterEmployers(req.user);
     res.json(rows);

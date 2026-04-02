@@ -64,12 +64,14 @@ export class JobService {
 
   static async getEmployerDashboard(user) {
     let filter = {};
-    if (user.role === 'EMPLOYER') {
-      filter = { postedBy: user._id };
+    if (user.role === 'SUPER_ADMIN') {
+      filter = {};
     } else if (user.role === 'RECRUITER') {
       filter = { postedBy: user._id, postedByRole: 'RECRUITER' };
+    } else {
+      filter = { postedBy: user._id };
     }
-    const jobs = await Job.find(filter).lean();
+    const jobs = await Job.find(filter).populate('postedBy', 'email role profile.firstName profile.lastName').sort({ createdAt: -1 }).lean();
     
     for (let job of jobs) {
       const apps = await JobApplication.find({ jobId: job._id })
@@ -150,7 +152,8 @@ export class JobService {
     if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
     const canEdit = user.role === 'SUPER_ADMIN' || String(job.postedBy) === String(user._id);
     if (!canEdit) throw Object.assign(new Error('Not allowed to edit this job'), { status: 403 });
-    const allowed = ['title', 'company', 'location', 'type', 'description', 'salaryRange', 'requirements', 'visaSponsorshipAvailable', 'partTimeAllowed', 'workRights', 'tags', 'isActive', 'goLiveAt', 'listingEndsAt', 'companyLogoUrl'];
+    const allowed = ['title', 'company', 'location', 'type', 'description', 'salaryRange', 'requirements', 'visaSponsorshipAvailable', 'partTimeAllowed', 'workRights', 'tags', 'isActive', 'goLiveAt', 'listingEndsAt', 'companyLogoUrl', 'recruiterEmployerProfileId', 'anzscoCode'];
+    if (user.role === 'SUPER_ADMIN') allowed.push('moderationState');
     const update = {};
     allowed.forEach((k) => {
       if (data[k] === undefined) return;
@@ -169,6 +172,21 @@ export class JobService {
     const canEdit = user.role === 'SUPER_ADMIN' || String(job.postedBy) === String(user._id);
     if (!canEdit) throw Object.assign(new Error('Not allowed'), { status: 403 });
     return Job.findByIdAndUpdate(jobId, { isActive: false }, { new: true });
+  }
+
+  /** Soft-remove listing: creator or super admin. */
+  static async deleteJob(jobId, user) {
+    const job = await Job.findById(jobId);
+    if (!job) throw Object.assign(new Error('Job not found'), { status: 404 });
+    const isOwner = String(job.postedBy) === String(user._id);
+    if (user.role !== 'SUPER_ADMIN' && !isOwner) {
+      throw Object.assign(new Error('Not allowed to delete this job'), { status: 403 });
+    }
+    return Job.findByIdAndUpdate(
+      jobId,
+      { isActive: false, moderationState: 'REMOVED' },
+      { new: true }
+    );
   }
 
   static async createJob(data, postedBy) {
