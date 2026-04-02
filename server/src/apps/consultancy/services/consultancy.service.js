@@ -16,6 +16,7 @@ import ConsultancyBranch from '../../../shared/models/ConsultancyBranch.js';
 import { isBusinessEmail } from '../../../shared/utils/emailValidation.js';
 import { normalizeCampaignAutomation } from '../../../shared/services/campaign-scheduler.service.js';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET, JWT_EXPIRES } from '../../../config/jwt.js';
 
 export class ConsultancyService {
   static async uploadSignature(consultancyId, fileUrl) {
@@ -322,7 +323,7 @@ export class ConsultancyService {
     });
 
     const user = await User.create({ email, password, role: 'CONSULTANCY_ADMIN', profile: { firstName, lastName, consultancyId: consultancy._id } });
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production', { expiresIn: '7d' });
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
     return { user: { id: user._id, _id: user._id, email: user.email, role: user.role, profile: user.profile }, token, consultancy: { id: consultancy._id, name: consultancy.name } };
   }
 

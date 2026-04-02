@@ -2,6 +2,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET, JWT_EXPIRES } from '../config/jwt.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -32,7 +33,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } }); // 2MB
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // --- Password Management ---
@@ -44,6 +44,7 @@ router.post('/change-password', authenticate, validate(schemas.changePasswordSch
 router.post('/register', authLimiter, validate(schemas.registerSchema), asyncHandler(AuthController.register));
 router.post('/login', authLimiter, validate(schemas.loginSchema), asyncHandler(AuthController.login));
 router.get('/me', authenticate, asyncHandler(AuthController.getMe));
+router.post('/switch-account', authenticate, validate(schemas.switchAccountSchema), asyncHandler(AuthController.switchAccount));
 router.patch('/me', authenticate, validate(schemas.updateMeSchema), asyncHandler(AuthController.updateMe));
 router.post('/me/avatar', authenticate, upload.single('file'), asyncHandler(AuthController.updateAvatar));
 
@@ -64,7 +65,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         else console.error('[auth/google/callback] no user (check MongoDB + user creation)');
         return res.redirect(`${FRONTEND_URL}/login?error=oauth`);
       }
-      const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
+      const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
       res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}`);
     })(req, res, next);
   });

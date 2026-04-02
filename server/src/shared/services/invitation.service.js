@@ -1,8 +1,7 @@
 import Client from '../../shared/models/Client.js';
 import User from '../../shared/models/User.js';
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production';
+import { JWT_SECRET, JWT_EXPIRES } from '../../config/jwt.js';
 
 export class InvitationService {
   static async validate(token, email) {
@@ -37,7 +36,7 @@ export class InvitationService {
       invitationAcceptedAt: new Date(),
     });
 
-    const jwtToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
+    const jwtToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
     return {
       user: { id: user._id, email: user.email, role: user.role, profile: user.profile },
       token: jwtToken,

@@ -8,6 +8,7 @@ import Notifications from '../components/Notifications';
 import { AbroadUpLogo } from '../components/brand/AbroadUpLogo';
 import { BrandMark } from '../components/brand/BrandMark';
 import { StudentJumpIn } from '../components/student/StudentJumpIn';
+import SwitchUserControl from '../components/SwitchUserControl';
 
 const SIDEBAR_EXPANDED = 256; // w-64
 const SIDEBAR_COLLAPSED = 80;  // icon-only
@@ -248,6 +249,7 @@ export default function StudentLayout() {
               <Mail className="w-5 h-5" />
             </NavLink>
             <Notifications />
+            <SwitchUserControl />
             <div className="relative shrink-0">
               <button
                 type="button"

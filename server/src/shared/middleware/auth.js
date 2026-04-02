@@ -1,8 +1,7 @@
-import '../../loadEnv.js';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Consultancy from '../models/Consultancy.js';
-const JWT_SECRET = process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production';
+import { JWT_SECRET } from '../../config/jwt.js';
 
 export async function getAuthenticatedUserFromToken(token) {
   if (!token) return null;

@@ -9,7 +9,7 @@ import * as schemas from '../shared/schemas/job.schema.js';
 const router = express.Router();
 
 /** Roles that can post and manage their own job listings */
-const JOB_OWNER_ROLES = ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'];
+const JOB_OWNER_ROLES = ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'];
 
 // Public jobs - no auth (for landing, public /jobs page)
 router.get('/public', asyncHandler(JobController.getPublicJobs));
@@ -58,6 +58,6 @@ router.patch('/:id', authenticate, requireRole(...JOB_OWNER_ROLES), validate(sch
 router.delete('/:id', authenticate, requireRole(...JOB_OWNER_ROLES), asyncHandler(JobController.deleteJob));
 
 // Create job (Admin/Agent/Employer)
-router.post('/', authenticate, authorize('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'), validate(schemas.createJobSchema), asyncHandler(JobController.createJob));
+router.post('/', authenticate, authorize('SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'), validate(schemas.createJobSchema), asyncHandler(JobController.createJob));
 
 export default router;

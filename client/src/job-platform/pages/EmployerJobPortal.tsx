@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { authFetch, useAuthStore } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
 import { resolveFileUrl } from '../../lib/imageUrl';
-import { XCircle, Briefcase, Users, Plus, Building2, Pencil, Archive, FileText, CalendarClock, ImageIcon, Trash2 } from 'lucide-react';
+import { XCircle, Briefcase, Users, Plus, Building2, Pencil, Archive, FileText, CalendarClock, ImageIcon, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 
 function toLocalInput(d?: string) {
   if (!d) return '';
@@ -10,6 +10,21 @@ function toLocalInput(d?: string) {
   if (Number.isNaN(x.getTime())) return '';
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}T${pad(x.getHours())}:${pad(x.getMinutes())}`;
+}
+
+function daysListed(iso?: string | null): number | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+}
+
+function jobStatusLabel(job: any): string {
+  if (job.moderationState === 'REMOVED') return 'Removed';
+  if (job.isActive === false) return 'Closed';
+  if (job.goLiveAt && new Date(job.goLiveAt) > new Date()) return 'Scheduled';
+  if (job.listingEndsAt && new Date(job.listingEndsAt) < new Date() && job.isActive !== false) return 'Listing ended';
+  return 'Live';
 }
 
 export default function EmployerJobPortal() {
@@ -47,6 +62,7 @@ export default function EmployerJobPortal() {
     website: '',
     logoUrl: '',
   });
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
   const fetchDashboardData = async () => {
     setError('');
@@ -277,6 +293,14 @@ export default function EmployerJobPortal() {
     return url.startsWith('http') ? url : `${window.location.origin}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
+  const sortedJobs = useMemo(
+    () =>
+      [...jobs].sort(
+        (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      ),
+    [jobs]
+  );
+
   if (loading) return <div className="flex justify-center py-12"><div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" /></div>;
 
   return (
@@ -460,139 +484,291 @@ export default function EmployerJobPortal() {
         </form>
       )}
 
-      <div className="space-y-8">
-        {jobs.length === 0 ? (
+      <div className="space-y-6">
+        {sortedJobs.length === 0 ? (
           <div className="bg-white border border-slate-200 p-12 text-center rounded-3xl">
-             <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-             <p className="text-lg font-bold text-slate-900 mb-1">No Jobs Posted</p>
-             <p className="text-slate-500">You haven&apos;t posted any jobs yet.</p>
+            <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-lg font-bold text-slate-900 mb-1">No Jobs Posted</p>
+            <p className="text-slate-500">You haven&apos;t posted any jobs yet.</p>
           </div>
         ) : (
-          jobs.map((job: any) => (
-            <div key={job._id} className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-sm">
-              <div className="bg-slate-50 p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 flex-wrap">
-                    <Briefcase className="w-5 h-5 text-emerald-600" /> {job.title}
-                    {!job.isActive && <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-bold rounded">Closed</span>}
-                    {job.goLiveAt && new Date(job.goLiveAt) > new Date() && (
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded">Scheduled</span>
-                    )}
-                    {job.listingEndsAt && new Date(job.listingEndsAt) < new Date() && job.isActive && (
-                      <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-bold rounded">Listing ended</span>
-                    )}
-                  </h2>
-                  <p className="text-sm text-slate-500 mt-1">{job.location} • {job.type?.replace('_', ' ')} • {job.company}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
-                    <Users className="w-4 h-4 text-emerald-600" />
-                    <span className="font-bold text-slate-700">{job.applications?.length || 0} Applicants</span>
+          <>
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide">All job postings</h2>
+                <p className="text-xs text-slate-500">
+                  Posted = when the listing was created · Days = days since posted · Expand a row for applicants
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[900px]">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-3 py-3 w-10" aria-label="Expand" />
+                      <th className="px-3 py-3">Job</th>
+                      <th className="px-3 py-3">Company</th>
+                      <th className="px-3 py-3">Location</th>
+                      <th className="px-3 py-3 whitespace-nowrap">Posted</th>
+                      <th className="px-3 py-3 text-center">Days listed</th>
+                      <th className="px-3 py-3">Status</th>
+                      <th className="px-3 py-3 text-center">Applicants</th>
+                      <th className="px-3 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedJobs.map((job: any) => {
+                      const statusLabel = jobStatusLabel(job);
+                      const posted = job.createdAt ? new Date(job.createdAt) : null;
+                      const postedOk = posted && !Number.isNaN(posted.getTime());
+                      const days = daysListed(job.createdAt);
+                      const expanded = expandedJobId === job._id;
+                      return (
+                        <tr key={job._id} className="border-b border-slate-100 hover:bg-emerald-50/40">
+                          <td className="px-2 py-2 align-middle">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedJobId(expanded ? null : job._id)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:bg-white border border-transparent hover:border-slate-200"
+                              title={expanded ? 'Collapse applicants' : 'View applicants'}
+                              aria-expanded={expanded}
+                            >
+                              {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            </button>
+                          </td>
+                          <td className="px-3 py-2.5 font-bold text-slate-900 max-w-[220px]">
+                            <span className="line-clamp-2">{job.title}</span>
+                          </td>
+                          <td className="px-3 py-2.5 text-slate-700">{job.company || '—'}</td>
+                          <td className="px-3 py-2.5 text-slate-600 max-w-[140px]">{job.location || '—'}</td>
+                          <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">
+                            {postedOk ? posted!.toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—'}
+                          </td>
+                          <td className="px-3 py-2.5 text-center font-bold text-slate-800">
+                            {days === null ? '—' : `${days}d`}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span
+                              className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                                statusLabel === 'Live'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : statusLabel === 'Scheduled'
+                                    ? 'bg-amber-100 text-amber-900'
+                                    : statusLabel === 'Removed'
+                                      ? 'bg-rose-100 text-rose-800'
+                                      : 'bg-slate-200 text-slate-700'
+                              }`}
+                            >
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-center font-bold text-emerald-700">{job.applications?.length ?? 0}</td>
+                          <td className="px-3 py-2.5 text-right">
+                            <div className="inline-flex items-center gap-1 justify-end flex-wrap">
+                              {job.moderationState !== 'REMOVED' && (
+                                <>
+                                  {job.isActive !== false && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingJob({ ...job })}
+                                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50"
+                                        title="Edit"
+                                      >
+                                        <Pencil className="w-4 h-4 text-slate-600" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => closeJob(job._id)}
+                                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50"
+                                        title="Close (hide from search)"
+                                      >
+                                        <Archive className="w-4 h-4 text-slate-600" />
+                                      </button>
+                                    </>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteJobListing(job._id)}
+                                    className="p-1.5 rounded-lg border border-rose-200 hover:bg-rose-50"
+                                    title="Delete listing"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-rose-600" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {sortedJobs.map((job: any) =>
+              expandedJobId !== job._id ? null : (
+                <div
+                  key={`panel-${job._id}`}
+                  className="bg-white border border-emerald-200 rounded-2xl overflow-hidden shadow-sm ring-1 ring-emerald-100"
+                >
+                  <div className="bg-emerald-50/80 px-4 py-3 border-b border-emerald-100 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-black text-emerald-900">
+                      Applicants — {job.title}
+                    </p>
+                    <span className="text-xs font-bold text-emerald-600">
+                      {job.applications?.length || 0} total
+                    </span>
                   </div>
-                  {job.moderationState !== 'REMOVED' && (
-                    <>
-                      {job.isActive !== false && (
+                  {job.applications?.length > 0 && (
+                    <div className="px-4 py-2 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedApps((prev) =>
+                            job.applications.every((a: any) => prev.has(a._id))
+                              ? new Set([...prev].filter((x) => !job.applications.some((a: any) => a._id === x)))
+                              : new Set([...prev, ...job.applications.map((a: any) => a._id)])
+                          )
+                        }
+                        className="text-sm font-bold text-slate-600 hover:text-slate-900"
+                      >
+                        Select all
+                      </button>
+                      {selectedApps.size > 0 && (
                         <>
-                          <button onClick={() => setEditingJob({ ...job })} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50" title="Edit"><Pencil className="w-4 h-4 text-slate-600" /></button>
-                          <button onClick={() => closeJob(job._id)} className="p-2 rounded-lg border border-slate-200 hover:bg-rose-50 transition" title="Close job (hide from search)"><Archive className="w-4 h-4 text-slate-600" /></button>
+                          <span className="text-slate-400">|</span>
+                          <button type="button" onClick={() => bulkUpdateStatus('SHORTLISTED')} className="text-sm font-bold text-amber-600 hover:text-amber-700">
+                            Shortlist ({selectedApps.size})
+                          </button>
+                          <button type="button" onClick={() => bulkUpdateStatus('REJECTED')} className="text-sm font-bold text-rose-600 hover:text-rose-700">
+                            Reject ({selectedApps.size})
+                          </button>
                         </>
                       )}
-                      <button onClick={() => deleteJobListing(job._id)} className="p-2 rounded-lg border border-slate-200 hover:bg-rose-100 transition" title="Delete listing permanently"><Trash2 className="w-4 h-4 text-rose-600" /></button>
-                    </>
+                    </div>
                   )}
-                </div>
-              </div>
-
-              {job.applications?.length > 0 && (
-                <div className="p-6 border-b border-slate-100 flex items-center gap-2">
-                  <button onClick={() => setSelectedApps(prev => job.applications.every((a: any) => prev.has(a._id)) ? new Set([...prev].filter(x => !job.applications.some((a: any) => a._id === x))) : new Set([...prev, ...job.applications.map((a: any) => a._id)]))} className="text-sm font-bold text-slate-600 hover:text-slate-900">
-                    Select all
-                  </button>
-                  {selectedApps.size > 0 && (
-                    <>
-                      <span className="text-slate-400">|</span>
-                      <button onClick={() => bulkUpdateStatus('SHORTLISTED')} className="text-sm font-bold text-amber-600 hover:text-amber-700">Shortlist ({selectedApps.size})</button>
-                      <button onClick={() => bulkUpdateStatus('REJECTED')} className="text-sm font-bold text-rose-600 hover:text-rose-700">Reject ({selectedApps.size})</button>
-                    </>
-                  )}
-                </div>
-              )}
-
-              <div className="divide-y divide-slate-100 p-2">
-                {!job.applications || job.applications.length === 0 ? (
-                  <p className="p-6 text-center text-slate-500 font-medium">No applications for this position yet.</p>
-                ) : (
-                  job.applications.map((app: any) => (
-                    <div key={app._id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-slate-50 transition-colors rounded-2xl m-2">
-                      <div className="flex items-start gap-3">
-                        <input type="checkbox" checked={selectedApps.has(app._id)} onChange={() => toggleSelectApp(app._id)} className="mt-1" />
-                        <div>
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-md ${
-                              app.status === 'APPLIED' ? 'bg-slate-100 text-slate-700' :
-                              app.status === 'SHORTLISTED' ? 'bg-amber-100 text-amber-700' :
-                              app.status === 'INTERVIEW' ? 'bg-sky-100 text-sky-700' :
-                              app.status === 'OFFERED' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                            }`}>{app.status}</span>
-                            <p className="text-sm font-bold text-slate-500">{new Date(app.createdAt).toLocaleDateString()}</p>
+                  <div className="divide-y divide-slate-100 p-2">
+                    {!job.applications || job.applications.length === 0 ? (
+                      <p className="p-6 text-center text-slate-500 font-medium">No applications for this position yet.</p>
+                    ) : (
+                      job.applications.map((app: any) => (
+                        <div
+                          key={app._id}
+                          className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-slate-50 transition-colors rounded-2xl m-2"
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedApps.has(app._id)}
+                              onChange={() => toggleSelectApp(app._id)}
+                              className="mt-1"
+                            />
+                            <div>
+                              <div className="flex items-center gap-3 mb-2">
+                                <span
+                                  className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-md ${
+                                    app.status === 'APPLIED'
+                                      ? 'bg-slate-100 text-slate-700'
+                                      : app.status === 'SHORTLISTED'
+                                        ? 'bg-amber-100 text-amber-700'
+                                        : app.status === 'INTERVIEW'
+                                          ? 'bg-sky-100 text-sky-700'
+                                          : app.status === 'OFFERED'
+                                            ? 'bg-emerald-100 text-emerald-700'
+                                            : 'bg-rose-100 text-rose-700'
+                                  }`}
+                                >
+                                  {app.status}
+                                </span>
+                                <p className="text-sm font-bold text-slate-500">{new Date(app.createdAt).toLocaleDateString()}</p>
+                              </div>
+                              <h3 className="text-lg font-bold text-slate-900 mb-1">
+                                {app.studentId?.profile?.firstName} {app.studentId?.profile?.lastName}
+                              </h3>
+                              <p className="text-slate-500 text-sm mb-2">{app.studentId?.email}</p>
+                              <div className="flex items-center gap-3 text-sm flex-wrap">
+                                {app.resumeUrl && (
+                                  <a
+                                    href={getDocUrl(app.resumeUrl)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-emerald-600 font-bold hover:underline"
+                                  >
+                                    <FileText className="w-4 h-4" /> Resume
+                                  </a>
+                                )}
+                                {app.coverLetterUrl && (
+                                  <a
+                                    href={getDocUrl(app.coverLetterUrl)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-sky-600 font-bold hover:underline"
+                                  >
+                                    <FileText className="w-4 h-4" /> Cover
+                                  </a>
+                                )}
+                                {app.resumeText && (
+                                  <span className="text-slate-600 text-xs max-w-md line-clamp-3" title={app.resumeText}>
+                                    Resume (text): {app.resumeText.slice(0, 120)}
+                                    {app.resumeText.length > 120 ? '…' : ''}
+                                  </span>
+                                )}
+                                {app.coverLetterText && (
+                                  <span className="text-slate-500 text-xs max-w-md line-clamp-2" title={app.coverLetterText}>
+                                    Cover (text): {app.coverLetterText.slice(0, 80)}
+                                    {app.coverLetterText.length > 80 ? '…' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <h3 className="text-lg font-bold text-slate-900 mb-1">{app.studentId?.profile?.firstName} {app.studentId?.profile?.lastName}</h3>
-                          <p className="text-slate-500 text-sm mb-2">{app.studentId?.email}</p>
-                          <div className="flex items-center gap-3 text-sm">
-                            {app.resumeUrl && (
-                              <a href={getDocUrl(app.resumeUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-emerald-600 font-bold hover:underline">
-                                <FileText className="w-4 h-4" /> Resume
-                              </a>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {app.status === 'APPLIED' && (
+                              <button
+                                type="button"
+                                onClick={() => updateStatus(app._id, 'SHORTLISTED')}
+                                className="px-4 py-2 border border-slate-200 font-bold rounded-xl text-slate-600 hover:bg-slate-50 transition text-sm"
+                              >
+                                Shortlist
+                              </button>
                             )}
-                            {app.coverLetterUrl && (
-                              <a href={getDocUrl(app.coverLetterUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sky-600 font-bold hover:underline">
-                                <FileText className="w-4 h-4" /> Cover
-                              </a>
+                            {['SHORTLISTED', 'INTERVIEW'].includes(app.status) && (
+                              <button
+                                type="button"
+                                onClick={() => updateStatus(app._id, 'INTERVIEW')}
+                                className="px-4 py-2 border border-sky-200 text-sky-600 font-bold rounded-xl hover:bg-sky-50 transition-colors text-sm"
+                              >
+                                Invite Interview
+                              </button>
                             )}
-                            {app.resumeText && (
-                              <span className="text-slate-600 text-xs max-w-md line-clamp-3" title={app.resumeText}>
-                                Resume (text): {app.resumeText.slice(0, 120)}
-                                {app.resumeText.length > 120 ? '…' : ''}
-                              </span>
+                            {['APPLIED', 'SHORTLISTED', 'INTERVIEW'].includes(app.status) && (
+                              <button
+                                type="button"
+                                onClick={() => updateStatus(app._id, 'OFFERED')}
+                                className="px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-sm text-sm"
+                              >
+                                Send Offer
+                              </button>
                             )}
-                            {app.coverLetterText && (
-                              <span className="text-slate-500 text-xs max-w-md line-clamp-2" title={app.coverLetterText}>
-                                Cover (text): {app.coverLetterText.slice(0, 80)}
-                                {app.coverLetterText.length > 80 ? '…' : ''}
-                              </span>
+                            {!['REJECTED', 'OFFERED', 'HIRED'].includes(app.status) && (
+                              <button
+                                type="button"
+                                onClick={() => updateStatus(app._id, 'REJECTED')}
+                                className="px-3 py-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition text-sm"
+                              >
+                                <XCircle className="w-5 h-5" />
+                              </button>
                             )}
                           </div>
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {app.status === 'APPLIED' && (
-                          <button onClick={() => updateStatus(app._id, 'SHORTLISTED')} className="px-4 py-2 border border-slate-200 font-bold rounded-xl text-slate-600 hover:bg-slate-50 transition text-sm">
-                            Shortlist
-                          </button>
-                        )}
-                        {['SHORTLISTED', 'INTERVIEW'].includes(app.status) && (
-                          <button onClick={() => updateStatus(app._id, 'INTERVIEW')} className="px-4 py-2 border border-sky-200 text-sky-600 font-bold rounded-xl hover:bg-sky-50 transition-colors text-sm">
-                            Invite Interview
-                          </button>
-                        )}
-                        {['APPLIED', 'SHORTLISTED', 'INTERVIEW'].includes(app.status) && (
-                          <button onClick={() => updateStatus(app._id, 'OFFERED')} className="px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-sm text-sm">
-                            Send Offer
-                          </button>
-                        )}
-                        {!['REJECTED', 'OFFERED', 'HIRED'].includes(app.status) && (
-                          <button onClick={() => updateStatus(app._id, 'REJECTED')} className="px-3 py-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition text-sm">
-                            <XCircle className="w-5 h-5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          ))
+                      ))
+                    )}
+                  </div>
+                </div>
+              )
+            )}
+          </>
         )}
       </div>
     </div>

@@ -3,9 +3,19 @@ import crypto from 'crypto';
 import User from '../../shared/models/User.js';
 import { sendEmail } from '../../shared/utils/email.js';
 import { getUserPermissions } from '../../shared/middleware/auth.js';
+import { JWT_SECRET, JWT_EXPIRES } from '../../config/jwt.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Case-insensitive exact match on stored email string. */
+function emailExactFilter(email) {
+  if (!email || typeof email !== 'string') return { _id: null };
+  return { email: new RegExp(`^${escapeRegex(email.trim())}$`, 'i') };
+}
 
 const otpStore = new Map();
 
@@ -96,8 +106,13 @@ export class AuthService {
       await user.save();
     }
     
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
-    return { user: { id: user._id, _id: user._id, email: user.email, role: user.role, profile: user.profile }, token };
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+    const linkedAccounts = await AuthService._linkedAccountsForEmail(user.email, user._id);
+    return {
+      user: { id: user._id, _id: user._id, email: user.email, role: user.role, profile: user.profile },
+      token,
+      ...(linkedAccounts.length ? { linkedAccounts } : {}),
+    };
   }
 
   static async register(data) {
@@ -109,13 +124,45 @@ export class AuthService {
       throw Object.assign(new Error('Email already registered'), { status: 400 });
     }
     const user = await User.create({ email, password, role: 'STUDENT', profile });
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
     return { user: { id: user._id, _id: user._id, email: user.email, role: user.role, profile: user.profile }, token };
   }
 
+  /** Other user rows sharing the same email (case-insensitive), excluding one id. */
+  static async _linkedAccountsForEmail(email, excludeUserId) {
+    if (!email) return [];
+    const filter = emailExactFilter(email);
+    const rows = await User.find({
+      ...filter,
+      _id: { $ne: excludeUserId },
+    })
+      .select('_id role profile.firstName profile.lastName email')
+      .lean();
+    return rows.map((u) => ({
+      _id: u._id,
+      role: u.role,
+      label: [u.profile?.firstName, u.profile?.lastName].filter(Boolean).join(' ') || u.email || 'Account',
+    }));
+  }
+
+  static async getLinkedAccountsForUser(user) {
+    return AuthService._linkedAccountsForEmail(user.email, user._id);
+  }
+
   static async login(email, password) {
-    const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
+    const filter = emailExactFilter(email);
+    const candidates = await User.find(filter);
+    if (candidates.length === 0) {
+      throw Object.assign(new Error('Invalid credentials'), { status: 401 });
+    }
+    let user = null;
+    for (const u of candidates) {
+      if (await u.comparePassword(password)) {
+        user = u;
+        break;
+      }
+    }
+    if (!user) {
       throw Object.assign(new Error('Invalid credentials'), { status: 401 });
     }
     if (!user.isActive) {
@@ -125,8 +172,35 @@ export class AuthService {
         : 'Your account is inactive. Contact support.';
       throw Object.assign(new Error(msg), { status: 403 });
     }
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
-    return { user: { id: user._id, _id: user._id, email: user.email, role: user.role, profile: user.profile }, token };
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+    const linkedAccounts = await AuthService._linkedAccountsForEmail(user.email, user._id);
+    return {
+      user: { id: user._id, _id: user._id, email: user.email, role: user.role, profile: user.profile },
+      token,
+      ...(linkedAccounts.length ? { linkedAccounts } : {}),
+    };
+  }
+
+  /** Switch to another user row that shares the same email (already authenticated). */
+  static async switchToUser(currentUser, targetUserId) {
+    const target = await User.findById(targetUserId).select('-password');
+    if (!target || !target.isActive) {
+      throw Object.assign(new Error('Account not found'), { status: 404 });
+    }
+    if (!currentUser.email || !target.email) {
+      throw Object.assign(new Error('Switch account is not available for this login'), { status: 403 });
+    }
+    const re = new RegExp(`^${escapeRegex(String(currentUser.email).trim())}$`, 'i');
+    if (!re.test(String(target.email).trim())) {
+      throw Object.assign(new Error('Invalid account switch'), { status: 403 });
+    }
+    const token = jwt.sign({ userId: target._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+    const linkedAccounts = await AuthService._linkedAccountsForEmail(target.email, target._id);
+    return {
+      user: { id: target._id, _id: target._id, email: target.email, role: target.role, profile: target.profile },
+      token,
+      ...(linkedAccounts.length ? { linkedAccounts } : {}),
+    };
   }
 
   static async updateMe(user, data) {

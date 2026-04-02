@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Users, FileText, Target, ArrowRight, Activity, TrendingUp, AlertTriangle, CheckSquare, ShieldCheck, CalendarClock, Archive, ReceiptText, Download, Mail, X, Save } from 'lucide-react';
+import { Users, FileText, Target, ArrowRight, Activity, TrendingUp, AlertTriangle, CheckSquare, ShieldCheck, CalendarClock, Archive, ReceiptText, Download, Mail, X, Save, Briefcase } from 'lucide-react';
 import { authFetch, safeJson } from '../../store/auth';
 import { useAuthStore } from '../../store/auth';
 import { format } from 'date-fns';
@@ -39,6 +39,7 @@ export default function ConsultancyDashboard() {
   const [campaignPreview, setCampaignPreview] = useState<any | null>(null);
   const [campaignSchedules, setCampaignSchedules] = useState<Record<string, any>>({});
   const [savingCampaignSchedules, setSavingCampaignSchedules] = useState(false);
+  const [jobStats, setJobStats] = useState<{ total: number; live: number } | null>(null);
 
   const defaultCampaignSchedules = {
     VISA_EXPIRY_30: { enabled: false, frequency: 'DAILY', weekday: 1, hour: 9, minute: 0 },
@@ -82,6 +83,17 @@ export default function ConsultancyDashboard() {
       const billing = await (billingRes?.ok ? safeJson<any[]>(billingRes) : []);
       const campaignHistoryData = await (campaignHistoryRes?.ok ? safeJson<any>(campaignHistoryRes) : { rows: [], stats: {} });
       const tasksRaw = await (tasksRes?.ok ? safeJson<any[]>(tasksRes) : []);
+      const jobsRes = await authFetch('/api/jobs/employer/dashboard').catch(() => null as Response | null);
+      if (jobsRes?.ok) {
+        const j = await safeJson<unknown>(jobsRes);
+        const jobsDash = Array.isArray(j) ? j : [];
+        const live = jobsDash.filter(
+          (job: any) => job.isActive !== false && job.moderationState !== 'REMOVED'
+        ).length;
+        setJobStats({ total: jobsDash.length, live });
+      } else {
+        setJobStats(null);
+      }
       const clients = Array.isArray(clientsRaw) ? clientsRaw : [];
       const apps = Array.isArray(appsRaw) ? appsRaw : [];
       const leads = Array.isArray(leadsRaw) ? leadsRaw : [];
@@ -431,10 +443,10 @@ export default function ConsultancyDashboard() {
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mt-6">
         {loading ? (
           <>
-            {[1, 2, 3].map(i => <div key={i} className="card flex items-center gap-4"><Skeleton className="w-12 h-12 rounded-xl" /><div className="flex-1 space-y-2"><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-24" /></div></div>)}
+            {[1, 2, 3, 4].map(i => <div key={i} className="card flex items-center gap-4"><Skeleton className="w-12 h-12 rounded-xl" /><div className="flex-1 space-y-2"><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-24" /></div></div>)}
           </>
         ) : (
         <>
@@ -472,6 +484,18 @@ export default function ConsultancyDashboard() {
           </div>
           <Link to={scopedPath('leads')} className="ml-auto text-ori-600 hover:underline text-sm flex items-center gap-1">
             View <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+        <div className="card flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+            <Briefcase className="w-6 h-6 text-emerald-700" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-slate-900">{jobStats ? jobStats.live : '—'}</p>
+            <p className="text-slate-500 text-sm">Live job posts{jobStats && jobStats.total !== jobStats.live ? ` (${jobStats.total} total)` : ''}</p>
+          </div>
+          <Link to={scopedPath('jobs')} className="ml-auto text-emerald-700 hover:underline text-sm flex items-center gap-1 font-semibold">
+            Manage <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
         </>

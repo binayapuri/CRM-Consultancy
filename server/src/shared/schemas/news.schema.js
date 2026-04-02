@@ -11,7 +11,8 @@ export const getNewsSchema = z.object({
 export const createArticleSchema = z.object({
   body: z.object({
     title: z.string().min(1),
-    slug: z.string().min(1),
+    // Optional on create: Article model pre-save derives slug from title when omitted
+    slug: z.string().min(1).optional(),
     content: z.string().min(1),
     summary: z.string().optional(),
     coverImage: z.string().optional(),

@@ -36,7 +36,7 @@ export default function Activate() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Activation failed');
-      useAuthStore.setState({ user: data.user, token: data.token });
+      useAuthStore.setState({ user: data.user, token: data.token, linkedAccounts: data.linkedAccounts ?? [] });
       navigate('/student/dashboard');
     } catch (err: any) {
       setError(err.message);

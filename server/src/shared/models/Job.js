@@ -15,7 +15,7 @@ const jobSchema = new mongoose.Schema({
   partTimeAllowed: { type: Boolean, default: false }, // Critical for student visas
   postedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // e.g. Super Admin or verified employer
   recruiterEmployerProfileId: { type: mongoose.Schema.Types.ObjectId, ref: 'RecruiterEmployerProfile' },
-  postedByRole: { type: String, enum: ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'], default: 'EMPLOYER' },
+  postedByRole: { type: String, enum: ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT', 'SPONSOR', 'EMPLOYER', 'RECRUITER'], default: 'EMPLOYER' },
   salaryMin: Number,
   salaryMax: Number,
   workRights: [String], // e.g. ['STUDENT_VISA_24_HOURS', 'FULL_WORK_RIGHTS']

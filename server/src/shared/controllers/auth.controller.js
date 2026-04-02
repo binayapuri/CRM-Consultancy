@@ -34,7 +34,15 @@ export class AuthController {
   }
 
   static async getMe(req, res) {
-    res.json(req.user);
+    const linkedAccounts = await AuthService.getLinkedAccountsForUser(req.user);
+    const u = req.user.toObject ? req.user.toObject() : { ...req.user };
+    if (u.password) delete u.password;
+    res.json({ ...u, linkedAccounts });
+  }
+
+  static async switchAccount(req, res) {
+    const result = await AuthService.switchToUser(req.user, req.body.userId);
+    res.json(result);
   }
 
   static async updateMe(req, res) {

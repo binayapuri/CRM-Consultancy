@@ -51,3 +51,9 @@ export const changePasswordSchema = z.object({
     newPassword: z.string().min(6)
   })
 });
+
+export const switchAccountSchema = z.object({
+  body: z.object({
+    userId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid user id')
+  })
+});

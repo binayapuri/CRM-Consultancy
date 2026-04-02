@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuthStore } from './store/auth';
@@ -37,6 +38,7 @@ import Sponsors from './pages/consultancy/Sponsors';
 import ConsultancyProfile from './pages/consultancy/Profile';
 import ConsultancySettings from './pages/consultancy/Settings';
 import ConsultancyBranches from './pages/consultancy/Branches';
+import ConsultancyJobs from './pages/consultancy/Jobs';
 import ClientEnroll from './pages/consultancy/ClientEnroll';
 import Employees from './pages/consultancy/Employees';
 import EmployeeDetail from './pages/consultancy/EmployeeDetail';
@@ -141,9 +143,19 @@ function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Refresh session + linked accounts after reload (JWT may still be valid). */
+function AuthSessionRefresh() {
+  const token = useAuthStore((s) => s.token);
+  useEffect(() => {
+    if (token) useAuthStore.getState().fetchUser();
+  }, [token]);
+  return null;
+}
+
 export default function App() {
   return (
     <>
+      <AuthSessionRefresh />
       <Helmet>
         <link rel="icon" type="image/png" href="/logo4.png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/logo4.png" />
@@ -182,6 +194,7 @@ export default function App() {
         <Route path="documents" element={<Documents />} />
         <Route path="templates" element={<Navigate to="documents" replace />} />
         <Route path="leads" element={<Leads />} />
+        <Route path="jobs" element={<ConsultancyJobs />} />
         <Route path="calendar" element={<ConsultancyCalendarView />} />
         <Route path="leads/add" element={<LeadForm />} />
         <Route path="leads/:id/edit" element={<LeadForm />} />

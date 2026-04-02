@@ -31,7 +31,10 @@ export default function RegisterConsultancy() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Registration failed');
-      localStorage.setItem('orivisa-auth', JSON.stringify({ state: { user: data.user, token: data.token }, version: 1 }));
+      localStorage.setItem(
+        'orivisa-auth',
+        JSON.stringify({ state: { user: data.user, token: data.token, linkedAccounts: [] }, version: 1 })
+      );
       navigate('/consultancy/dashboard');
       window.location.reload();
     } catch (err: unknown) {

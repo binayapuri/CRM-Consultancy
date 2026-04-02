@@ -3,30 +3,42 @@ import { persist } from 'zustand/middleware';
 
 const API = '/api';
 
+export type LinkedAccount = { _id: string; role: string; label: string };
+
 type User = {
   id?: string;
   _id?: string;
   email: string;
   role: string;
-  // Broad profile type used across the app; keep it flexible to avoid TS errors
   profile?: any;
 };
 
 type AuthState = {
   user: User | null;
   token: string | null;
+  linkedAccounts: LinkedAccount[];
   login: (email: string, password: string) => Promise<void>;
   loginWithToken: (token: string) => Promise<void>;
   register: (email: string, password: string, role: string, profile?: object) => Promise<void>;
+  switchAccount: (userId: string) => Promise<void>;
   logout: () => void;
   fetchUser: () => Promise<void>;
 };
+
+function splitMePayload(data: Record<string, unknown>): { user: User; linkedAccounts: LinkedAccount[] } {
+  const { linkedAccounts, ...rest } = data;
+  return {
+    user: rest as User,
+    linkedAccounts: Array.isArray(linkedAccounts) ? (linkedAccounts as LinkedAccount[]) : [],
+  };
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
       token: null,
+      linkedAccounts: [],
       login: async (email, password) => {
         const res = await fetch(`${API}/auth/login`, {
           method: 'POST',
@@ -35,14 +47,19 @@ export const useAuthStore = create<AuthState>()(
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Login failed');
-        set({ user: data.user, token: data.token });
+        set({
+          user: data.user,
+          token: data.token,
+          linkedAccounts: Array.isArray(data.linkedAccounts) ? data.linkedAccounts : [],
+        });
       },
       loginWithToken: async (token) => {
         set({ token });
         const res = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error('Invalid token');
-        const user = await res.json();
-        set({ user, token });
+        const raw = await res.json();
+        const { user, linkedAccounts } = splitMePayload(raw);
+        set({ user, token, linkedAccounts });
       },
       register: async (email, password, role, profile) => {
         const res = await fetch(`${API}/auth/register`, {
@@ -52,18 +69,42 @@ export const useAuthStore = create<AuthState>()(
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Registration failed');
-        set({ user: data.user, token: data.token });
+        set({
+          user: data.user,
+          token: data.token,
+          linkedAccounts: Array.isArray(data.linkedAccounts) ? data.linkedAccounts : [],
+        });
       },
-      logout: () => set({ user: null, token: null }),
+      switchAccount: async (userId: string) => {
+        const { token } = get();
+        if (!token) throw new Error('Not signed in');
+        const res = await fetch(`${API}/auth/switch-account`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ userId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Switch failed');
+        set({
+          user: data.user,
+          token: data.token,
+          linkedAccounts: Array.isArray(data.linkedAccounts) ? data.linkedAccounts : [],
+        });
+      },
+      logout: () => set({ user: null, token: null, linkedAccounts: [] }),
       fetchUser: async () => {
         const { token } = get();
         if (!token) return;
         const res = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) {
-          const user = await res.json();
-          set({ user });
+          const raw = await res.json();
+          const { user, linkedAccounts } = splitMePayload(raw);
+          set({ user, linkedAccounts });
         } else if (res.status === 401) {
-          set({ user: null, token: null });
+          set({ user: null, token: null, linkedAccounts: [] });
         }
       },
     }),
@@ -73,7 +114,6 @@ export const useAuthStore = create<AuthState>()(
 
 /** Returns true if the 401 response indicates the JWT is invalid/expired (cleared session). */
 function isTokenInvalid401(res: Response, body: { error?: string } | null): boolean {
-  // 403 = role-forbidden, never logout. Only 401 with JWT error strings.
   if (res.status !== 401 || !body?.error) return false;
   const msg = String(body.error).toLowerCase();
   return /invalid token|token expired|jwt|signature|malformed|sign in again|no token|authorization/i.test(msg);
@@ -90,16 +130,19 @@ export function authFetch(url: string, opts: RequestInit = {}): Promise<Response
   const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
 
   return fetch(fullUrl, { ...opts, headers }).then((res) => {
-    // NEVER force logout on 403 — that is a role/permission deny, not an auth failure
     if (res.status === 401) {
-      res.clone().json()
+      res
+        .clone()
+        .json()
         .then((body: { error?: string } | null) => {
           if (isTokenInvalid401(res, body)) {
             useAuthStore.getState().logout();
             window.location.href = '/login';
           }
         })
-        .catch(() => {/* ignore non-json 401 errors gracefully */});
+        .catch(() => {
+          /* ignore non-json 401 */
+        });
     }
     return res;
   });

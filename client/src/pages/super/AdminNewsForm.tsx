@@ -10,6 +10,14 @@ import { ArrowLeft, Save, Upload, X } from 'lucide-react';
 
 type NewsCategory = { _id: string; name: string; slug: string; order?: number };
 
+function apiErrorMessage(data: unknown, fallback: string): string {
+  const d = data as { error?: string; details?: { path?: string; message?: string }[] };
+  if (d?.details?.length) {
+    return `${d.error || 'Validation failed'}: ${d.details.map((x) => x.message).join('; ')}`;
+  }
+  return d?.error || fallback;
+}
+
 const emptyForm = () => ({
   title: '',
   summary: '',
@@ -103,7 +111,7 @@ export default function AdminNewsForm() {
           body: JSON.stringify(payload),
         });
         const data = await safeJson(res);
-        if (!res.ok) throw new Error((data as any)?.error || 'Update failed');
+        if (!res.ok) throw new Error(apiErrorMessage(data, 'Update failed'));
         showToast('Article updated', 'success');
         navigate('/admin/news');
       } else {
@@ -113,7 +121,7 @@ export default function AdminNewsForm() {
           body: JSON.stringify(payload),
         });
         const data = await safeJson(res);
-        if (!res.ok) throw new Error((data as any)?.error || 'Create failed');
+        if (!res.ok) throw new Error(apiErrorMessage(data, 'Create failed'));
         showToast('Article created', 'success');
         navigate('/admin/news');
       }

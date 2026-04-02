@@ -85,7 +85,11 @@ export default function Login() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Invalid code');
-      useAuthStore.setState({ user: data.user, token: data.token });
+      useAuthStore.setState({
+        user: data.user,
+        token: data.token,
+        linkedAccounts: Array.isArray(data.linkedAccounts) ? data.linkedAccounts : [],
+      });
       const user = data.user;
       if (user?.role === 'SUPER_ADMIN') navigate('/admin/dashboard');
       else if (user?.role === 'STUDENT') navigate('/student/dashboard');

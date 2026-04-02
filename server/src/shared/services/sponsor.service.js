@@ -4,7 +4,7 @@ import Sponsor from '../../shared/models/Sponsor.js';
 import User from '../../shared/models/User.js';
 import { sendEmail } from '../../shared/utils/email.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production';
+import { JWT_SECRET, JWT_EXPIRES } from '../../config/jwt.js';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 export class SponsorService {
@@ -100,7 +100,7 @@ export class SponsorService {
     sponsor.userId = portalUser._id;
     await sponsor.save();
 
-    const token = jwt.sign({ userId: portalUser._id }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: portalUser._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
     const loginUrl = `${FRONTEND_URL}/auth/callback?token=${token}`;
     await sendEmail({
       to: email,

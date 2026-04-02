@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, Kanban, Users, FileText, Target, Calendar, GraduationCap, Shield, Wallet, User, LogOut, UsersRound, History, Settings, PanelLeftClose, PanelLeft, Building2, Clock, ReceiptText, Search } from 'lucide-react';
+import { LayoutDashboard, Kanban, Users, FileText, Target, Calendar, GraduationCap, Shield, Wallet, User, LogOut, UsersRound, History, Settings, PanelLeftClose, PanelLeft, Building2, Clock, ReceiptText, Search, Briefcase } from 'lucide-react';
 import Notifications from '../components/Notifications';
+import SwitchUserControl from '../components/SwitchUserControl';
 import TeamMessages from '../components/TeamMessages';
 import ConsultancyGlobalSearch from '../components/ConsultancyGlobalSearch';
 import { useAuthStore } from '../store/auth';
@@ -19,6 +20,7 @@ const nav = [
   { to: 'trace-history', icon: History, label: 'Trace History', adminOnly: true, perm: 'traceHistory' },
   { to: 'documents', icon: FileText, label: 'Documents & Templates', perm: 'documents' },
   { to: 'leads', icon: Target, label: 'Leads', perm: 'leads' },
+  { to: 'jobs', icon: Briefcase, label: 'Jobs', perm: null },
   { to: 'calendar', icon: Calendar, label: 'Calendar View', perm: 'tasks' },
   { to: 'daily-tasks', icon: Calendar, label: 'Daily Tasks', perm: 'tasks' },
   { to: 'attendance', icon: Clock, label: 'Attendance', perm: 'tasks' },
@@ -164,6 +166,7 @@ export default function ConsultancyLayout() {
               <Search className="w-5 h-5" />
             </button>
             <Notifications />
+            <SwitchUserControl />
             <TeamMessages />
             {/* Profile dropdown */}
             <div className="relative">

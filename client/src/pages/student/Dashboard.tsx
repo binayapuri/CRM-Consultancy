@@ -181,68 +181,123 @@ export default function StudentDashboard() {
 
   return (
     <div className="w-full min-w-0 max-w-full space-y-6 sm:space-y-8 animate-fade-in-up">
-      {/* ────────── Hero Banner ────────── */}
+      {/* ────────── Hero — compact strip ────────── */}
       <div
-        className="relative overflow-hidden rounded-xl p-5 sm:p-7 md:p-10"
-        style={{ background: 'linear-gradient(135deg, #0F0E2E 0%, #1a1560 50%, #0d2847 100%)' }}
+        className="relative overflow-hidden rounded-xl border border-white/[0.08] shadow-lg shadow-indigo-950/40"
+        style={{
+          background: 'linear-gradient(125deg, #0c0b24 0%, #15104a 42%, #0a1f38 100%)',
+        }}
       >
-        {/* Glow orbs */}
-        <div className="absolute top-0 right-0 w-80 h-80 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle, #6366F1, transparent)', filter: 'blur(64px)' }} />
-        <div className="absolute bottom-0 left-24 w-60 h-60 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #10B981, transparent)', filter: 'blur(80px)' }} />
+        <div
+          className="absolute inset-0 opacity-[0.45] pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse 90% 80% at 100% 0%, rgba(99,102,241,0.35), transparent 55%), radial-gradient(ellipse 70% 60% at 0% 100%, rgba(16,185,129,0.12), transparent 50%)',
+          }}
+        />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-8">
-          <div className="min-w-0">
-            <p className="text-xs sm:text-sm font-bold uppercase tracking-widest mb-2" style={{ color: '#10B981' }}>Welcome Back</p>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-none mb-3 flex items-center gap-2">
-              Hey, {firstname}! <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-amber-300 shrink-0" aria-hidden />
-            </h1>
-            <p className="text-base sm:text-lg font-medium" style={{ color: '#94A3B8' }}>
-              Your personal Australian migration companion.
-            </p>
-
-            {/* Journey progress bar */}
-            <div className="mt-6">
-              <div className="flex items-center gap-2 mb-2">
-                {(() => {
-                  const StageIcon = currentStageObj.icon;
-                  return <StageIcon className="w-7 h-7 text-white shrink-0" aria-hidden />;
-                })()}
-                <span className="text-white font-bold text-lg">{currentStageObj.label}</span>
-                <span className="text-sm px-2 py-0.5 rounded-full font-semibold text-indigo-200" style={{ background: 'rgba(99,102,241,0.3)' }}>
-                  Stage {stageIndex + 1} of {JOURNEY_STAGES.length}
-                </span>
+        <div className="relative z-10 px-4 py-3.5 sm:px-5 sm:py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+            {/* Greeting */}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-end gap-x-2 gap-y-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400/95">Welcome back</p>
               </div>
-              <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+              <h1 className="mt-0.5 text-xl sm:text-2xl font-black text-white tracking-tight leading-tight flex flex-wrap items-center gap-1.5">
+                <span>Hey, {firstname}!</span>
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300/95 shrink-0" aria-hidden />
+              </h1>
+              <p className="text-xs text-slate-400/95 font-medium mt-0.5 max-w-md leading-snug">
+                Your personal Australian migration companion.
+              </p>
+            </div>
+
+            {/* Profile + PR — inline chips */}
+            <div className="flex flex-wrap items-stretch gap-2 shrink-0 lg:justify-end">
+              <Link
+                to="../profile"
+                className="group flex items-center gap-2.5 rounded-lg px-3 py-2 min-w-[8.5rem] transition hover:bg-white/[0.07]"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
                 <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${((stageIndex + 1) / JOURNEY_STAGES.length) * 100}%`, background: 'linear-gradient(90deg, #6366F1, #10B981)' }}
-                />
-              </div>
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-black text-white shadow-inner"
+                  style={{
+                    background:
+                      profilePercent >= 80
+                        ? 'linear-gradient(145deg,#10B981,#059669)'
+                        : profilePercent >= 50
+                          ? 'linear-gradient(145deg,#F59E0B,#D97706)'
+                          : 'linear-gradient(145deg,#6366F1,#4F46E5)',
+                  }}
+                >
+                  {profilePercent}%
+                </div>
+                <div className="min-w-0 text-left">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-400/90">Profile</p>
+                  <p className="text-[11px] text-slate-300/95 line-clamp-1 leading-tight">
+                    {profilePercent >= 80 ? 'Looking good' : profileMissing.slice(0, 2).join(', ') || 'Add details'}
+                  </p>
+                  {profilePercent < 100 && (
+                    <span className="text-[10px] font-semibold text-indigo-200 group-hover:text-white inline-flex items-center gap-0.5">
+                      Complete <ArrowRight className="w-3 h-3" />
+                    </span>
+                  )}
+                </div>
+              </Link>
+
+              <Link
+                to="../calculator"
+                className="group flex items-center gap-2.5 rounded-lg px-3 py-2 min-w-[8.5rem] transition hover:bg-white/[0.07]"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                <div className="text-left flex-1 min-w-0">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-400/90">PR points</p>
+                  <p className="text-2xl font-black text-white leading-none tabular-nums">{prPoints}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Indicative</p>
+                </div>
+                <span
+                  className="shrink-0 inline-flex items-center gap-0.5 rounded-full px-2 py-1 text-[10px] font-bold text-indigo-100 transition group-hover:bg-indigo-500/30"
+                  style={{ background: 'rgba(99,102,241,0.35)' }}
+                >
+                  Calc <ArrowRight className="w-3 h-3" />
+                </span>
+              </Link>
             </div>
           </div>
 
-          <div className="shrink-0 flex flex-row lg:flex-col gap-3 sm:gap-4 w-full lg:w-auto justify-center lg:justify-end">
-            {/* Profile completeness — compact */}
-            <div className="text-center p-3 sm:p-4 rounded-xl flex-1 max-w-[11rem]" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#10B981' }}>Profile</p>
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full mx-auto flex items-center justify-center font-black text-xl sm:text-2xl text-white" style={{ background: profilePercent >= 80 ? 'linear-gradient(135deg,#10B981,#059669)' : profilePercent >= 50 ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'linear-gradient(135deg,#6366F1,#4F46E5)' }}>
-                {profilePercent}%
-              </div>
-              <p className="text-[10px] sm:text-xs mt-2 line-clamp-2" style={{ color: '#94A3B8' }}>{profilePercent >= 80 ? 'Looking good' : profileMissing.slice(0, 2).join(', ')}</p>
-              {profilePercent < 100 && (
-                <Link to="../profile" className="mt-1 inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-indigo-200 hover:underline">
-                  Complete <ArrowRight className="w-3 h-3" />
-                </Link>
-              )}
+          {/* Journey — one slim row */}
+          <div
+            className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 pt-3 border-t border-white/[0.08]"
+          >
+            <div className="flex items-center gap-2 shrink-0">
+              {(() => {
+                const StageIcon = currentStageObj.icon;
+                return <StageIcon className="w-4 h-4 text-white/90 shrink-0" aria-hidden />;
+              })()}
+              <span className="text-sm font-semibold text-white">{currentStageObj.label}</span>
+              <span
+                className="text-[10px] px-2 py-0.5 rounded-full font-semibold text-indigo-100"
+                style={{ background: 'rgba(99,102,241,0.35)' }}
+              >
+                Stage {stageIndex + 1} of {JOURNEY_STAGES.length}
+              </span>
             </div>
-            {/* PR Points — server estimate */}
-            <div className="text-center p-3 sm:p-5 rounded-xl flex-1 max-w-[11rem]" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}>
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#10B981' }}>PR points</p>
-              <p className="text-4xl sm:text-5xl font-black text-white leading-none">{prPoints}</p>
-              <p className="text-[10px] sm:text-xs mt-2 leading-snug" style={{ color: '#94A3B8' }}>Indicative · from your profile</p>
-              <Link to="../calculator" className="mt-2 inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full transition hover:opacity-80" style={{ background: 'rgba(99,102,241,0.4)', color: '#C7D2FE' }}>
-                Calculator <ArrowRight className="w-3 h-3" />
-              </Link>
+            <div className="flex-1 min-w-0 h-1.5 rounded-full overflow-hidden bg-white/[0.08]">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${((stageIndex + 1) / JOURNEY_STAGES.length) * 100}%`,
+                  background: 'linear-gradient(90deg, #6366F1, #10B981)',
+                }}
+              />
             </div>
           </div>
         </div>

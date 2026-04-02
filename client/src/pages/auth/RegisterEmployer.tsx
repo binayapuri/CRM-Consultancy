@@ -33,8 +33,11 @@ export default function RegisterEmployer() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Registration failed');
-      useAuthStore.setState({ user: data.user, token: data.token });
-      localStorage.setItem('orivisa-auth', JSON.stringify({ state: { user: data.user, token: data.token }, version: 1 }));
+      useAuthStore.setState({ user: data.user, token: data.token, linkedAccounts: [] });
+      localStorage.setItem(
+        'orivisa-auth',
+        JSON.stringify({ state: { user: data.user, token: data.token, linkedAccounts: [] }, version: 1 })
+      );
       navigate(getDashboardPathForRole('EMPLOYER'));
       window.location.reload();
     } catch (err: unknown) {

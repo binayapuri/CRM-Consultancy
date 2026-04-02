@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../shared/models/User.js';
+import { JWT_SECRET, JWT_EXPIRES } from '../config/jwt.js';
 import Employer from '../shared/models/Employer.js';
 import { asyncHandler } from '../shared/utils/asyncHandler.js';
 
@@ -46,11 +47,7 @@ router.post('/register', asyncHandler(async (req, res) => {
     { new: true }
   ).select('email role profile').lean();
 
-  const token = jwt.sign(
-    { userId: user._id },
-    process.env.JWT_SECRET || 'orivisa-secret-key-change-in-production',
-    { expiresIn: '7d' }
-  );
+  const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
 
   res.status(201).json({
     user: updated,
