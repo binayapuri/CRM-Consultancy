@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth';
 import { GraduationCap } from 'lucide-react';
 import { AbroadUpLogo } from '../../components/brand/AbroadUpLogo';
@@ -13,6 +13,10 @@ export default function Register() {
   const [error, setError] = useState('');
   const { register } = useAuthStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextPath = searchParams.get('next');
+  const studentDestination =
+    nextPath && nextPath.startsWith('/student/') && !nextPath.includes('..') ? nextPath : '/student/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +24,7 @@ export default function Register() {
     try {
       await register(email, password, 'STUDENT', { firstName, lastName });
       const user = useAuthStore.getState().user;
-      if (user?.role === 'STUDENT') navigate('/student/dashboard');
+      if (user?.role === 'STUDENT') navigate(studentDestination);
     } catch (err: unknown) {
       setError((err as Error).message);
     }

@@ -3,6 +3,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      screens: {
+        xs: '475px',
+      },
       colors: {
         brand: {
           navy: '#1B365D',
@@ -38,8 +41,18 @@ export default {
         'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
         'float': 'float 6s ease-in-out infinite',
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'landing-reveal': 'landingReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'gradient-shift': 'gradientShift 8s ease infinite',
       },
       keyframes: {
+        landingReveal: {
+          '0%': { opacity: '0', transform: 'translateY(1.25rem)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        gradientShift: {
+          '0%, 100%': { opacity: '0.85' },
+          '50%': { opacity: '1' },
+        },
         blob: {
           '0%': { transform: 'translate(0px, 0px) scale(1)' },
           '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
