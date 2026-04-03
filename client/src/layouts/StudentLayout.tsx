@@ -104,6 +104,10 @@ export default function StudentLayout() {
     document.documentElement.classList.toggle('student-reduce-motion', !!uiPrefs.reduceMotion);
   }, [uiPrefs.reduceMotion]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('student-high-contrast', !!uiPrefs.highContrast);
+  }, [uiPrefs.highContrast]);
+
   const handleLogout = () => { logout(); navigate('/login'); };
 
   // Preserve scroll per route for "SPA-like" mobile navigation.

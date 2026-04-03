@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuthStore, authFetch } from '../../store/auth';
 import { resolveFileUrl } from '../../lib/imageUrl';
 import { useUiStore } from '../../store/ui';
@@ -21,31 +21,40 @@ import {
   Bell,
   Monitor,
   Send,
+  Receipt,
+  Globe,
+  Info,
+  Database,
 } from 'lucide-react';
 import { StudentSectionTabs } from '../../components/StudentSectionTabs';
+
+/** Legacy URLs ?tab=email and ?tab=invoices open the combined billing section. */
+const TAB_ALIASES: Record<string, string> = { email: 'billing', invoices: 'billing' };
 
 const TABS = [
   { id: 'security', label: 'Security', icon: KeyRound },
   { id: 'account', label: 'Account', icon: User },
   { id: 'avatar', label: 'Avatar', icon: Camera },
   { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'preferences', label: 'Display & region', icon: Monitor },
-  { id: 'email', label: 'Email (SMTP)', icon: Mail },
-  { id: 'invoices', label: 'Invoices (Payment)', icon: CreditCard },
-  { id: 'privacy', label: 'Privacy', icon: Shield },
-  { id: 'danger', label: 'Danger Zone', icon: Trash2 },
+  { id: 'preferences', label: 'Display & language', icon: Monitor },
+  { id: 'billing', label: 'Billing & email', icon: Receipt },
+  { id: 'privacy', label: 'Privacy & data', icon: Shield },
+  { id: 'danger', label: 'Danger zone', icon: Trash2 },
 ];
 
 const VALID_TAB_IDS = new Set(TABS.map((t) => t.id));
+
+function resolveTabParam(p: string | null): string {
+  if (!p) return 'security';
+  const mapped = TAB_ALIASES[p] ?? p;
+  return VALID_TAB_IDS.has(mapped) ? mapped : 'security';
+}
 
 export default function Settings() {
   const { user, logout } = useAuthStore();
   const { showToast } = useUiStore();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [tab, setTab] = useState(() => {
-    const p = searchParams.get('tab');
-    return p && VALID_TAB_IDS.has(p) ? p : 'security';
-  });
+  const [tab, setTab] = useState(() => resolveTabParam(searchParams.get('tab')));
 
   const setTabFromUrl = useCallback(
     (id: string) => {
@@ -66,12 +75,24 @@ export default function Settings() {
 
   useEffect(() => {
     const p = searchParams.get('tab');
-    if (p && VALID_TAB_IDS.has(p)) {
-      if (p !== tab) setTab(p);
+    if (p && TAB_ALIASES[p]) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('tab', 'billing');
+          return next;
+        },
+        { replace: true }
+      );
+      return;
+    }
+    const resolved = resolveTabParam(p);
+    if (p && VALID_TAB_IDS.has(resolved)) {
+      if (resolved !== tab) setTab(resolved);
     } else if (!p && tab !== 'security') {
       setTab('security');
     }
-  }, [searchParams, tab]);
+  }, [searchParams, tab, setSearchParams]);
 
   // Security
   const [currentPw, setCurrentPw] = useState('');
@@ -137,9 +158,15 @@ export default function Settings() {
   const [prefCompact, setPrefCompact] = useState(false);
   const [prefMotion, setPrefMotion] = useState(false);
   const [prefFont, setPrefFont] = useState(100);
+  const [prefDateFormat, setPrefDateFormat] = useState<'DMY' | 'MDY'>('DMY');
+  const [prefWeekStart, setPrefWeekStart] = useState<'monday' | 'sunday'>('monday');
+  const [prefLanguage, setPrefLanguage] = useState<'en'>('en');
+  const [prefAnalytics, setPrefAnalytics] = useState(false);
+  const [prefHighContrast, setPrefHighContrast] = useState(false);
   const [prefMsg, setPrefMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [testEmailLoading, setTestEmailLoading] = useState(false);
+  const [testEmailTo, setTestEmailTo] = useState('');
 
   useEffect(() => {
     const np = user?.profile?.notificationPreferences;
@@ -160,11 +187,16 @@ export default function Settings() {
     setPrefCompact(!!p.compactNav);
     setPrefMotion(!!p.reduceMotion);
     setPrefFont(p.fontScale || 100);
+    setPrefDateFormat(p.dateFormat === 'MDY' ? 'MDY' : 'DMY');
+    setPrefWeekStart(p.weekStartsOn === 'sunday' ? 'sunday' : 'monday');
+    setPrefLanguage(p.language === 'en' ? 'en' : 'en');
+    setPrefAnalytics(!!p.analyticsOptIn);
+    setPrefHighContrast(!!p.highContrast);
     setPrefMsg(null);
   }, [tab]);
 
   useEffect(() => {
-    if (tab !== 'invoices' && tab !== 'email') return;
+    if (tab !== 'billing') return;
     let cancelled = false;
     (async () => {
       setInvLoading(true);
@@ -200,6 +232,27 @@ export default function Settings() {
       cancelled = true;
     };
   }, [tab]);
+
+  useEffect(() => {
+    if (tab !== 'billing' || !user?.email) return;
+    setTestEmailTo((prev) => (prev.trim() ? prev : user.email || ''));
+  }, [tab, user?.email]);
+
+  const applySmtpPreset = (preset: 'gmail' | 'outlook' | 'icloud') => {
+    if (preset === 'gmail') {
+      setSmtpHost('smtp.gmail.com');
+      setSmtpPort(587);
+      setSmtpSecure(false);
+    } else if (preset === 'outlook') {
+      setSmtpHost('smtp.office365.com');
+      setSmtpPort(587);
+      setSmtpSecure(false);
+    } else {
+      setSmtpHost('smtp.mail.me.com');
+      setSmtpPort(587);
+      setSmtpSecure(false);
+    }
+  };
 
   const inp =
     'w-full min-w-0 max-w-full px-3 sm:px-4 py-3 rounded-xl text-sm font-medium text-slate-800 outline-none transition-all focus:ring-2 focus:ring-indigo-500/40 bg-slate-50 border border-slate-200';
@@ -363,18 +416,31 @@ export default function Settings() {
       compactNav: prefCompact,
       reduceMotion: prefMotion,
       fontScale: prefFont,
+      dateFormat: prefDateFormat,
+      weekStartsOn: prefWeekStart,
+      language: prefLanguage,
+      analyticsOptIn: prefAnalytics,
+      highContrast: prefHighContrast,
     });
     showToast('Display preferences applied', 'success');
-    setPrefMsg({ type: 'success', text: 'Saved. Font and motion settings apply on this device immediately.' });
+    setPrefMsg({
+      type: 'success',
+      text: 'Saved. Font, motion, and contrast apply on this device immediately.',
+    });
   };
 
   const sendTestEmail = async () => {
+    const to = (testEmailTo.trim() || user?.email || '').trim();
+    if (!to) {
+      showToast('Enter a recipient email or ensure your account has an email.', 'error');
+      return;
+    }
     setTestEmailLoading(true);
     try {
       const res = await authFetch('/api/student/invoice-settings/test-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: user?.email || '' }),
+        body: JSON.stringify({ to }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not send test email');
@@ -407,16 +473,21 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Tab navigation */}
-      <StudentSectionTabs
-        tabs={TABS.map((t) => {
-          const Icon = t.icon;
-          return { id: t.id, label: t.label, icon: <Icon className="w-4 h-4" aria-hidden /> };
-        })}
-        activeId={tab}
-        onChange={setTabFromUrl}
-      />
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-start">
+        <aside className="lg:w-60 shrink-0">
+          <StudentSectionTabs
+            variant="vertical"
+            mobilePicker
+            tabs={TABS.map((t) => {
+              const Icon = t.icon;
+              return { id: t.id, label: t.label, icon: <Icon className="w-4 h-4" aria-hidden /> };
+            })}
+            activeId={tab}
+            onChange={setTabFromUrl}
+          />
+        </aside>
 
+        <div className="min-w-0 flex-1 space-y-6">
       {/* Security Tab */}
       {tab === 'security' && (
         <div className="bg-white rounded-xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
@@ -442,6 +513,23 @@ export default function Settings() {
             {pwLoading ? 'Updating...' : 'Update Password'}
           </button>
           <Alert msg={pwMsg} />
+
+          <hr className="border-slate-100" />
+          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+            <h3 className="font-black text-slate-800 mb-1 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-indigo-600 shrink-0" aria-hidden /> Two-factor authentication
+            </h3>
+            <p className="text-sm text-slate-600 font-medium mb-3">
+              Add an extra layer of security to your account. Support for authenticator apps and SMS is coming soon.
+            </p>
+            <button
+              type="button"
+              disabled
+              className="px-4 py-2.5 rounded-lg font-bold text-sm bg-white border border-slate-200 text-slate-400 cursor-not-allowed"
+            >
+              Enable 2FA (coming soon)
+            </button>
+          </div>
 
           <hr className="border-slate-100" />
           <div>
@@ -578,17 +666,48 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Display & region */}
+      {/* Display & language */}
       {tab === 'preferences' && (
         <div className="bg-white rounded-xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
           <h2 className="font-black text-slate-900 text-xl flex items-center gap-2">
-            <Monitor className="w-6 h-6 text-indigo-600 shrink-0" aria-hidden /> Display & region
+            <Monitor className="w-6 h-6 text-indigo-600 shrink-0" aria-hidden /> Display & language
           </h2>
             <p className="text-sm text-slate-500 font-medium">
             These preferences are stored on <strong>this browser</strong> for a more comfortable experience (timezone labels, fee display on{' '}
             <strong>Training &amp; courses</strong>, spacing, and accessibility).
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1">
+                <Globe className="w-3.5 h-3.5" aria-hidden /> Language
+              </label>
+              <select value={prefLanguage} onChange={(e) => setPrefLanguage(e.target.value as 'en')} className={inp}>
+                <option value="en">English</option>
+              </select>
+              <p className="text-xs text-slate-400 mt-1">Additional languages may be added later.</p>
+            </div>
+            <div>
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Date format</label>
+              <select
+                value={prefDateFormat}
+                onChange={(e) => setPrefDateFormat(e.target.value as 'DMY' | 'MDY')}
+                className={inp}
+              >
+                <option value="DMY">DD/MM/YYYY</option>
+                <option value="MDY">MM/DD/YYYY</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Week starts on</label>
+              <select
+                value={prefWeekStart}
+                onChange={(e) => setPrefWeekStart(e.target.value as 'monday' | 'sunday')}
+                className={inp}
+              >
+                <option value="monday">Monday</option>
+                <option value="sunday">Sunday</option>
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Timezone</label>
               <select value={prefTimezone} onChange={(e) => setPrefTimezone(e.target.value)} className={inp}>
@@ -638,6 +757,28 @@ export default function Settings() {
             <input type="checkbox" checked={prefMotion} onChange={(e) => setPrefMotion(e.target.checked)} />
             <span className="font-bold text-slate-800">Reduce motion (limits animations)</span>
           </label>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" checked={prefHighContrast} onChange={(e) => setPrefHighContrast(e.target.checked)} className="mt-1 shrink-0" />
+            <span>
+              <span className="font-bold text-slate-800">High contrast</span>
+              <span className="block text-xs text-slate-500 font-medium mt-0.5">
+                Stronger text and borders in the student portal (this device only).
+              </span>
+            </span>
+          </label>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={prefAnalytics} onChange={(e) => setPrefAnalytics(e.target.checked)} className="mt-1 shrink-0" />
+              <span>
+                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <Database className="w-4 h-4 text-slate-500 shrink-0" aria-hidden /> Usage analytics (optional)
+                </span>
+                <span className="block text-xs text-slate-500 font-medium mt-1">
+                  If enabled, we may collect anonymised feature usage in this browser to improve the product. No ads profile.
+                </span>
+              </span>
+            </label>
+          </div>
           <button
             onClick={savePreferences}
             className="px-6 py-3 rounded-lg font-black text-white text-sm"
@@ -649,27 +790,64 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Email (SMTP) Tab */}
-      {tab === 'email' && (
+      {/* Billing & email: SMTP + bank / PayID + test send */}
+      {tab === 'billing' && (
         <div
           className="bg-white rounded-xl p-4 sm:p-6 space-y-4 sm:space-y-6 w-full min-w-0 max-w-[95vw] sm:max-w-full mx-auto"
           style={{ border: '1px solid #E8EDFB' }}
         >
-          <div className="min-w-0">
-            <h2 className="font-black text-slate-900 text-lg sm:text-xl flex flex-wrap items-center gap-2 min-w-0">
-              <Mail className="w-5 h-5 text-indigo-600 shrink-0" aria-hidden />{' '}
-              <span className="break-words">Email sending (SMTP)</span>
-            </h2>
-            <p className="text-sm text-slate-500 font-medium mt-2 break-words">
-              Configure your own SMTP (private) for sending invoices and other future emails from Abroad Up (for example, reminders or statements).
-            </p>
+          <div className="min-w-0 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+              <h2 className="font-black text-slate-900 text-lg sm:text-xl flex flex-wrap items-center gap-2 min-w-0">
+                <Receipt className="w-5 h-5 text-indigo-600 shrink-0" aria-hidden />{' '}
+                <span className="break-words">Billing &amp; email</span>
+              </h2>
+              <p className="text-sm text-slate-500 font-medium mt-2 break-words max-w-2xl">
+                Configure SMTP for sending invoice emails and bank / PayID details that appear on PDFs. One save updates everything below.
+              </p>
+            </div>
+            <Link
+              to="/student/invoices"
+              className="shrink-0 inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800 border border-indigo-200 rounded-lg px-3 py-2 bg-indigo-50/80"
+            >
+              Open invoice manager →
+            </Link>
           </div>
 
           <div className="rounded-xl border border-slate-200 p-4 sm:p-5 min-w-0 overflow-hidden">
-            <h3 className="font-black text-slate-900 flex flex-wrap items-center gap-2 min-w-0">
-              <Mail className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden />{' '}
-              <span className="break-words">SMTP (Send from your email)</span>
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-black text-slate-900 flex flex-wrap items-center gap-2 min-w-0">
+                <Mail className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden />{' '}
+                <span className="break-words">SMTP (send invoice emails)</span>
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => applySmtpPreset('gmail')}
+                  className="text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:border-indigo-200"
+                >
+                  Gmail
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applySmtpPreset('outlook')}
+                  className="text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:border-indigo-200"
+                >
+                  Outlook / Microsoft 365
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applySmtpPreset('icloud')}
+                  className="text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:border-indigo-200"
+                >
+                  iCloud
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 mt-2 flex items-start gap-1.5">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden />
+              Presets fill host, port, and TLS mode; you still need your username and app password from your provider.
+            </p>
             <div className="mt-4 flex flex-wrap items-start gap-2">
               <input type="checkbox" checked={smtpEnabled} onChange={(e) => setSmtpEnabled(e.target.checked)} className="mt-1 shrink-0" />
               <span className="text-sm font-bold text-slate-700 min-w-0 break-words">Enable my SMTP for invoice emails</span>
@@ -695,7 +873,7 @@ export default function Settings() {
               <div className="md:col-span-2 min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Password / App password</label>
                 <input value={smtpPassword} onChange={(e) => setSmtpPassword(e.target.value)} className={inp} placeholder={smtpHasPassword ? 'Saved (enter to replace)' : 'Enter app password'} />
-                <p className="text-xs text-slate-400 mt-1 break-words">We recommend using a Gmail/App password. Your password is stored encrypted.</p>
+                <p className="text-xs text-slate-400 mt-1 break-words">We recommend using an app-specific password. Your password is stored encrypted.</p>
               </div>
               <div className="md:col-span-2 flex flex-wrap items-start gap-2 min-w-0">
                 <input type="checkbox" checked={smtpSecure} onChange={(e) => setSmtpSecure(e.target.checked)} className="mt-1 shrink-0" />
@@ -706,56 +884,14 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 p-4">
-            <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
-              <Send className="w-4 h-4 text-indigo-600" aria-hidden /> Send test email
-            </h3>
-            <p className="text-xs text-slate-600 mt-1 mb-3">
-              Sends a message to <strong>{user?.email}</strong> using your saved SMTP. Save settings first if you just changed them.
-            </p>
-            <button
-              type="button"
-              onClick={sendTestEmail}
-              disabled={testEmailLoading || !smtpEnabled}
-              className="px-4 py-2 rounded-lg font-bold text-sm bg-white border border-indigo-200 text-indigo-800 hover:bg-indigo-50 disabled:opacity-40"
-            >
-              {testEmailLoading ? 'Sending…' : 'Send test email'}
-            </button>
-          </div>
-
-          <button
-            onClick={saveInvoiceSettings}
-            disabled={invLoading}
-            className="w-full sm:w-auto px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}
-          >
-            {invLoading ? 'Saving...' : 'Save Invoice Settings'}
-          </button>
-          <Alert msg={invMsg} />
-        </div>
-      )}
-
-      {/* Invoices / Payment Tab */}
-      {tab === 'invoices' && (
-        <div
-          className="bg-white rounded-xl p-4 sm:p-6 space-y-4 sm:space-y-6 w-full min-w-0 max-w-[95vw] sm:max-w-full mx-auto"
-          style={{ border: '1px solid #E8EDFB' }}
-        >
-          <div className="min-w-0">
-            <h2 className="font-black text-slate-900 text-lg sm:text-xl flex flex-wrap items-center gap-2 min-w-0">
-              <CreditCard className="w-5 h-5 text-indigo-600 shrink-0" aria-hidden />{' '}
-              <span className="break-words">Invoice payment details</span>
-            </h2>
-            <p className="text-sm text-slate-500 font-medium mt-2 break-words">
-              These bank details appear in the <strong>Payment Information</strong> box on your invoice PDFs and in the student Invoice Manager.
-            </p>
-          </div>
-
           <div className="rounded-xl border border-slate-200 p-4 sm:p-5 min-w-0 overflow-hidden">
             <h3 className="font-black text-slate-900 flex flex-wrap items-center gap-2 min-w-0">
               <CreditCard className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden />{' '}
-              <span className="break-words">Bank details (for getting paid)</span>
+              <span className="break-words">Bank &amp; PayID (shown on invoices)</span>
             </h3>
+            <p className="text-sm text-slate-500 font-medium mt-2">
+              These details appear in the <strong>Payment Information</strong> section on invoice PDFs and in the invoice manager.
+            </p>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
               <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Bank name</label>
@@ -775,7 +911,7 @@ export default function Settings() {
               </div>
               <div className="min-w-0">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">PayID type</label>
-                <select value={payIdType} onChange={(e) => setPayIdType(e.target.value as any)} className={inp}>
+                <select value={payIdType} onChange={(e) => setPayIdType(e.target.value as 'EMAIL' | 'PHONE' | '')} className={inp}>
                   <option value="">None</option>
                   <option value="EMAIL">Email</option>
                   <option value="PHONE">Phone</option>
@@ -792,13 +928,43 @@ export default function Settings() {
             </div>
           </div>
 
+          <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 p-4">
+            <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+              <Send className="w-4 h-4 text-indigo-600" aria-hidden /> Send test email
+            </h3>
+            <p className="text-xs text-slate-600 mt-1 mb-3">
+              Uses your <strong>saved</strong> SMTP settings. Save below if you just changed host or credentials.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3 mb-3">
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Send to</label>
+                <input
+                  type="email"
+                  value={testEmailTo}
+                  onChange={(e) => setTestEmailTo(e.target.value)}
+                  className={inp}
+                  placeholder={user?.email || 'your@email.com'}
+                />
+                <p className="text-xs text-slate-400 mt-1">Defaults to your account email; override to test another inbox.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={sendTestEmail}
+              disabled={testEmailLoading || !smtpEnabled}
+              className="px-4 py-2 rounded-lg font-bold text-sm bg-white border border-indigo-200 text-indigo-800 hover:bg-indigo-50 disabled:opacity-40"
+            >
+              {testEmailLoading ? 'Sending…' : 'Send test email'}
+            </button>
+          </div>
+
           <button
             onClick={saveInvoiceSettings}
             disabled={invLoading}
             className="w-full sm:w-auto px-6 py-3 rounded-lg font-black text-white text-sm disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg, #6366F1, #10B981)' }}
           >
-            {invLoading ? 'Saving...' : 'Save Invoice Settings'}
+            {invLoading ? 'Saving...' : 'Save billing & email settings'}
           </button>
           <Alert msg={invMsg} />
         </div>
@@ -807,7 +973,18 @@ export default function Settings() {
       {/* Privacy Tab */}
       {tab === 'privacy' && (
         <div className="bg-white rounded-xl p-6 space-y-5" style={{ border: '1px solid #E8EDFB' }}>
-          <h2 className="font-black text-slate-900 text-xl">Data Privacy</h2>
+          <h2 className="font-black text-slate-900 text-xl">Privacy &amp; data</h2>
+          <p className="text-sm text-slate-500 font-medium">
+            Optional anonymised analytics can be toggled under{' '}
+            <button
+              type="button"
+              onClick={() => setTabFromUrl('preferences')}
+              className="font-bold text-indigo-600 hover:underline"
+            >
+              Display &amp; language
+            </button>
+            .
+          </p>
           <div className="p-5 rounded-lg" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
             <p className="font-black text-emerald-900 flex items-center gap-2"><KeyRound className="w-4 h-4 shrink-0" aria-hidden /> Your data is private by default</p>
             <p className="text-sm text-emerald-700 font-medium mt-1">Migration agents can only see your profile when you explicitly connect and choose what to share from the "Find Consultancy" page.</p>
@@ -825,7 +1002,7 @@ export default function Settings() {
               ['Immigration Details', 'Visa status, ANZSCO code, English test results'],
               ['Education & Work', 'Degrees and employment history you enter'],
               ['Documents', 'Files you upload to your Document Vault'],
-              ['Usage Data', 'Pages visited, features used (anonymous analytics only)'],
+              ['Usage Data', 'Pages visited, features used if you opt in under Display & language'],
             ].map(([title, desc]) => (
               <div key={title} className="flex justify-between items-start py-3 border-b border-slate-100 last:border-0">
                 <div>
@@ -859,6 +1036,8 @@ export default function Settings() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

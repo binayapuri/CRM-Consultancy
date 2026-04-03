@@ -688,7 +688,7 @@ export default function InvoicesPage() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => navigate('/student/settings?tab=invoices')}
+            onClick={() => navigate('/student/settings?tab=billing')}
             className="px-4 py-2.5 rounded-xl bg-sky-600 text-white text-xs sm:text-sm font-black hover:bg-sky-700"
           >
             Open invoice settings

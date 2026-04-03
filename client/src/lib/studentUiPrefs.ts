@@ -6,6 +6,15 @@ export type StudentUiPrefs = {
   compactNav?: boolean;
   reduceMotion?: boolean;
   fontScale?: number;
+  /** Display dates as DD/MM/YYYY vs MM/DD/YYYY (app surfaces can use later). */
+  dateFormat?: 'DMY' | 'MDY';
+  weekStartsOn?: 'monday' | 'sunday';
+  /** UI language hint (currently English-only UI). */
+  language?: 'en';
+  /** Optional: allow anonymised usage analytics in this browser. */
+  analyticsOptIn?: boolean;
+  /** Stronger contrast for text and borders in the student portal. */
+  highContrast?: boolean;
 };
 
 export function readStudentUiPrefs(): StudentUiPrefs {

@@ -28,6 +28,15 @@ html.student-reduce-motion *::after {
   scroll-behavior: auto !important;
 }
 
+/* Student portal: optional high-contrast mode from Settings */
+html.student-high-contrast #student-main {
+  --tw-prose-body: #0f172a;
+}
+html.student-high-contrast #student-main a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 @layer components {
   .card {
     @apply bg-white rounded-xl shadow-sm border border-slate-200/80 p-5;

@@ -25,24 +25,46 @@ const tabButtonBase =
  */
 export function StudentSectionTabs({ tabs, activeId, onChange, variant = 'horizontal', mobilePicker = false }: StudentSectionTabsProps) {
   if (variant === 'vertical') {
+    const selectEl = mobilePicker && (
+      <label className="lg:hidden mb-3 block">
+        <span className="sr-only">Section</span>
+        <select
+          value={activeId}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/40"
+        >
+          {tabs.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
     return (
-      <nav className="space-y-1.5" aria-label="Profile sections">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-1">Sections</p>
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onChange(t.id)}
-            className={`${tabButtonBase} px-3 py-3 min-h-[44px] justify-start
+      <>
+        {selectEl}
+        <nav
+          className={`space-y-1.5 ${mobilePicker ? 'hidden lg:block' : ''}`}
+          aria-label="Profile sections"
+        >
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-1">Sections</p>
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => onChange(t.id)}
+              className={`${tabButtonBase} px-3 py-3 min-h-[44px] justify-start
               ${activeId === t.id
                 ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/15'
                 : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-200 hover:text-indigo-600'}`}
-          >
-            {t.icon && <span className="shrink-0 opacity-90">{t.icon}</span>}
-            <span className="truncate">{t.label}</span>
-          </button>
-        ))}
-      </nav>
+            >
+              {t.icon && <span className="shrink-0 opacity-90">{t.icon}</span>}
+              <span className="truncate">{t.label}</span>
+            </button>
+          ))}
+        </nav>
+      </>
     );
   }
 
