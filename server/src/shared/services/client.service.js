@@ -25,19 +25,32 @@ function getEmailProfileForUser(consultancy, user) {
   return def || active[0];
 }
 
-const getConsultancyId = (user) => user.profile?.consultancyId || user._id;
+/** ObjectId or populated Mongoose doc — always compare the underlying id. */
+function refId(ref) {
+  if (ref == null) return null;
+  if (typeof ref === 'object' && ref._id != null) return ref._id;
+  return ref;
+}
+
+const getConsultancyId = (user) => {
+  const u = user?.profile?.consultancyId;
+  if (u == null) return user?._id;
+  return refId(u);
+};
 
 function assertConsultancyClientAccess(client, user) {
   if (!user || user.role === 'STUDENT') return;
   if (user.role === 'SUPER_ADMIN') return;
   const cid = getConsultancyId(user);
-  if (!client.consultancyId || client.consultancyId.toString() !== cid?.toString()) {
+  const clientCid = refId(client.consultancyId);
+  if (!clientCid || String(clientCid) !== String(cid)) {
     throw Object.assign(new Error('Not authorized'), { status: 403 });
   }
   const ub = user.profile?.branchId;
+  const clientBranch = refId(client.branchId);
   // Only enforce branch scoping when the client is assigned to a branch. Unassigned
   // clients (no branch) remain visible to all staff of the consultancy.
-  if (ub && client.branchId && client.branchId.toString() !== ub.toString()) {
+  if (refId(ub) && clientBranch && String(clientBranch) !== String(refId(ub))) {
     throw Object.assign(new Error('Not authorized for this branch'), { status: 403 });
   }
 }
