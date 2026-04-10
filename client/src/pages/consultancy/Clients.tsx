@@ -67,6 +67,11 @@ export default function Clients() {
       setAgents(Array.isArray(agentsData) ? agentsData : []);
       setBranches(Array.isArray(branchesData) ? branchesData : []);
       setLoading(false);
+    }).catch(() => {
+      setClients([]);
+      setAgents([]);
+      setBranches([]);
+      setLoading(false);
     });
   };
 

@@ -67,6 +67,7 @@ export default function ClientDetail() {
   
   // UI States
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [sendingInvite, setSendingInvite] = useState(false);
 
@@ -145,15 +146,24 @@ export default function ClientDetail() {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
+  const clientsListPath = consultancyId
+    ? `/consultancy/clients?consultancyId=${encodeURIComponent(consultancyId)}`
+    : '/consultancy/clients';
+
   const refreshClient = async () => {
     try {
-      const res = await authFetch(`/api/clients/${id}`);
+      setLoadError(null);
+      const q = consultancyId ? `?consultancyId=${encodeURIComponent(consultancyId)}` : '';
+      const res = await authFetch(`/api/clients/${id}${q}`);
       const data = await safeJson<any>(res);
-      if (data.error) throw new Error(data.error);
+      if (!res.ok) throw new Error(data?.error || 'Failed to load client');
+      if (data?.error) throw new Error(data.error);
       setClient(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      navigate('/consultancy/clients', { replace: true });
+      const message = err instanceof Error ? err.message : 'Could not load this client';
+      setLoadError(message);
+      setClient(null);
     }
   };
 
@@ -163,10 +173,11 @@ export default function ClientDetail() {
 
   useEffect(() => {
     if (!id || id === 'undefined') {
-      navigate('/consultancy/clients', { replace: true });
+      navigate(clientsListPath, { replace: true });
       return;
     }
     const init = async () => {
+      setLoading(true);
       await refreshClient();
       fetchApplications();
       authFetch('/api/constants/document-types').then(r => safeJson<any[]>(r)).then(setDocTypes);
@@ -175,7 +186,7 @@ export default function ClientDetail() {
       setLoading(false);
     };
     init();
-  }, [id]);
+  }, [id, consultancyId]);
 
   useEffect(() => {
     if (id && tab === 'documents') fetchDocuments();
@@ -571,10 +582,23 @@ export default function ClientDetail() {
     fetchApplications();
   };
 
-  if (loading || !client) return (
+  if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4">
       <LoadingSpinner />
       <div className="text-slate-400 font-bold tracking-widest uppercase animate-pulse text-xs">Syncing Galaxy Data...</div>
+    </div>
+  );
+
+  if (loadError || !client) return (
+    <div className="flex flex-col items-center justify-center min-h-screen gap-6 px-4 max-w-lg mx-auto text-center">
+      <p className="text-slate-900 font-black text-lg">{loadError || 'Client not found'}</p>
+      <p className="text-slate-500 text-sm">You can return to the list and try again, or contact an admin if this keeps happening.</p>
+      <Link
+        to={clientsListPath}
+        className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back to clients
+      </Link>
     </div>
   );
 

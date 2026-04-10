@@ -35,7 +35,9 @@ function assertConsultancyClientAccess(client, user) {
     throw Object.assign(new Error('Not authorized'), { status: 403 });
   }
   const ub = user.profile?.branchId;
-  if (ub && (!client.branchId || client.branchId.toString() !== ub.toString())) {
+  // Only enforce branch scoping when the client is assigned to a branch. Unassigned
+  // clients (no branch) remain visible to all staff of the consultancy.
+  if (ub && client.branchId && client.branchId.toString() !== ub.toString()) {
     throw Object.assign(new Error('Not authorized for this branch'), { status: 403 });
   }
 }
