@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { authFetch } from '../../store/auth';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { authFetch, useAuthStore } from '../../store/auth';
 import { format } from 'date-fns';
-import { Search, Plus, Filter, X, Users, Mail } from 'lucide-react';
+import { Search, Plus, Filter, X, Users, Mail, Trash2 } from 'lucide-react';
 import { TableSkeleton } from '../../components/Skeleton';
 import StatusBadge from '../../components/StatusBadge';
 import EmptyState from '../../components/EmptyState';
@@ -17,6 +17,8 @@ const STATUS_OPTIONS = [
 ];
 
 export default function Clients() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [searchParams] = useSearchParams();
   const consultancyId = searchParams.get('consultancyId');
   const [clients, setClients] = useState<any[]>([]);
@@ -41,6 +43,16 @@ export default function Clients() {
   const [bulkPreview, setBulkPreview] = useState<any | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
+  const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const clientDetailPath = (id: string) =>
+    consultancyId
+      ? `/consultancy/clients/${id}?consultancyId=${encodeURIComponent(consultancyId)}`
+      : `/consultancy/clients/${id}`;
+
+  const canDeleteClient = user?.role === 'SUPER_ADMIN' || user?.role === 'CONSULTANCY_ADMIN';
+  const canAssignAgent = ['SUPER_ADMIN', 'CONSULTANCY_ADMIN', 'MANAGER', 'AGENT'].includes(user?.role || '');
 
   const fetchData = () => {
     setLoading(true);
@@ -175,6 +187,42 @@ export default function Clients() {
     }
   };
 
+  const handleAssignAgent = async (clientId: string, agentId: string) => {
+    setAssigningId(clientId);
+    try {
+      const res = await authFetch(`/api/clients/${clientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedAgentId: agentId || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update agent');
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Could not assign agent');
+    } finally {
+      setAssigningId(null);
+    }
+  };
+
+  const handleDeleteClient = async (e: React.MouseEvent, clientId: string) => {
+    e.stopPropagation();
+    if (!canDeleteClient) return;
+    if (!window.confirm('Delete this client record? This cannot be undone.')) return;
+    setDeletingId(clientId);
+    try {
+      const res = await authFetch(`/api/clients/${clientId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete');
+      setSelectedClientIds((ids) => ids.filter((id) => id !== clientId));
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Delete failed');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="w-full min-w-0 max-w-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -221,11 +269,11 @@ export default function Clients() {
           </div>
         )}
       </div>
-      <div className="card mt-6 overflow-x-auto overflow-y-visible">
+      <div className="card mt-6 overflow-x-auto overflow-y-visible relative z-0">
         {loading ? (
           <div className="p-6"><TableSkeleton rows={8} /></div>
         ) : (
-        <table className="w-full min-w-[640px]">
+        <table className="w-full min-w-[900px]">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-slate-700 w-10">
@@ -234,26 +282,64 @@ export default function Clients() {
               <th className="text-left px-4 py-3 font-medium text-slate-700">Name</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Email</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Visa</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-700">Agent</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Branch</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Status</th>
               <th className="text-left px-4 py-3 font-medium text-slate-700">Last Activity</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-700">Actions</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-700 w-40">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c: any) => (
-              <tr key={c._id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                <td className="px-4 py-3">
+            {filtered.map((c: any) => {
+              const agentId = c.assignedAgentId?._id || c.assignedAgentId || '';
+              return (
+              <tr
+                key={c._id}
+                tabIndex={0}
+                className="border-b border-slate-100 hover:bg-slate-50/50 cursor-pointer transition-colors"
+                onClick={() => c._id && navigate(clientDetailPath(c._id))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (c._id) navigate(clientDetailPath(c._id));
+                  }
+                }}
+              >
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                   <input type="checkbox" checked={selectedClientIds.includes(c._id)} onChange={() => toggleClientSelection(c._id)} />
                 </td>
                 <td className="px-4 py-3">
-                  <Link to={consultancyId ? `/consultancy/clients/${c._id}?consultancyId=${consultancyId}` : `/consultancy/clients/${c._id}`} className="font-medium text-ori-600 hover:text-ori-700 hover:underline">
+                  <span className="font-medium text-ori-600">
                     {c.profile?.firstName} {c.profile?.lastName}
-                  </Link>
+                  </span>
                   {c.status === 'PENDING_ACCESS' && <div className="text-[10px] text-amber-600 font-bold bg-amber-50 inline-block px-1.5 rounded mt-1">Awaiting Student Approval</div>}
                 </td>
                 <td className="px-4 py-3 text-slate-600">{c.profile?.email}</td>
                 <td className="px-4 py-3 text-slate-600">{c.profile?.currentVisa || '-'}</td>
+                <td className="px-4 py-3 text-slate-600 text-sm min-w-[10rem]" onClick={(e) => e.stopPropagation()}>
+                  {canAssignAgent && agents.length > 0 ? (
+                    <select
+                      className="input py-1.5 text-sm max-w-[11rem]"
+                      value={agentId}
+                      disabled={assigningId === c._id}
+                      onChange={(e) => handleAssignAgent(c._id, e.target.value)}
+                      aria-label="Assign agent"
+                    >
+                      <option value="">Unassigned</option>
+                      {agents.map((a: any) => (
+                        <option key={a._id} value={a._id}>
+                          {a.profile?.firstName} {a.profile?.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span>
+                      {c.assignedAgentId?.profile
+                        ? `${c.assignedAgentId.profile.firstName || ''} ${c.assignedAgentId.profile.lastName || ''}`.trim() || '—'
+                        : '—'}
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-slate-600 text-sm">
                   {c.branchId?.name || (typeof c.branchId === 'object' && c.branchId?.name) || '—'}
                 </td>
@@ -261,11 +347,31 @@ export default function Clients() {
                 <td className="px-4 py-3 text-slate-500 text-sm">
                   {c.lastActivityAt ? format(new Date(c.lastActivityAt), 'dd MMM yyyy') : '-'}
                 </td>
-                <td className="px-4 py-3">
-                  <Link to={consultancyId ? `/consultancy/clients/${c._id}?consultancyId=${consultancyId}` : `/consultancy/clients/${c._id}`} className="text-ori-600 hover:underline text-sm">View</Link>
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className="text-ori-600 hover:underline text-sm font-medium"
+                      onClick={() => navigate(clientDetailPath(c._id))}
+                    >
+                      Open
+                    </button>
+                    {canDeleteClient && (
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
+                        disabled={deletingId === c._id}
+                        onClick={(e) => handleDeleteClient(e, c._id)}
+                        title="Delete client (admin only)"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
-            ))}
+            );})}
           </tbody>
         </table>
         )}
